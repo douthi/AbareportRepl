@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Abacus ERP CRM Sync</title>
+    <title>Uniska AG – Abacus x CRM Sync</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -49,7 +49,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     <div class="container mt-4 flex-grow-1">
-        <h1 class="mb-4">Uniska AG CRM Sync</h1>
+        <h1 class="mb-4">Uniska AG – Abacus x CRM Sync</h1>
 
         <!-- Selection Form -->
         <div class="card mb-4">
@@ -108,14 +108,6 @@
         <!-- Data Table -->
         <div class="card mb-4">
             <div class="card-body">
-                <!-- Loading Indicator -->
-                <div id="loadingIndicator" class="text-center mb-3 d-none">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2" id="loadingMessage">Processing reports...</p>
-                </div>
-
                 <div class="table-container">
                     <!-- Initial Data Loading Overlay -->
                     <div id="initialLoadingOverlay" class="loading-overlay">
@@ -145,6 +137,14 @@
                             <tbody id="dataTableBody"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Loading Indicator (Moved below table) -->
+                <div id="loadingIndicator" class="text-center mt-3 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2" id="loadingMessage">Processing reports...</p>
                 </div>
             </div>
         </div>
