@@ -1,0 +1,891 @@
+Certainly! Here's a **bullet-point style guide** to help you set up a **Flask** backend for syncing data from **Abacus ERP** to **Pipedrive CRM**. This guide focuses on **data fetching**, **pagination handling**, **polling for report completion**, and **processing finished data**.
+
+---
+
+## **1. Setup and Installation**
+
+- **Create a Virtual Environment:**
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
+
+- **Install Required Packages:**
+  ```bash
+  pip install Flask requests python-dotenv
+  ```
+
+- **Project Structure:**
+  ```
+  your-app/
+  ├── app.py                # Main Flask application
+  ├── requirements.txt      # Python dependencies
+  ├── .env                  # Environment variables
+  └── README.md             # Project documentation
+  ```
+
+---
+
+## **2. Configuration**
+
+- **Create a `.env` File:**
+  ```env
+  CLIENT_ID=your_client_id_here
+  CLIENT_SECRET=your_client_secret_here
+  TOKEN_URL=https://your.token.url/here
+  BASE_URL=https://abacus.indutrade.ch
+  PAGE_SIZE=200
+  ```
+
+- **Load Environment Variables in `app.py`:**
+  ```python
+  from flask import Flask, jsonify, request
+  import requests
+  import uuid
+  import time
+  from dotenv import load_dotenv
+  import os
+
+  load_dotenv()
+
+  app = Flask(__name__)
+
+  CLIENT_ID = os.getenv('CLIENT_ID')
+  CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+  TOKEN_URL = os.getenv('TOKEN_URL')
+  BASE_URL = os.getenv('BASE_URL')
+  PAGE_SIZE = int(os.getenv('PAGE_SIZE', 200))
+  ```
+
+---
+
+## **3. In-Memory Storage**
+
+- **Initialize Storage for Reports and Data:**
+  ```python
+  report_status_store = {}
+  report_data_store = {}
+  ```
+
+---
+
+## **4. Helper Functions**
+
+### **A. Obtain Access Token**
+
+- **Function to Get Access Token:**
+  ```python
+  def get_access_token():
+      try:
+          response = requests.post(
+              TOKEN_URL,
+              data={
+                  'grant_type': 'client_credentials',
+                  'client_id': CLIENT_ID,
+                  'client_secret': CLIENT_SECRET
+              },
+              headers={'Content-Type': 'application/x-www-form-urlencoded'}
+          )
+          response.raise_for_status()
+          access_token = response.json().get('access_token')
+          print("Access token obtained successfully.")
+          return access_token
+      except requests.exceptions.RequestException as e:
+          print(f"Error obtaining access token: {e}")
+          raise
+  ```
+
+### **B. Start a Report**
+
+- **Function to Start a Report:**
+  ```python
+  def start_report(mandant, report_key, year):
+      access_token = get_access_token()
+      report_id = str(uuid.uuid4())
+      
+      report_status_store[report_id] = {
+          'mandant': mandant,
+          'report_key': report_key,
+          'api_report_id': None,
+          'status': 'Running',
+          'message': 'Report started.',
+          'total_pages': 1
+      }
+      
+      report_name = REPORT_KEYS.get(report_key)
+      endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
+      
+      # Conditionally include parameters
+      if report_key == "dko" and year != "none":
+          body = {
+              "outputType": "json",
+              "parameters": {
+                  "AUF_DATUM_VON": f"{year}-01-01",
+                  "AUF_DATUM_BIS": f"{year}-12-31"
+              },
+              "paging": PAGE_SIZE
+          }
+      else:
+          body = {
+              "outputType": "json",
+              "paging": PAGE_SIZE
+          }
+      
+      try:
+          response = requests.post(
+              f"{BASE_URL}{endpoint}",
+              json=body,
+              headers={
+                  'Authorization': f'Bearer {access_token}',
+                  'Content-Type': 'application/json'
+              }
+          )
+          response.raise_for_status()
+          api_report_id = response.json().get('id') or response.json().get('reportId')
+          
+          if not api_report_id:
+              raise Exception("API did not return a report ID.")
+          
+          report_status_store[report_id]['api_report_id'] = api_report_id
+          print(f"Report '{report_key.upper()}' started with ID: {report_id}")
+          
+          # Start polling in background
+          poll_report_status(report_id, api_report_id, report_key)
+          
+          return report_id
+      except Exception as e:
+          report_status_store[report_id]['status'] = 'FinishedError'
+          report_status_store[report_id]['message'] = str(e)
+          print(f"Error starting report '{report_key.upper()}': {e}")
+          raise
+  ```
+
+### **C. Poll Report Status**
+
+- **Function to Poll Report Status:**
+  ```python
+  def poll_report_status(report_id, api_report_id, report_key):
+      def poll():
+          while True:
+              try:
+                  access_token = get_access_token()
+                  status_endpoint = f"/api/abareport/v1/jobs/{api_report_id}"
+                  
+                  response = requests.get(
+                      f"{BASE_URL}{status_endpoint}",
+                      headers={
+                          'Authorization': f'Bearer {access_token}',
+                          'Content-Type': 'application/json'
+                      }
+                  )
+                  response.raise_for_status()
+                  data = response.json()
+                  
+                  state = data.get('state')
+                  message = data.get('message', '')
+                  
+                  # Parse rows to calculate total_pages
+                  rows_match = re.search(r'rows=(\d+)', message, re.IGNORECASE)
+                  if rows_match:
+                      rows = int(rows_match.group(1))
+                      total_pages = (rows + PAGE_SIZE - 1) // PAGE_SIZE
+                  else:
+                      total_pages = 1
+                  
+                  report_status_store[report_id].update({
+                      'status': state,
+                      'message': message,
+                      'total_pages': total_pages
+                  })
+                  
+                  print(f"Report '{report_key.upper()}' with ID '{report_id}': State - {state}, Total Pages - {total_pages}")
+                  
+                  if state == "FinishedSuccess":
+                      # Fetch data
+                      data = fetch_report_output(api_report_id, report_key, total_pages, report_id)
+                      report_data_store[report_id] = data
+                      print(f"Report '{report_key.upper()}' with ID '{report_id}' stored successfully.")
+                      break
+                  elif state == "FinishedError":
+                      print(f"Report '{report_key.upper()}' with ID '{report_id}' failed: {message}")
+                      break
+                  else:
+                      print(f"Report '{report_key.upper()}' with ID '{report_id}' is still running.")
+                  
+              except Exception as e:
+                  report_status_store[report_id]['status'] = 'FinishedError'
+                  report_status_store[report_id]['message'] = str(e)
+                  print(f"Error polling report '{report_key.upper()}' with ID '{report_id}': {e}")
+                  break
+              
+              time.sleep(5)  # Poll every 5 seconds
+      
+      import threading
+      threading.Thread(target=poll).start()
+  ```
+
+### **D. Fetch Report Output**
+
+- **Function to Fetch Report Output:**
+  ```python
+  def fetch_report_output(api_report_id, report_key, total_pages, report_id):
+      access_token = get_access_token()
+      output_endpoint = f"/api/abareport/v1/jobs/{api_report_id}/output"
+      all_data = []
+      
+      try:
+          for page in range(1, total_pages + 1):
+              print(f"Fetching page {page} for report '{report_key.upper()}'...")
+              response = requests.get(
+                  f"{BASE_URL}{output_endpoint}/{page}",
+                  headers={
+                      'Authorization': f'Bearer {access_token}',
+                      'Content-Type': 'application/json'
+                  }
+              )
+              if response.status_code == 404:
+                  print(f"Page {page} does not exist for report '{report_key.upper()}'.")
+                  break
+              response.raise_for_status()
+              data = response.json()
+              
+              if isinstance(data, list) and data:
+                  all_data.extend(data)
+                  print(f"Page {page} fetched successfully with {len(data)} records.")
+              else:
+                  print(f"No data found on page {page} for report '{report_key.upper()}'.")
+                  break
+          
+          print(f"Fetched a total of {len(all_data)} records for report '{report_key.upper()}'.")
+          return all_data
+      except Exception as e:
+          report_status_store[report_id]['status'] = 'FinishedError'
+          report_status_store[report_id]['message'] = str(e)
+          print(f"Error fetching report output for '{report_key.upper()}': {e}")
+          raise
+  ```
+
+---
+
+## **5. API Endpoints**
+
+### **A. Start All Reports**
+
+- **Endpoint to Initiate All Reports:**
+  ```python
+  @app.route('/startAllReports', methods=['POST'])
+  def start_all_reports():
+      data = request.get_json()
+      mandant = data.get('mandant')
+      year = data.get('year', 'none')
+      
+      if not mandant or mandant not in SUPPORTED_MANDANTS:
+          return jsonify({'error': 'Invalid mandant.'}), 400
+      
+      try:
+          report_ids = {}
+          for report_key in REPORT_KEYS.keys():
+              report_id = start_report(mandant, report_key, year)
+              report_ids[report_key] = report_id
+          return jsonify({'report_ids': report_ids}), 200
+      except Exception as e:
+          return jsonify({'error': str(e)}), 500
+  ```
+
+### **B. Get Report Statuses**
+
+- **Endpoint to Retrieve All Report Statuses:**
+  ```python
+  @app.route('/reports', methods=['GET'])
+  def get_reports():
+      reports = []
+      for report_id, status in report_status_store.items():
+          reports.append({
+              'report_id': report_id,
+              'report_key': status['report_key'],
+              'status': status['status'],
+              'message': status['message']
+          })
+      return jsonify({'reports': reports}), 200
+  ```
+
+### **C. Get Report Data**
+
+- **Endpoint to Retrieve Report Data (Without CSV Download):**
+  ```python
+  @app.route('/reportData/<report_id>', methods=['GET'])
+  def get_report_data(report_id):
+      data = report_data_store.get(report_id)
+      status = report_status_store.get(report_id)
+      
+      if not data or not status or status['status'] != 'FinishedSuccess':
+          return jsonify({'error': 'Report data not available.'}), 404
+      
+      return jsonify({'report_data': data}), 200
+  ```
+
+---
+
+## **6. Running the Application**
+
+- **Start the Flask Server:**
+  ```bash
+  export FLASK_APP=app.py
+  flask run
+  ```
+  - **Or specify host and port:**
+    ```bash
+    flask run --host=0.0.0.0 --port=5000
+    ```
+
+---
+
+## **7. Example Usage**
+
+### **A. Initiate Reports**
+
+- **Request:**
+  ```bash
+  POST /startAllReports
+  Content-Type: application/json
+
+  {
+      "mandant": "19",
+      "year": "2023"
+  }
+  ```
+
+- **Response:**
+  ```json
+  {
+      "report_ids": {
+          "adr": "uuid-1",
+          "akp": "uuid-2",
+          "anr": "uuid-3",
+          "zla": "uuid-4",
+          "npo": "uuid-5",
+          "dko": "uuid-6"
+      }
+  }
+  ```
+
+### **B. Check Report Statuses**
+
+- **Request:**
+  ```bash
+  GET /reports
+  ```
+
+- **Response:**
+  ```json
+  {
+      "reports": [
+          {
+              "report_id": "uuid-1",
+              "report_key": "adr",
+              "status": "Running",
+              "message": "Report started."
+          },
+          ...
+      ]
+  }
+  ```
+
+### **C. Retrieve Report Data After Completion**
+
+- **Request:**
+  ```bash
+  GET /reportData/uuid-1
+  ```
+
+- **Response (Success):**
+  ```json
+  {
+      "report_data": [
+          {
+              "company_name": "Company A",
+              "contact_name": "John Doe",
+              ...
+          },
+          ...
+      ]
+  }
+  ```
+
+- **Response (Error):**
+  ```json
+  {
+      "error": "Report data not available."
+  }
+  ```
+
+---
+
+## **8. Handling Errors and Edge Cases**
+
+- **Non-Existent Pages:**
+  - The `fetch_report_output` function stops fetching when a 404 error occurs, preventing attempts to access non-existent pages.
+  
+- **Incorrect `total_pages` Calculation:**
+  - Calculated based on the `rows` field from the API response, ensuring accurate pagination.
+  
+- **Incomplete Data:**
+  - If any page fails to fetch, the report is marked as `FinishedError`, and data is not stored, preventing download of incomplete reports.
+
+---
+
+## **9. Testing the Backend**
+
+- **Use Tools Like Postman or cURL:**
+  - **Start Reports:**
+    ```bash
+    curl -X POST http://localhost:5000/startAllReports \
+    -H "Content-Type: application/json" \
+    -d '{"mandant": "19", "year": "2023"}'
+    ```
+  
+  - **Check Statuses:**
+    ```bash
+    curl http://localhost:5000/reports
+    ```
+  
+  - **Retrieve Report Data:**
+    ```bash
+    curl http://localhost:5000/reportData/uuid-1
+    ```
+
+---
+
+## **10. Next Steps**
+
+- **Integrate with Pipedrive CRM:**
+  - Once data fetching is robust, proceed to map and sync the data to Pipedrive using their APIs.
+
+- **Implement User Interface:**
+  - Develop a frontend to interact with these backend endpoints, allowing users to initiate syncs, monitor progress, and review data.
+
+- **Persist Data:**
+  - For production, consider using a database (e.g., PostgreSQL, MongoDB) instead of in-memory storage to persist report statuses and data.
+
+- **Security Enhancements:**
+  - Implement authentication (e.g., JWT) to secure API endpoints.
+  - Restrict CORS origins appropriately.
+
+- **Logging and Monitoring:**
+  - Enhance logging using libraries like `logging`.
+  - Implement monitoring tools to track application performance and errors.
+
+---
+
+## **Code Example: Complete `app.py`**
+
+```python
+from flask import Flask, jsonify, request
+import requests
+import uuid
+import time
+import re
+from dotenv import load_dotenv
+import os
+import threading
+
+load_dotenv()
+
+app = Flask(__name__)
+
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+TOKEN_URL = os.getenv('TOKEN_URL')
+BASE_URL = os.getenv('BASE_URL')
+PAGE_SIZE = int(os.getenv('PAGE_SIZE', 200))
+
+SUPPORTED_MANDANTS = {
+    "19": "Uniska Interiors",
+    "20": "Uniska AG",
+}
+
+REPORT_KEYS = {
+    "adr": "uniska_pipedrive_adr",
+    "akp": "uniska_pipedrive_akp",
+    "anr": "uniska_pipedrive_anr",
+    "zla": "uniska_pipedrive_zla",
+    "npo": "uniska_pipedrive_npo",
+    "dko": "uniska_pipedrive_dko",
+}
+
+report_status_store = {}
+report_data_store = {}
+
+def get_access_token():
+    try:
+        response = requests.post(
+            TOKEN_URL,
+            data={
+                'grant_type': 'client_credentials',
+                'client_id': CLIENT_ID,
+                'client_secret': CLIENT_SECRET
+            },
+            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+        )
+        response.raise_for_status()
+        access_token = response.json().get('access_token')
+        print("Access token obtained successfully.")
+        return access_token
+    except requests.exceptions.RequestException as e:
+        print(f"Error obtaining access token: {e}")
+        raise
+
+def start_report(mandant, report_key, year):
+    access_token = get_access_token()
+    report_id = str(uuid.uuid4())
+    
+    report_status_store[report_id] = {
+        'mandant': mandant,
+        'report_key': report_key,
+        'api_report_id': None,
+        'status': 'Running',
+        'message': 'Report started.',
+        'total_pages': 1
+    }
+    
+    report_name = REPORT_KEYS.get(report_key)
+    endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
+    
+    # Conditionally include parameters
+    if report_key == "dko" and year != "none":
+        body = {
+            "outputType": "json",
+            "parameters": {
+                "AUF_DATUM_VON": f"{year}-01-01",
+                "AUF_DATUM_BIS": f"{year}-12-31"
+            },
+            "paging": PAGE_SIZE
+        }
+    else:
+        body = {
+            "outputType": "json",
+            "paging": PAGE_SIZE
+        }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}{endpoint}",
+            json=body,
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }
+        )
+        response.raise_for_status()
+        api_report_id = response.json().get('id') or response.json().get('reportId')
+        
+        if not api_report_id:
+            raise Exception("API did not return a report ID.")
+        
+        report_status_store[report_id]['api_report_id'] = api_report_id
+        print(f"Report '{report_key.upper()}' started with ID: {report_id}")
+        
+        # Start polling in background
+        poll_report_status(report_id, api_report_id, report_key)
+        
+        return report_id
+    except Exception as e:
+        report_status_store[report_id]['status'] = 'FinishedError'
+        report_status_store[report_id]['message'] = str(e)
+        print(f"Error starting report '{report_key.upper()}': {e}")
+        raise
+
+def poll_report_status(report_id, api_report_id, report_key):
+    def poll():
+        while True:
+            try:
+                access_token = get_access_token()
+                status_endpoint = f"/api/abareport/v1/jobs/{api_report_id}"
+                
+                response = requests.get(
+                    f"{BASE_URL}{status_endpoint}",
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'Content-Type': 'application/json'
+                    }
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                state = data.get('state')
+                message = data.get('message', '')
+                
+                # Parse rows to calculate total_pages
+                rows_match = re.search(r'rows=(\d+)', message, re.IGNORECASE)
+                if rows_match:
+                    rows = int(rows_match.group(1))
+                    total_pages = (rows + PAGE_SIZE - 1) // PAGE_SIZE
+                else:
+                    total_pages = 1
+                
+                report_status_store[report_id].update({
+                    'status': state,
+                    'message': message,
+                    'total_pages': total_pages
+                })
+                
+                print(f"Report '{report_key.upper()}' with ID '{report_id}': State - {state}, Total Pages - {total_pages}")
+                
+                if state == "FinishedSuccess":
+                    # Fetch data
+                    data = fetch_report_output(api_report_id, report_key, total_pages, report_id)
+                    report_data_store[report_id] = data
+                    print(f"Report '{report_key.upper()}' with ID '{report_id}' stored successfully.")
+                    break
+                elif state == "FinishedError":
+                    print(f"Report '{report_key.upper()}' with ID '{report_id}' failed: {message}")
+                    break
+                else:
+                    print(f"Report '{report_key.upper()}' with ID '{report_id}' is still running.")
+                
+            except Exception as e:
+                report_status_store[report_id]['status'] = 'FinishedError'
+                report_status_store[report_id]['message'] = str(e)
+                print(f"Error polling report '{report_key.upper()}' with ID '{report_id}': {e}")
+                break
+            
+            time.sleep(5)  # Poll every 5 seconds
+    
+    threading.Thread(target=poll).start()
+
+def fetch_report_output(api_report_id, report_key, total_pages, report_id):
+    access_token = get_access_token()
+    output_endpoint = f"/api/abareport/v1/jobs/{api_report_id}/output"
+    all_data = []
+    
+    try:
+        for page in range(1, total_pages + 1):
+            print(f"Fetching page {page} for report '{report_key.upper()}'...")
+            try:
+                response = requests.get(
+                    f"{BASE_URL}{output_endpoint}/{page}",
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'Content-Type': 'application/json'
+                    }
+                )
+                if response.status_code == 404:
+                    print(f"Page {page} does not exist for report '{report_key.upper()}'.")
+                    break
+                response.raise_for_status()
+                data = response.json()
+                
+                if isinstance(data, list) and data:
+                    all_data.extend(data)
+                    print(f"Page {page} fetched successfully with {len(data)} records.")
+                else:
+                    print(f"No data found on page {page} for report '{report_key.upper()}'.")
+                    break
+            except Exception as e:
+                print(f"Error fetching page {page} for report '{report_key.upper()}': {e}")
+                raise Exception(f"Failed to fetch page {page} for report '{report_key.upper()}': {e}")
+        
+        print(f"Fetched a total of {len(all_data)} records for report '{report_key.upper()}'.")
+        return all_data
+    except Exception as e:
+        report_status_store[report_id]['status'] = 'FinishedError'
+        report_status_store[report_id]['message'] = str(e)
+        print(f"Error fetching report output for '{report_key.upper()}': {e}")
+        raise
+
+@app.route('/startAllReports', methods=['POST'])
+def start_all_reports():
+    data = request.get_json()
+    mandant = data.get('mandant')
+    year = data.get('year', 'none')
+    
+    if not mandant or mandant not in SUPPORTED_MANDANTS:
+        return jsonify({'error': 'Invalid mandant.'}), 400
+    
+    try:
+        report_ids = {}
+        for report_key in REPORT_KEYS.keys():
+            report_id = start_report(mandant, report_key, year)
+            report_ids[report_key] = report_id
+        return jsonify({'report_ids': report_ids}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/reports', methods=['GET'])
+def get_reports():
+    reports = []
+    for report_id, status in report_status_store.items():
+        reports.append({
+            'report_id': report_id,
+            'report_key': status['report_key'],
+            'status': status['status'],
+            'message': status['message']
+        })
+    return jsonify({'reports': reports}), 200
+
+@app.route('/reportData/<report_id>', methods=['GET'])
+def get_report_data(report_id):
+    data = report_data_store.get(report_id)
+    status = report_status_store.get(report_id)
+    
+    if not data or not status or status['status'] != 'FinishedSuccess':
+        return jsonify({'error': 'Report data not available.'}), 404
+    
+    return jsonify({'report_data': data}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+---
+
+## **11. Summary of What the Backend Does**
+
+- **Authentication:**
+  - Obtains an access token from Abacus ERP using client credentials.
+
+- **Report Initiation:**
+  - Starts reports for specified `report_keys` and `mandant`.
+  - Supports optional year filtering for relevant reports.
+
+- **Polling Mechanism:**
+  - Continuously polls the status of each initiated report every 5 seconds.
+  - Calculates `total_pages` based on the `rows` field in the API response.
+  - Stops polling once the report status is `FinishedSuccess` or `FinishedError`.
+
+- **Data Fetching:**
+  - Fetches all pages of data up to `total_pages`.
+  - Aggregates data into `report_data_store` upon successful fetching.
+  - Handles errors by marking reports as `FinishedError`.
+
+- **API Endpoints:**
+  - **`/startAllReports` (POST):** Initiates all defined reports and returns their IDs.
+  - **`/reports` (GET):** Retrieves the status of all reports.
+  - **`/reportData/<report_id>` (GET):** Fetches the aggregated data for a specific report if it's successfully completed.
+
+---
+
+## **12. Example Flow**
+
+1. **Initiate Reports:**
+   - **Request:**
+     ```json
+     POST /startAllReports
+     Content-Type: application/json
+
+     {
+         "mandant": "19",
+         "year": "2023"
+     }
+     ```
+   - **Response:**
+     ```json
+     {
+         "report_ids": {
+             "adr": "uuid-1",
+             "akp": "uuid-2",
+             "anr": "uuid-3",
+             "zla": "uuid-4",
+             "npo": "uuid-5",
+             "dko": "uuid-6"
+         }
+     }
+     ```
+
+2. **Monitor Report Statuses:**
+   - **Request:**
+     ```bash
+     GET /reports
+     ```
+   - **Response:**
+     ```json
+     {
+         "reports": [
+             {
+                 "report_id": "uuid-1",
+                 "report_key": "adr",
+                 "status": "Running",
+                 "message": "Report started."
+             },
+             ...
+         ]
+     }
+     ```
+
+3. **Retrieve Report Data Upon Completion:**
+   - **Request:**
+     ```bash
+     GET /reportData/uuid-1
+     ```
+   - **Response (Success):**
+     ```json
+     {
+         "report_data": [
+             {
+                 "company_name": "Company A",
+                 "contact_name": "John Doe",
+                 ...
+             },
+             ...
+         ]
+     }
+     ```
+
+   - **Response (Error):**
+     ```json
+     {
+         "error": "Report data not available."
+     }
+     ```
+
+---
+
+## **13. Troubleshooting Tips**
+
+- **Access Token Issues:**
+  - Ensure that `CLIENT_ID`, `CLIENT_SECRET`, and `TOKEN_URL` in the `.env` file are correct.
+  - Check network connectivity to the token endpoint.
+
+- **Report Initiation Failures:**
+  - Verify that the `mandant` and `report_key` are valid.
+  - Check the API response for specific error messages.
+
+- **Polling Errors:**
+  - Ensure that the `api_report_id` is correctly retrieved.
+  - Verify that the `rows` field is present in the `message` for accurate `total_pages` calculation.
+
+- **Data Fetching Failures:**
+  - Confirm that the pages exist by checking the `total_pages` calculation.
+  - Handle unexpected data formats gracefully.
+
+- **API Endpoint Accessibility:**
+  - Ensure that the backend server has access to the Abacus ERP API endpoints.
+  - Check for any firewall or network restrictions.
+
+---
+
+## **14. Final Recommendations**
+
+- **Persist Data Using a Database:**
+  - Replace in-memory storage (`report_status_store` and `report_data_store`) with a persistent database to ensure data durability across server restarts.
+
+- **Implement Authentication for API Endpoints:**
+  - Secure your API endpoints using authentication methods like JWT to prevent unauthorized access.
+
+- **Enhance Logging:**
+  - Use Python's `logging` module to create detailed logs, which are essential for debugging and monitoring.
+
+- **Optimize Polling Mechanism:**
+  - Consider exponential backoff or other strategies to optimize polling frequency and reduce server load.
+
+- **Error Notifications:**
+  - Implement a notification system (e.g., email alerts) to inform administrators of critical failures.
+
+- **Scalability Considerations:**
+  - Design the application to handle multiple concurrent reports and users efficiently.
+
+---
+
+By following this guide, you should have a functional Flask backend capable of initiating reports, polling their status, fetching all necessary data with proper pagination handling, and making the data available through API endpoints. This setup lays the foundation for further integration with Pipedrive CRM and the development of a comprehensive frontend interface.
+
+Feel free to reach out if you need further assistance or encounter specific issues!
