@@ -14,6 +14,19 @@ app.config.from_object(Config)
 # Initialize report manager
 report_manager = ReportManager(app.config)
 
+@app.route('/')
+def index():
+    """Root endpoint to verify API is working."""
+    return jsonify({
+        'status': 'ok',
+        'message': 'API is running',
+        'endpoints': {
+            'POST /startAllReports': 'Start reports for a mandant',
+            'GET /reports': 'Get all report statuses',
+            'GET /reportData/<report_id>': 'Get specific report data'
+        }
+    })
+
 @app.route('/startAllReports', methods=['POST'])
 def start_all_reports():
     """Start all reports for a given mandant and year."""
