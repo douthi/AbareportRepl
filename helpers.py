@@ -22,19 +22,23 @@ class ReportManager:
             from urllib.parse import urlencode
             logger.debug(f"Using CLIENT_ID: {self.config['CLIENT_ID']}")
             logger.debug(f"Using CLIENT_SECRET length: {len(self.config['CLIENT_SECRET']) if self.config['CLIENT_SECRET'] else 0}")
+            # Encode credentials
+            credentials = f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}"
+            auth_header = f"Basic {base64.b64encode(credentials.encode()).decode()}"
+            
             auth_data = {
                 'grant_type': 'client_credentials',
-                'client_id': self.config['CLIENT_ID'],
-                'client_secret': self.config['CLIENT_SECRET'],
                 'scope': 'AbacusReports'
             }
             encoded_data = urlencode(auth_data)
+            
             response = requests.post(
                 self.config['TOKEN_URL'],
                 data=encoded_data,
                 headers={
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Authorization': auth_header
                 }
             )
             response.raise_for_status()
