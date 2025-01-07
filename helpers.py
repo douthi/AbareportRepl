@@ -271,7 +271,9 @@ class ReportManager:
                 # Add AKP data directly if available
                 if akp_entries and len(akp_entries) > 0:
                     akp = akp_entries[0]  # Take first AKP entry
-                    for k in AKP_COLUMNS:
+                    # Only include specific AKP columns
+                    desired_akp_columns = ['NAME', 'VORNAME', 'FUNKTION', 'MAIL', 'TEL', 'ABTEILUNG']
+                    for k in desired_akp_columns:
                         if k in akp:
                             combined_record[f'AKP_{k}'] = akp.get(k)
 
