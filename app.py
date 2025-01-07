@@ -91,6 +91,16 @@ def get_report_data(report_id):
 def not_found_error(error):
     return jsonify({'error': 'Not found'}), 404
 
+@app.route('/combinedData', methods=['GET'])
+def get_combined_data():
+    """Get combined and matched data from all reports."""
+    try:
+        data = report_manager.get_combined_data()
+        return jsonify({'combined_data': data}), 200
+    except Exception as e:
+        logger.error(f"Error getting combined data: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"Internal server error: {error}")

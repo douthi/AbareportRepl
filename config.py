@@ -21,9 +21,7 @@ class Config:
         "adr": "uniska_pipedrive_adr",
         "akp": "uniska_pipedrive_akp",
         "anr": "uniska_pipedrive_anr",
-        "zla": "uniska_pipedrive_zla",
         "npo": "uniska_pipedrive_npo",
-        "dko": "uniska_pipedrive_dko",
     }
 
     # Supported mandants

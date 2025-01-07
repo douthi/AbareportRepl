@@ -199,6 +199,64 @@ class ReportManager:
         """Get data of a completed report."""
         return self.report_data_store.get(report_id)
 
+    def get_combined_data(self) -> List[Dict[str, Any]]:
+        """Get combined and matched data from NPO, ADR, and AKP reports."""
+        combined_data = []
+        
+        # Get the latest report data for each type
+        npo_data = None
+        adr_data = None
+        akp_data = None
+        
+        for report_id, status in self.report_status_store.items():
+            if status['status'] == 'FinishedSuccess':
+                if status['report_key'] == 'npo':
+                    npo_data = self.report_data_store.get(report_id)
+                elif status['report_key'] == 'adr':
+                    adr_data = self.report_data_store.get(report_id)
+                elif status['report_key'] == 'akp':
+                    akp_data = self.report_data_store.get(report_id)
+
+        if not all([npo_data, adr_data]):
+            return []  # Return empty if required data is missing
+
+        # Create lookup dictionaries
+        npo_dict = {}
+        for npo in npo_data:
+            key = npo.get('KdINR') if npo.get('Person1') == '0' else npo.get('Person1')
+            if key:
+                npo_dict[key] = npo
+
+        adr_dict = {adr.get('INR'): adr for adr in adr_data if adr.get('INR')}
+        
+        # Create AKP lookup dictionary
+        akp_dict = {}
+        if akp_data:
+            for akp in akp_data:
+                adr_inr = akp.get('ADR_INR')
+                if adr_inr:
+                    if adr_inr not in akp_dict:
+                        akp_dict[adr_inr] = []
+                    akp_dict[adr_inr].append(akp)
+
+        # Combine data based on matching keys
+        for inr, adr in adr_dict.items():
+            if inr in npo_dict:
+                npo = npo_dict[inr]
+                akp_entries = akp_dict.get(inr, [])
+                
+                # If no AKP entries exist, still include the record with ADR and NPO data
+                if not akp_entries:
+                    combined_record = {**adr, **npo, 'akp_data': []}
+                    combined_data.append(combined_record)
+                else:
+                    # Create a record for each AKP entry
+                    for akp in akp_entries:
+                        combined_record = {**adr, **npo, 'akp_data': akp}
+                        combined_data.append(combined_record)
+
+        return combined_data
+
     def get_all_reports(self) -> List[Dict[str, Any]]:
         """Get status of all reports."""
         return [
