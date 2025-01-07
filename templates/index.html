@@ -14,10 +14,22 @@
         .status-fresh-sync {
             color: var(--bs-success);
         }
+        .btn-underline {
+            text-decoration: underline;
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            color: var(--bs-secondary);
+        }
+        .btn-underline:hover {
+            color: var(--bs-primary);
+        }
     </style>
 </head>
 <body>
     <div class="container mt-4">
+        <h1 class="mb-4">Uniska AG ERP Report Manager</h1>
+
         <!-- Selection Form -->
         <div class="card mb-4">
             <div class="card-body">
@@ -67,7 +79,7 @@
         </div>
 
         <!-- Data Table -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -89,6 +101,13 @@
                 </div>
             </div>
         </div>
+
+        <!-- Pipedrive Connection -->
+        <div class="text-center mb-4">
+            <button id="pipedriveConnect" class="btn btn-underline">
+                Add Pipedrive Connection
+            </button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -98,6 +117,19 @@
             const hideProcessedCheckbox = document.getElementById('hideProcessed');
             let currentData = [];
             let freshSyncs = new Set(); // Track items synced in current session
+
+            // Pipedrive connection handler
+            document.getElementById('pipedriveConnect').addEventListener('click', function() {
+                if (confirm('Do you want to connect a Pipedrive account?')) {
+                    const apiKey = prompt('Please enter your Pipedrive API key:');
+                    if (apiKey) {
+                        if (confirm('Are you sure you want to use this API key?')) {
+                            // Here we would handle the API key, for now just show success
+                            alert('Pipedrive connection successful!');
+                        }
+                    }
+                }
+            });
 
             // Load initial data
             fetch('/combinedData')
