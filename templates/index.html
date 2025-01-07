@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Abacus ERP Report Manager</title>
+    <title>Abacus ERP CRM Sync</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -28,7 +28,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     <div class="container mt-4 flex-grow-1">
-        <h1 class="mb-4">Uniska AG ERP Report Manager</h1>
+        <h1 class="mb-4">Uniska AG CRM Sync</h1>
 
         <!-- Selection Form -->
         <div class="card mb-4">
@@ -64,7 +64,10 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <input type="text" id="searchProjNr" class="form-control" placeholder="Search by ProjNr">
+                        <div class="position-relative">
+                            <input type="text" id="searchProjNr" class="form-control" placeholder="Search by ProjNr" list="projNrSuggestions">
+                            <datalist id="projNrSuggestions"></datalist>
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-check">
@@ -81,6 +84,14 @@
         <!-- Data Table -->
         <div class="card mb-4">
             <div class="card-body">
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="text-center mb-3 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2" id="loadingMessage">Processing reports...</p>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -117,6 +128,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchProjNr');
             const hideProcessedCheckbox = document.getElementById('hideProcessed');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const loadingMessage = document.getElementById('loadingMessage');
             let currentData = [];
             let freshSyncs = new Set(); // Track items synced in current session
 
@@ -142,7 +155,16 @@
                         Status: item.Status || 'new'
                     }));
                     updateTable();
+                    updateProjNrSuggestions();
                 });
+
+            function updateProjNrSuggestions() {
+                const datalist = document.getElementById('projNrSuggestions');
+                const uniqueProjNrs = [...new Set(currentData.map(item => item.ProjNr))];
+                datalist.innerHTML = uniqueProjNrs
+                    .map(projNr => `<option value="${projNr}">`)
+                    .join('');
+            }
 
             function getStatusClass(status, projNr) {
                 if (freshSyncs.has(projNr)) return 'status-fresh-sync';
@@ -240,6 +262,10 @@
                 const formData = new FormData(this);
                 const jsonData = Object.fromEntries(formData.entries());
 
+                // Show loading indicator
+                loadingIndicator.classList.remove('d-none');
+                loadingMessage.textContent = 'Starting reports...';
+
                 fetch('/startAllReports', {
                     method: 'POST',
                     headers: {
@@ -251,8 +277,9 @@
                 .then(data => {
                     if (data.error) {
                         alert(`Error: ${data.error}`);
+                        loadingIndicator.classList.add('d-none');
                     } else {
-                        alert('Reports started successfully. Please wait while data is being processed.');
+                        loadingMessage.textContent = 'Reports started successfully. Processing data...';
                         pollForUpdates();
                     }
                 });
@@ -267,8 +294,15 @@
                                 report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
                             );
 
+                            // Update loading message based on progress
+                            const finishedCount = data.reports.filter(
+                                report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
+                            ).length;
+                            loadingMessage.textContent = `Processing reports... (${finishedCount}/${data.reports.length} completed)`;
+
                             if (allFinished) {
                                 clearInterval(interval);
+                                loadingIndicator.classList.add('d-none');
                                 fetch('/combinedData')
                                     .then(response => response.json())
                                     .then(data => {
@@ -277,6 +311,7 @@
                                             Status: item.Status || 'new'
                                         }));
                                         updateTable();
+                                        updateProjNrSuggestions();
                                     });
                             }
                         });
