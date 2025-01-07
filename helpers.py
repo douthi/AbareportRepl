@@ -213,15 +213,14 @@ class ReportManager:
         ADR_COLUMNS = [
             'INR', 'KURZNA', 'LAND', 'PLZ', 'NAME', 'VORNAME', 'ORT', 'SUBJEKTTYP',
             'IS_AKP_ONLY', 'EMAIL', 'ZEILE1', 'ZEILE2', 'STAAT', 'STREET', 'ANR_NR',
-            'ANREDENAME', 'TEL', 'TEL2', 'TELEX', 'TELEFAX', 'SPRACHE', 'ASI_INR',
+            'TEL', 'TEL2', 'TELEX', 'TELEFAX', 'SPRACHE', 'ASI_INR',
             'AKP_NR', 'WWW', 'HOUSE_NUMBER', 'AddressAddition', 'StreetAddition',
-            'PostOfficeBoxText', 'PostOfficeBoxNumber', 'ANR_GROUP'
+            'PostOfficeBoxText', 'PostOfficeBoxNumber'
         ]
 
         AKP_COLUMNS = [
             'ADR_INR', 'NR', 'NAME', 'VORNAME', 'FUNKTION', 'SUBJEKT_NR', 'ANR_NR',
-            'ANREDENAME', 'TEL', 'MAIL', 'WWW', 'TEL2', 'TEL3', 'TEL4', 'ABTEILUNG',
-            'ANR_GROUP'
+            'TEL', 'MAIL', 'WWW', 'TEL2', 'TEL3', 'TEL4', 'ABTEILUNG'
         ]
 
         # Get the latest report data for each type
