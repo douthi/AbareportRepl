@@ -18,14 +18,19 @@ class ReportManager:
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
         try:
+            auth_data = {
+                'grant_type': 'client_credentials',
+                'client_id': self.config['CLIENT_ID'],
+                'client_secret': self.config['CLIENT_SECRET'],
+                'scope': 'AbacusReports'
+            }
             response = requests.post(
                 self.config['TOKEN_URL'],
-                data={
-                    'grant_type': 'client_credentials',
-                    'client_id': self.config['CLIENT_ID'],
-                    'client_secret': self.config['CLIENT_SECRET']
-                },
-                headers={'Content-Type': 'application/x-www-form-urlencoded'}
+                data=auth_data,
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
+                }
             )
             response.raise_for_status()
             access_token = response.json().get('access_token')
