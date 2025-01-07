@@ -19,6 +19,8 @@ class ReportManager:
         """Get access token from Abacus ERP."""
         try:
             from urllib.parse import urlencode
+            logger.debug(f"Using CLIENT_ID: {self.config['CLIENT_ID']}")
+            logger.debug(f"Using CLIENT_SECRET length: {len(self.config['CLIENT_SECRET']) if self.config['CLIENT_SECRET'] else 0}")
             auth_data = {
                 'grant_type': 'client_credentials',
                 'client_id': self.config['CLIENT_ID'],
@@ -31,7 +33,10 @@ class ReportManager:
                 data=encoded_data,
                 headers={
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Authorization': 'Basic ' + requests.utils.b64encode(
+                        f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}".encode()
+                    ).decode()
                 }
             )
             response.raise_for_status()
