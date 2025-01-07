@@ -268,10 +268,10 @@ class ReportManager:
 
                 # Filter NPO data
                 filtered_npo = {k: npo.get(k) for k in NPO_COLUMNS if k in npo}
-                
+
                 # Filter ADR data
                 filtered_adr = {k: adr.get(k) for k in ADR_COLUMNS if k in adr}
-                
+
                 # Combine NPO and ADR data
                 combined_record = {**filtered_adr, **filtered_npo}
 
