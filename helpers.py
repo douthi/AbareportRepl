@@ -203,6 +203,26 @@ class ReportManager:
         """Get combined and matched data from NPO, ADR, and AKP reports."""
         combined_data = []
         
+        NPO_COLUMNS = [
+            'ProjNr', 'ProjName', 'KdINR', 'RootProj', 'Name2', 'Name3', 'ISOCode',
+            'Status', 'Status1', 'Status2', 'Status3', 'Status4', 'KDatum', 'KSumme',
+            'ADatum', 'ASumme', 'NDatum', 'NSumme', 'Person1'
+        ]
+        
+        ADR_COLUMNS = [
+            'INR', 'KURZNA', 'LAND', 'PLZ', 'NAME', 'VORNAME', 'ORT', 'SUBJEKTTYP',
+            'IS_AKP_ONLY', 'EMAIL', 'ZEILE1', 'ZEILE2', 'STAAT', 'STREET', 'ANR_NR',
+            'ANREDENAME', 'TEL', 'TEL2', 'TELEX', 'TELEFAX', 'SPRACHE', 'ASI_INR',
+            'AKP_NR', 'WWW', 'HOUSE_NUMBER', 'AddressAddition', 'StreetAddition',
+            'PostOfficeBoxText', 'PostOfficeBoxNumber', 'ANR_GROUP'
+        ]
+        
+        AKP_COLUMNS = [
+            'ADR_INR', 'NR', 'NAME', 'VORNAME', 'FUNKTION', 'SUBJEKT_NR', 'ANR_NR',
+            'ANREDENAME', 'TEL', 'MAIL', 'WWW', 'TEL2', 'TEL3', 'TEL4', 'ABTEILUNG',
+            'ANR_GROUP'
+        ]
+        
         # Get the latest report data for each type
         npo_data = None
         adr_data = None
@@ -246,13 +266,16 @@ class ReportManager:
                 akp_entries = akp_dict.get(inr, [])
                 
                 # If no AKP entries exist, still include the record with ADR and NPO data
+                filtered_npo = {k: npo.get(k) for k in NPO_COLUMNS if k in npo}
+                filtered_adr = {k: adr.get(k) for k in ADR_COLUMNS if k in adr}
+                
                 if not akp_entries:
-                    combined_record = {**adr, **npo, 'akp_data': []}
+                    combined_record = {**filtered_adr, **filtered_npo, 'akp_data': []}
                     combined_data.append(combined_record)
                 else:
-                    # Create a record for each AKP entry
                     for akp in akp_entries:
-                        combined_record = {**adr, **npo, 'akp_data': akp}
+                        filtered_akp = {k: akp.get(k) for k in AKP_COLUMNS if k in akp}
+                        combined_record = {**filtered_adr, **filtered_npo, 'akp_data': filtered_akp}
                         combined_data.append(combined_record)
 
         return combined_data
