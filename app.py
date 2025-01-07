@@ -1,7 +1,8 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from config import Config
 from helpers import ReportManager
 import logging
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,16 +17,11 @@ report_manager = ReportManager(app.config)
 
 @app.route('/')
 def index():
-    """Root endpoint to verify API is working."""
-    return jsonify({
-        'status': 'ok',
-        'message': 'API is running',
-        'endpoints': {
-            'POST /startAllReports': 'Start reports for a mandant',
-            'GET /reports': 'Get all report statuses',
-            'GET /reportData/<report_id>': 'Get specific report data'
-        }
-    })
+    """Render the main page."""
+    return render_template('index.html', 
+                         config=app.config,
+                         current_year=datetime.now().year,
+                         data=[])  # Empty initial data
 
 @app.route('/startAllReports', methods=['POST'])
 def start_all_reports():

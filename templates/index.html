@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark">
+<head>
+    <title>Abacus ERP Report Manager</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Selection Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="mandant" class="form-label">Mandant</label>
+                        <select class="form-select" id="mandant" name="mandant" required>
+                            <option value="">Select Mandant</option>
+                            {% for id, name in config.SUPPORTED_MANDANTS.items() %}
+                            <option value="{{ id }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="year" class="form-label">Year</label>
+                        <select class="form-select" id="year" name="year">
+                            <option value="none">All Years</option>
+                            {% for year in range(current_year, current_year - 5, -1) %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Generate Reports</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" id="searchProjNr" class="form-control" placeholder="Search by ProjNr">
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="hideProcessed" checked>
+                            <label class="form-check-label" for="hideProcessed">
+                                Hide Processed Entries
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th data-sort="ProjNr" style="cursor: pointer">ProjNr <i class="fas fa-sort"></i></th>
+                                <th data-sort="ProjName">Project Name</th>
+                                <th data-sort="NAME">Name <i class="fas fa-sort"></i></th>
+                                <th data-sort="KDatum" style="cursor: pointer">KDatum <i class="fas fa-sort"></i></th>
+                                <th data-sort="KSumme" style="cursor: pointer">KSumme <i class="fas fa-sort"></i></th>
+                                <th data-sort="ADatum" style="cursor: pointer">ADatum <i class="fas fa-sort"></i></th>
+                                <th data-sort="ASumme" style="cursor: pointer">ASumme <i class="fas fa-sort"></i></th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            {% for item in data %}
+                            <tr>
+                                <td>{{ item.ProjNr }}</td>
+                                <td>{{ item.ProjName }}</td>
+                                <td>{{ item.NAME }}</td>
+                                <td>{{ item.KDatum }}</td>
+                                <td>{{ item.KSumme }}</td>
+                                <td>{{ item.ADatum }}</td>
+                                <td>{{ item.ASumme }}</td>
+                                <td>{{ item.Status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchProjNr');
+            const hideProcessedCheckbox = document.getElementById('hideProcessed');
+            let currentData = [];
+
+            // Load initial data
+            fetch('/combinedData')
+                .then(response => response.json())
+                .then(data => {
+                    currentData = data.combined_data;
+                    updateTable();
+                });
+
+            // Search and filter function
+            function updateTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const hideProcessed = hideProcessedCheckbox.checked;
+
+                const filteredData = currentData.filter(item => {
+                    const matchesSearch = item.ProjNr.toString().toLowerCase().includes(searchTerm);
+                    const isProcessed = item.Status === 'Processed';
+                    return matchesSearch && (!hideProcessed || !isProcessed);
+                });
+
+                const tbody = document.getElementById('dataTableBody');
+                tbody.innerHTML = filteredData.map(item => `
+                    <tr>
+                        <td>${item.ProjNr || ''}</td>
+                        <td>${item.ProjName || ''}</td>
+                        <td>${item.NAME || ''}</td>
+                        <td>${item.KDatum || ''}</td>
+                        <td>${item.KSumme || ''}</td>
+                        <td>${item.ADatum || ''}</td>
+                        <td>${item.ASumme || ''}</td>
+                        <td>${item.Status || ''}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Add event listeners
+            searchInput.addEventListener('input', updateTable);
+            hideProcessedCheckbox.addEventListener('change', updateTable);
+
+            // Sorting functionality
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.addEventListener('click', function() {
+                    const column = this.dataset.sort;
+                    const isDate = ['KDatum', 'ADatum'].includes(column);
+                    const isNumber = ['KSumme', 'ASumme', 'ProjNr'].includes(column);
+
+                    currentData.sort((a, b) => {
+                        if (isDate) {
+                            return new Date(a[column]) - new Date(b[column]);
+                        } else if (isNumber) {
+                            return parseFloat(a[column] || 0) - parseFloat(b[column] || 0);
+                        } else {
+                            return (a[column] || '').localeCompare(b[column] || '');
+                        }
+                    });
+
+                    if (this.classList.contains('asc')) {
+                        currentData.reverse();
+                        this.classList.remove('asc');
+                        this.classList.add('desc');
+                    } else {
+                        this.classList.remove('desc');
+                        this.classList.add('asc');
+                    }
+
+                    updateTable();
+                });
+            });
+
+            // Form submission
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const jsonData = Object.fromEntries(formData.entries());
+
+                fetch('/startAllReports', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                    } else {
+                        alert('Reports started successfully. Please wait while data is being processed.');
+                        // Poll for updates
+                        pollForUpdates();
+                    }
+                });
+            });
+
+            function pollForUpdates() {
+                const interval = setInterval(() => {
+                    fetch('/reports')
+                        .then(response => response.json())
+                        .then(data => {
+                            const allFinished = data.reports.every(
+                                report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
+                            );
+                            
+                            if (allFinished) {
+                                clearInterval(interval);
+                                // Reload data
+                                fetch('/combinedData')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        currentData = data.combined_data;
+                                        updateTable();
+                                    });
+                            }
+                        });
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>
