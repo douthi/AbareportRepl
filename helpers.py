@@ -304,10 +304,9 @@ class ReportManager:
 
                 if anr_data:
                     anr_dict = {anr.get('NR'): anr for anr in anr_data}
-                    anr_nr = filtered_adr.get('ANR_NR')
+                    anr_nr = adr.get('ANR_NR')  # Get from original adr data
                     if anr_nr and anr_nr in anr_dict:
                         filtered_adr['Anrede'] = anr_dict[anr_nr].get('ANREDE', anr_nr)
-                    del filtered_adr['ANR_NR']  # Remove original ANR_NR field
 
                 if not akp_entries:
                     combined_record = {**filtered_adr, **filtered_npo, 'akp_data': []}
