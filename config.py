@@ -12,7 +12,7 @@ class Config:
     # Abacus ERP configuration
     CLIENT_ID = os.getenv('CLIENT_ID')
     CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-    TOKEN_URL = os.getenv('TOKEN_URL')
+    TOKEN_URL = 'https://abacus.indutrade.ch/oauth/oauth2/v1/token'
     BASE_URL = os.getenv('BASE_URL', 'https://abacus.indutrade.ch')
     PAGE_SIZE = int(os.getenv('PAGE_SIZE', '200'))
 
