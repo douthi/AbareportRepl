@@ -265,57 +265,17 @@ class ReportManager:
                 npo = npo_dict[inr]
                 akp_entries = akp_dict.get(inr, [])
 
-                # If no AKP entries exist, still include the record with ADR and NPO data
-                # Only include required NPO fields and their new names
-                filtered_npo = {
-                    'Sum Offerte': npo.get('KSumme'),
-                    'Date Won': npo.get('ADatum'),
-                    'Won Sum': npo.get('ASumme'),
-                    'Eröffnet': npo.get('Status1'),
-                    'Auftragseingang': npo.get('Status2'),
-                    'Auftragsende': npo.get('Status3'),
-                    'Verloren': npo.get('Status4'),
-                    'ProjNr': npo.get('ProjNr'),
-                    'ProjName': npo.get('ProjName'),
-                    'KdINR': npo.get('KdINR'),
-                    'RootProj': npo.get('RootProj'),
-                    'ISOCode': npo.get('ISOCode'),
-                    'Status': npo.get('Status'),
-                    'NDatum': npo.get('NDatum'),
-                    'NSumme': npo.get('NSumme'),
-                    'Person1': npo.get('Person1')
-                }
+                # Create base record
+                combined_record = {**adr, **npo} #This line was changed to directly include adr and npo data instead of filtering
 
-                # Process ADR data - exclude removed fields
-                kept_adr_columns = [
-                    'INR', 'KURZNA', 'LAND', 'PLZ', 'NAME', 'ORT', 'SUBJEKTTYP',
-                    'IS_AKP_ONLY', 'EMAIL', 'ZEILE2', 'STAAT', 'STREET',
-                    'WWW', 'HOUSE_NUMBER', 'AddressAddition', 'StreetAddition',
-                    'PostOfficeBoxText', 'PostOfficeBoxNumber', 'ANR_GROUP'
-                ]
-                filtered_adr = {k: adr.get(k) for k in kept_adr_columns if k in adr}
+                # Add AKP data directly if available
+                if akp_entries and len(akp_entries) > 0:
+                    akp = akp_entries[0]  # Take first AKP entry
+                    for k in AKP_COLUMNS:
+                        if k in akp:
+                            combined_record[f'AKP_{k}'] = akp.get(k)
 
-                # Get ANR data if available
-                anr_data = None
-                for report_id, status in self.report_status_store.items():
-                    if status['status'] == 'FinishedSuccess' and status['report_key'] == 'anr':
-                        anr_data = self.report_data_store.get(report_id)
-                        break
-
-                if anr_data:
-                    anr_dict = {anr.get('NR'): anr for anr in anr_data}
-                    anr_nr = adr.get('ANR_NR')  # Get from original adr data
-                    if anr_nr and anr_nr in anr_dict:
-                        filtered_adr['Anrede'] = anr_dict[anr_nr].get('ANREDE', anr_nr)
-
-                if not akp_entries:
-                    combined_record = {**filtered_adr, **filtered_npo, 'akp_data': []}
-                    combined_data.append(combined_record)
-                else:
-                    for akp in akp_entries:
-                        filtered_akp = {k: akp.get(k) for k in AKP_COLUMNS if k in akp}
-                        combined_record = {**filtered_adr, **filtered_npo, 'akp_data': filtered_akp}
-                        combined_data.append(combined_record)
+                combined_data.append(combined_record)
 
         return combined_data
 
