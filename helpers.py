@@ -57,13 +57,13 @@ class ReportManager:
             'total_pages': 1
         }
 
-        report_name = self.config.REPORT_KEYS.get(report_key)
+        report_name = self.config['REPORT_KEYS'][report_key]
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
 
         # Build request body
         body = {
             "outputType": "json",
-            "paging": self.config.PAGE_SIZE
+            "paging": self.config['PAGE_SIZE']
         }
 
         # Add date parameters for dko report
@@ -75,7 +75,7 @@ class ReportManager:
 
         try:
             response = requests.post(
-                f"{self.config.BASE_URL}{endpoint}",
+                f"{self.config['BASE_URL']}{endpoint}",
                 json=body,
                 headers={
                     'Authorization': f'Bearer {access_token}',
