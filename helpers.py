@@ -202,13 +202,13 @@ class ReportManager:
     def get_combined_data(self) -> List[Dict[str, Any]]:
         """Get combined and matched data from NPO, ADR, and AKP reports."""
         combined_data = []
-        
+
         NPO_COLUMNS = [
             'ProjNr', 'ProjName', 'KdINR', 'RootProj', 'Name2', 'Name3', 'ISOCode',
             'Status', 'Status1', 'Status2', 'Status3', 'Status4', 'KDatum', 'KSumme',
             'ADatum', 'ASumme', 'NDatum', 'NSumme', 'Person1'
         ]
-        
+
         ADR_COLUMNS = [
             'INR', 'KURZNA', 'LAND', 'PLZ', 'NAME', 'VORNAME', 'ORT', 'SUBJEKTTYP',
             'IS_AKP_ONLY', 'EMAIL', 'ZEILE1', 'ZEILE2', 'STAAT', 'STREET', 'ANR_NR',
@@ -216,18 +216,18 @@ class ReportManager:
             'AKP_NR', 'WWW', 'HOUSE_NUMBER', 'AddressAddition', 'StreetAddition',
             'PostOfficeBoxText', 'PostOfficeBoxNumber', 'ANR_GROUP'
         ]
-        
+
         AKP_COLUMNS = [
             'ADR_INR', 'NR', 'NAME', 'VORNAME', 'FUNKTION', 'SUBJEKT_NR', 'ANR_NR',
             'ANREDENAME', 'TEL', 'MAIL', 'WWW', 'TEL2', 'TEL3', 'TEL4', 'ABTEILUNG',
             'ANR_GROUP'
         ]
-        
+
         # Get the latest report data for each type
         npo_data = None
         adr_data = None
         akp_data = None
-        
+
         for report_id, status in self.report_status_store.items():
             if status['status'] == 'FinishedSuccess':
                 if status['report_key'] == 'npo':
@@ -248,7 +248,7 @@ class ReportManager:
                 npo_dict[key] = npo
 
         adr_dict = {adr.get('INR'): adr for adr in adr_data if adr.get('INR')}
-        
+
         # Create AKP lookup dictionary
         akp_dict = {}
         if akp_data:
@@ -264,11 +264,34 @@ class ReportManager:
             if inr in npo_dict:
                 npo = npo_dict[inr]
                 akp_entries = akp_dict.get(inr, [])
-                
+
                 # If no AKP entries exist, still include the record with ADR and NPO data
                 filtered_npo = {k: npo.get(k) for k in NPO_COLUMNS if k in npo}
+                filtered_npo['Sum Offerte'] = npo.get('KSumme')
+                filtered_npo['Date Won'] = npo.get('ADatum')
+                filtered_npo['Won Sum'] = npo.get('ASumme')
+                filtered_npo['Eröffnet'] = npo.get('Status1')
+                filtered_npo['Auftragseingang'] = npo.get('Status2')
+                filtered_npo['Auftragsende'] = npo.get('Status3')
+                filtered_npo['Verloren'] = npo.get('Status4')
+
+                # Process ADR data
                 filtered_adr = {k: adr.get(k) for k in ADR_COLUMNS if k in adr}
-                
+
+                # Get ANR data if available
+                anr_data = None
+                for report_id, status in self.report_status_store.items():
+                    if status['status'] == 'FinishedSuccess' and status['report_key'] == 'anr':
+                        anr_data = self.report_data_store.get(report_id)
+                        break
+
+                if anr_data:
+                    anr_dict = {anr.get('NR'): anr for anr in anr_data}
+                    anr_nr = filtered_adr.get('ANR_NR')
+                    if anr_nr and anr_nr in anr_dict:
+                        filtered_adr['Anrede'] = anr_dict[anr_nr].get('ANREDE', anr_nr)
+                    del filtered_adr['ANR_NR']  # Remove original ANR_NR field
+
                 if not akp_entries:
                     combined_record = {**filtered_adr, **filtered_npo, 'akp_data': []}
                     combined_data.append(combined_record)
