@@ -110,7 +110,7 @@ class ReportManager:
                     status_endpoint = f"/api/abareport/v1/jobs/{api_report_id}"
 
                     response = requests.get(
-                        f"{self.config.BASE_URL}{status_endpoint}",
+                        f"{self.config['BASE_URL']}{status_endpoint}",
                         headers={
                             'Authorization': f'Bearer {access_token}',
                             'Content-Type': 'application/json'
@@ -124,7 +124,7 @@ class ReportManager:
 
                     # Calculate total pages from rows
                     rows_match = re.search(r'rows=(\d+)', message, re.IGNORECASE)
-                    total_pages = (int(rows_match.group(1)) + self.config.PAGE_SIZE - 1) // self.config.PAGE_SIZE if rows_match else 1
+                    total_pages = (int(rows_match.group(1)) + self.config['PAGE_SIZE'] - 1) // self.config['PAGE_SIZE'] if rows_match else 1
 
                     self.report_status_store[report_id].update({
                         'status': state,
