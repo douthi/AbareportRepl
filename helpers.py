@@ -4,6 +4,7 @@ import time
 import uuid
 import threading
 import requests
+import base64
 from typing import Dict, List, Any, Optional
 
 logging.basicConfig(level=logging.DEBUG)
@@ -34,7 +35,7 @@ class ReportManager:
                 headers={
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'Accept': 'application/json',
-                    'Authorization': 'Basic ' + requests.utils.b64encode(
+                    'Authorization': 'Basic ' + base64.b64encode(
                         f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}".encode()
                     ).decode()
                 }
