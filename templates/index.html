@@ -45,10 +45,23 @@
             position: relative;
             min-height: 200px;
         }
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
     <div class="container mt-4 flex-grow-1">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle">
+            <button class="btn btn-outline-secondary" id="themeToggle">
+                <i class="fas fa-sun"></i>
+                <span class="ms-2">Toggle Theme</span>
+            </button>
+        </div>
+
         <h1 class="mb-4">Uniska AG – Abacus x CRM Sync</h1>
 
         <!-- Selection Form -->
@@ -426,6 +439,35 @@
                         btnText.textContent = 'Export Data';
                     });
             });
+
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const htmlElement = document.documentElement;
+            const sunIcon = '<i class="fas fa-sun"></i>';
+            const moonIcon = '<i class="fas fa-moon"></i>';
+
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                updateThemeButton(savedTheme);
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = htmlElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeButton(newTheme);
+            });
+
+            function updateThemeButton(theme) {
+                themeToggle.innerHTML = `
+                    ${theme === 'dark' ? sunIcon : moonIcon}
+                    <span class="ms-2">${theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                `;
+            }
         });
     </script>
 </body>
