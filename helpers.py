@@ -34,10 +34,7 @@ class ReportManager:
                 data=encoded_data,
                 headers={
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json',
-                    'Authorization': 'Basic ' + base64.b64encode(
-                        f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}".encode()
-                    ).decode()
+                    'Accept': 'application/json'
                 }
             )
             response.raise_for_status()
