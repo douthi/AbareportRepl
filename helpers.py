@@ -18,15 +18,17 @@ class ReportManager:
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
         try:
+            from urllib.parse import urlencode
             auth_data = {
                 'grant_type': 'client_credentials',
                 'client_id': self.config['CLIENT_ID'],
                 'client_secret': self.config['CLIENT_SECRET'],
                 'scope': 'AbacusReports'
             }
+            encoded_data = urlencode(auth_data)
             response = requests.post(
                 self.config['TOKEN_URL'],
-                data=auth_data,
+                data=encoded_data,
                 headers={
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'Accept': 'application/json'
