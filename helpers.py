@@ -266,17 +266,34 @@ class ReportManager:
                 akp_entries = akp_dict.get(inr, [])
 
                 # If no AKP entries exist, still include the record with ADR and NPO data
-                filtered_npo = {k: npo.get(k) for k in NPO_COLUMNS if k in npo}
-                filtered_npo['Sum Offerte'] = npo.get('KSumme')
-                filtered_npo['Date Won'] = npo.get('ADatum')
-                filtered_npo['Won Sum'] = npo.get('ASumme')
-                filtered_npo['Eröffnet'] = npo.get('Status1')
-                filtered_npo['Auftragseingang'] = npo.get('Status2')
-                filtered_npo['Auftragsende'] = npo.get('Status3')
-                filtered_npo['Verloren'] = npo.get('Status4')
+                # Only include required NPO fields and their new names
+                filtered_npo = {
+                    'Sum Offerte': npo.get('KSumme'),
+                    'Date Won': npo.get('ADatum'),
+                    'Won Sum': npo.get('ASumme'),
+                    'Eröffnet': npo.get('Status1'),
+                    'Auftragseingang': npo.get('Status2'),
+                    'Auftragsende': npo.get('Status3'),
+                    'Verloren': npo.get('Status4'),
+                    'ProjNr': npo.get('ProjNr'),
+                    'ProjName': npo.get('ProjName'),
+                    'KdINR': npo.get('KdINR'),
+                    'RootProj': npo.get('RootProj'),
+                    'ISOCode': npo.get('ISOCode'),
+                    'Status': npo.get('Status'),
+                    'NDatum': npo.get('NDatum'),
+                    'NSumme': npo.get('NSumme'),
+                    'Person1': npo.get('Person1')
+                }
 
-                # Process ADR data
-                filtered_adr = {k: adr.get(k) for k in ADR_COLUMNS if k in adr}
+                # Process ADR data - exclude removed fields
+                kept_adr_columns = [
+                    'INR', 'KURZNA', 'LAND', 'PLZ', 'NAME', 'ORT', 'SUBJEKTTYP',
+                    'IS_AKP_ONLY', 'EMAIL', 'ZEILE2', 'STAAT', 'STREET',
+                    'WWW', 'HOUSE_NUMBER', 'AddressAddition', 'StreetAddition',
+                    'PostOfficeBoxText', 'PostOfficeBoxNumber', 'ANR_GROUP'
+                ]
+                filtered_adr = {k: adr.get(k) for k in kept_adr_columns if k in adr}
 
                 # Get ANR data if available
                 anr_data = None
