@@ -164,7 +164,7 @@ class ReportManager:
             for page in range(1, total_pages + 1):
                 logger.debug(f"Fetching page {page} for report '{report_key.upper()}'")
                 response = requests.get(
-                    f"{self.config.BASE_URL}{output_endpoint}/{page}",
+                    f"{self.config['BASE_URL']}{output_endpoint}/{page}",
                     headers={
                         'Authorization': f'Bearer {access_token}',
                         'Content-Type': 'application/json'
