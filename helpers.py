@@ -19,26 +19,20 @@ class ReportManager:
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
         try:
-            from urllib.parse import urlencode
             logger.debug(f"Using CLIENT_ID: {self.config['CLIENT_ID']}")
             logger.debug(f"Using CLIENT_SECRET length: {len(self.config['CLIENT_SECRET']) if self.config['CLIENT_SECRET'] else 0}")
-            # Encode credentials
+            # Encode credentials for basic auth
             credentials = f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}"
             auth_header = f"Basic {base64.b64encode(credentials.encode()).decode()}"
-            
-            auth_data = {
-                'grant_type': 'client_credentials',
-                'scope': 'AbacusReports'
-            }
-            encoded_data = urlencode(auth_data)
-            
+
             response = requests.post(
                 self.config['TOKEN_URL'],
-                data=encoded_data,
+                data='grant_type=client_credentials',
                 headers={
+                    'Accept-Charset': 'UTF-8',
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json',
-                    'Authorization': auth_header
+                    'Authorization': auth_header,
+                    'Accept': '*/*'
                 }
             )
             response.raise_for_status()
@@ -53,7 +47,7 @@ class ReportManager:
         """Start a report and return the report ID."""
         access_token = self.get_access_token()
         report_id = str(uuid.uuid4())
-        
+
         self.report_status_store[report_id] = {
             'mandant': mandant,
             'report_key': report_key,
@@ -62,23 +56,23 @@ class ReportManager:
             'message': 'Report started.',
             'total_pages': 1
         }
-        
+
         report_name = self.config.REPORT_KEYS.get(report_key)
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
-        
+
         # Build request body
         body = {
             "outputType": "json",
             "paging": self.config.PAGE_SIZE
         }
-        
+
         # Add date parameters for dko report
         if report_key == "dko" and year != "none":
             body["parameters"] = {
                 "AUF_DATUM_VON": f"{year}-01-01",
                 "AUF_DATUM_BIS": f"{year}-12-31"
             }
-        
+
         try:
             response = requests.post(
                 f"{self.config.BASE_URL}{endpoint}",
@@ -90,16 +84,16 @@ class ReportManager:
             )
             response.raise_for_status()
             api_report_id = response.json().get('id') or response.json().get('reportId')
-            
+
             if not api_report_id:
                 raise ValueError("API did not return a report ID")
-            
+
             self.report_status_store[report_id]['api_report_id'] = api_report_id
             logger.info(f"Report '{report_key.upper()}' started with ID: {report_id}")
-            
+
             # Start polling in background
             self._start_polling(report_id, api_report_id, report_key)
-            
+
             return report_id
         except Exception as e:
             self.report_status_store[report_id]['status'] = 'FinishedError'
@@ -114,7 +108,7 @@ class ReportManager:
                 try:
                     access_token = self.get_access_token()
                     status_endpoint = f"/api/abareport/v1/jobs/{api_report_id}"
-                    
+
                     response = requests.get(
                         f"{self.config.BASE_URL}{status_endpoint}",
                         headers={
@@ -124,22 +118,22 @@ class ReportManager:
                     )
                     response.raise_for_status()
                     data = response.json()
-                    
+
                     state = data.get('state')
                     message = data.get('message', '')
-                    
+
                     # Calculate total pages from rows
                     rows_match = re.search(r'rows=(\d+)', message, re.IGNORECASE)
                     total_pages = (int(rows_match.group(1)) + self.config.PAGE_SIZE - 1) // self.config.PAGE_SIZE if rows_match else 1
-                    
+
                     self.report_status_store[report_id].update({
                         'status': state,
                         'message': message,
                         'total_pages': total_pages
                     })
-                    
+
                     logger.debug(f"Report '{report_key.upper()}' status: {state}")
-                    
+
                     if state == "FinishedSuccess":
                         data = self._fetch_report_data(api_report_id, report_key, total_pages)
                         self.report_data_store[report_id] = data
@@ -148,14 +142,14 @@ class ReportManager:
                     elif state == "FinishedError":
                         logger.error(f"Report '{report_key.upper()}' failed: {message}")
                         break
-                    
+
                     time.sleep(5)
                 except Exception as e:
                     self.report_status_store[report_id]['status'] = 'FinishedError'
                     self.report_status_store[report_id]['message'] = str(e)
                     logger.error(f"Error polling report '{report_key.upper()}': {e}")
                     break
-        
+
         thread = threading.Thread(target=poll)
         thread.daemon = True
         thread.start()
@@ -165,7 +159,7 @@ class ReportManager:
         access_token = self.get_access_token()
         output_endpoint = f"/api/abareport/v1/jobs/{api_report_id}/output"
         all_data = []
-        
+
         try:
             for page in range(1, total_pages + 1):
                 logger.debug(f"Fetching page {page} for report '{report_key.upper()}'")
@@ -176,21 +170,21 @@ class ReportManager:
                         'Content-Type': 'application/json'
                     }
                 )
-                
+
                 if response.status_code == 404:
                     logger.warning(f"Page {page} not found for report '{report_key.upper()}'")
                     break
-                
+
                 response.raise_for_status()
                 data = response.json()
-                
+
                 if isinstance(data, list) and data:
                     all_data.extend(data)
                     logger.debug(f"Added {len(data)} records from page {page}")
                 else:
                     logger.warning(f"No data on page {page} for report '{report_key.upper()}'")
                     break
-            
+
             logger.info(f"Fetched total {len(all_data)} records for report '{report_key.upper()}'")
             return all_data
         except Exception as e:
