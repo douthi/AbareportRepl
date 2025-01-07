@@ -50,16 +50,80 @@
             top: 1rem;
             right: 1rem;
         }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bs-dark);
+            transition: .4s;
+            border-radius: 30px;
+            border: 2px solid var(--bs-secondary);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--bs-light);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--bs-light);
+        }
+        input:checked + .slider:before {
+            transform: translateX(30px);
+            background-color: var(--bs-dark);
+        }
+        .theme-icons {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 6px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .theme-icons i {
+            font-size: 14px;
+            color: var(--bs-light);
+        }
+        input:checked + .slider .theme-icons i {
+            color: var(--bs-dark);
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
     <div class="container mt-4 flex-grow-1">
         <!-- Theme Toggle -->
         <div class="theme-toggle">
-            <button class="btn btn-outline-secondary" id="themeToggle">
-                <i class="fas fa-sun"></i>
-                <span class="ms-2">Toggle Theme</span>
-            </button>
+            <label class="theme-switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider">
+                    <div class="theme-icons">
+                        <i class="fas fa-moon"></i>
+                        <i class="fas fa-sun"></i>
+                    </div>
+                </span>
+            </label>
         </div>
 
         <h1 class="mb-4">Uniska AG – Abacus x CRM Sync</h1>
@@ -443,31 +507,19 @@
             // Theme toggle functionality
             const themeToggle = document.getElementById('themeToggle');
             const htmlElement = document.documentElement;
-            const sunIcon = '<i class="fas fa-sun"></i>';
-            const moonIcon = '<i class="fas fa-moon"></i>';
 
             // Check for saved theme preference
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
                 htmlElement.setAttribute('data-bs-theme', savedTheme);
-                updateThemeButton(savedTheme);
+                themeToggle.checked = savedTheme === 'light';
             }
 
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = htmlElement.getAttribute('data-bs-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'light' : 'dark';
                 htmlElement.setAttribute('data-bs-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
-                updateThemeButton(newTheme);
             });
-
-            function updateThemeButton(theme) {
-                themeToggle.innerHTML = `
-                    ${theme === 'dark' ? sunIcon : moonIcon}
-                    <span class="ms-2">${theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-                `;
-            }
         });
     </script>
 </body>
