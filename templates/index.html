@@ -101,6 +101,13 @@
                             </label>
                         </div>
                     </div>
+                    <div class="col-md-4 text-end">
+                        <button id="exportBtn" class="btn btn-outline-secondary">
+                            <i class="fas fa-file-export me-2"></i>
+                            <span class="btn-text">Export Data</span>
+                            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -378,6 +385,47 @@
                         });
                 }, 5000);
             }
+
+            // Added export button functionality
+            document.getElementById('exportBtn').addEventListener('click', function() {
+                const button = this;
+                const spinner = button.querySelector('.spinner-border');
+                const btnText = button.querySelector('.btn-text');
+
+                // Disable button and show spinner
+                button.disabled = true;
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Exporting...';
+
+                // Trigger file download
+                fetch('/export')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Export failed');
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = response.headers.get('content-disposition')?.split('filename=')[1] || 'export.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    })
+                    .catch(error => {
+                        console.error('Export error:', error);
+                        alert('Failed to export data. Please try again.');
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        button.disabled = false;
+                        spinner.classList.add('d-none');
+                        btnText.textContent = 'Export Data';
+                    });
+            });
         });
     </script>
 </body>

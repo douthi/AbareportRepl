@@ -1,8 +1,11 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_file
 from config import Config
 from helpers import ReportManager
 import logging
 from datetime import datetime
+import csv
+import io
+import tempfile
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -22,6 +25,75 @@ def index():
                          config=app.config,
                          current_year=datetime.now().year,
                          data=[])  # Empty initial data
+
+@app.route('/export', methods=['GET'])
+def export_data():
+    """Export combined data in CSV format with custom formatting."""
+    try:
+        data = report_manager.get_combined_data()
+
+        if not data:
+            return jsonify({'error': 'No data available to export'}), 404
+
+        # Define custom column headers and order
+        columns = [
+            'ProjNr', 'ProjName', 'NAME', 'VORNAME', 'EMAIL', 'TEL',
+            'LAND', 'PLZ', 'ORT', 'STREET', 'HOUSE_NUMBER',
+            'KDatum', 'KSumme', 'ADatum', 'ASumme', 'Status'
+        ]
+
+        # Create a temporary file-like object
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=columns)
+
+        # Write headers with custom formatting
+        writer.writeheader()
+
+        # Write data rows
+        for row in data:
+            # Create a filtered dictionary with only the specified columns
+            filtered_row = {col: row.get(col, '') for col in columns}
+
+            # Apply custom formatting
+            if 'KSumme' in filtered_row:
+                # Format currency values
+                try:
+                    value = float(filtered_row['KSumme'])
+                    filtered_row['KSumme'] = f"CHF {value:,.2f}"
+                except (ValueError, TypeError):
+                    pass
+
+            if 'ASumme' in filtered_row:
+                try:
+                    value = float(filtered_row['ASumme'])
+                    filtered_row['ASumme'] = f"CHF {value:,.2f}"
+                except (ValueError, TypeError):
+                    pass
+
+            # Format dates
+            for date_field in ['KDatum', 'ADatum']:
+                if filtered_row.get(date_field):
+                    try:
+                        date_obj = datetime.strptime(filtered_row[date_field], '%Y-%m-%d')
+                        filtered_row[date_field] = date_obj.strftime('%d.%m.%Y')
+                    except ValueError:
+                        pass
+
+            writer.writerow(filtered_row)
+
+        # Prepare the output
+        output.seek(0)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8-sig')),  # Use UTF-8 with BOM for Excel compatibility
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'crm_sync_export_{timestamp}.csv'
+        )
+
+    except Exception as e:
+        logger.error(f"Error exporting data: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/startAllReports', methods=['POST'])
 def start_all_reports():
@@ -92,15 +164,15 @@ def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
         data = report_manager.get_combined_data()
-        
+
         # Check if HTML format is requested
         if request.args.get('format') == 'html':
             if not data:
                 return '<p>No data available</p>'
-                
+
             # Start HTML table
             html = '<table border="1" style="border-collapse: collapse; width: 100%;">'
-            
+
             # Headers
             if data:
                 headers = list(data[0].keys())
@@ -108,7 +180,7 @@ def get_combined_data():
                 for header in headers:
                     html += f'<th style="padding: 8px; text-align: left;">{header}</th>'
                 html += '</tr>'
-            
+
             # Data rows
             for row in data:
                 html += '<tr>'
@@ -116,10 +188,10 @@ def get_combined_data():
                     value = row.get(header, '')
                     html += f'<td style="padding: 8px;">{value}</td>'
                 html += '</tr>'
-            
+
             html += '</table>'
             return html
-            
+
         return jsonify({'combined_data': data}), 200
     except Exception as e:
         logger.error(f"Error getting combined data: {e}")
