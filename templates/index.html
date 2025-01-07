@@ -20,6 +20,7 @@
             border: none;
             padding: 0.5rem 1rem;
             color: var(--bs-secondary);
+            transition: color 0.3s ease;
         }
         .btn-underline:hover {
             color: var(--bs-primary);
@@ -40,6 +41,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            transition: background-color 0.3s ease;
         }
         .table-container {
             position: relative;
@@ -105,9 +107,28 @@
         .theme-icons i {
             font-size: 14px;
             color: var(--bs-light);
+            transition: color 0.3s ease;
         }
         input:checked + .slider .theme-icons i {
             color: var(--bs-dark);
+        }
+        /* Add smooth transitions for theme changes */
+        * {
+            transition: background-color 0.3s ease, 
+                      color 0.3s ease,
+                      border-color 0.3s ease;
+        }
+        /* Theme-aware table styles */
+        .table {
+            transition: color 0.3s ease, 
+                       background-color 0.3s ease,
+                       border-color 0.3s ease;
+        }
+        .table th {
+            color: var(--bs-emphasis-color);
+        }
+        .table td {
+            color: var(--bs-body-color);
         }
     </style>
 </head>
