@@ -19,11 +19,11 @@ class ReportManager:
         """Get access token from Abacus ERP."""
         try:
             response = requests.post(
-                self.config.TOKEN_URL,
+                self.config['TOKEN_URL'],
                 data={
                     'grant_type': 'client_credentials',
-                    'client_id': self.config.CLIENT_ID,
-                    'client_secret': self.config.CLIENT_SECRET
+                    'client_id': self.config['CLIENT_ID'],
+                    'client_secret': self.config['CLIENT_SECRET']
                 },
                 headers={'Content-Type': 'application/x-www-form-urlencoded'}
             )
