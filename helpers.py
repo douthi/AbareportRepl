@@ -203,6 +203,7 @@ class ReportManager:
         """Get combined and matched data from NPO, ADR, and AKP reports."""
         combined_data = []
 
+        # Define the exact columns we want from each table
         NPO_COLUMNS = [
             'ProjNr', 'ProjName', 'KdINR', 'RootProj', 'Name2', 'Name3', 'ISOCode',
             'Status', 'Status1', 'Status2', 'Status3', 'Status4', 'KDatum', 'KSumme',
@@ -265,15 +266,19 @@ class ReportManager:
                 npo = npo_dict[inr]
                 akp_entries = akp_dict.get(inr, [])
 
-                # Create base record
-                combined_record = {**adr, **npo} #This line was changed to directly include adr and npo data instead of filtering
+                # Filter NPO data
+                filtered_npo = {k: npo.get(k) for k in NPO_COLUMNS if k in npo}
+                
+                # Filter ADR data
+                filtered_adr = {k: adr.get(k) for k in ADR_COLUMNS if k in adr}
+                
+                # Combine NPO and ADR data
+                combined_record = {**filtered_adr, **filtered_npo}
 
-                # Add AKP data directly if available
+                # Add AKP data if available
                 if akp_entries and len(akp_entries) > 0:
                     akp = akp_entries[0]  # Take first AKP entry
-                    # Only include specific AKP columns
-                    desired_akp_columns = ['NAME', 'VORNAME', 'FUNKTION', 'MAIL', 'TEL', 'ABTEILUNG']
-                    for k in desired_akp_columns:
+                    for k in AKP_COLUMNS:
                         if k in akp:
                             combined_record[f'AKP_{k}'] = akp.get(k)
 
