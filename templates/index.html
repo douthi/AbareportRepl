@@ -4,6 +4,17 @@
     <title>Abacus ERP Report Manager</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-new {
+            color: var(--bs-info);
+        }
+        .status-synced {
+            color: var(--bs-secondary);
+        }
+        .status-fresh-sync {
+            color: var(--bs-success);
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-4">
@@ -36,10 +47,10 @@
             </div>
         </div>
 
-        <!-- Data Table -->
-        <div class="card">
+        <!-- Filters -->
+        <div class="card mb-4">
             <div class="card-body">
-                <div class="row mb-3">
+                <div class="row">
                     <div class="col-md-4">
                         <input type="text" id="searchProjNr" class="form-control" placeholder="Search by ProjNr">
                     </div>
@@ -47,12 +58,17 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="hideProcessed" checked>
                             <label class="form-check-label" for="hideProcessed">
-                                Hide Processed Entries
+                                Hide Synced Entries
                             </label>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
+        <!-- Data Table -->
+        <div class="card">
+            <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -65,22 +81,10 @@
                                 <th data-sort="ADatum" style="cursor: pointer">ADatum <i class="fas fa-sort"></i></th>
                                 <th data-sort="ASumme" style="cursor: pointer">ASumme <i class="fas fa-sort"></i></th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="dataTableBody">
-                            {% for item in data %}
-                            <tr>
-                                <td>{{ item.ProjNr }}</td>
-                                <td>{{ item.ProjName }}</td>
-                                <td>{{ item.NAME }}</td>
-                                <td>{{ item.KDatum }}</td>
-                                <td>{{ item.KSumme }}</td>
-                                <td>{{ item.ADatum }}</td>
-                                <td>{{ item.ASumme }}</td>
-                                <td>{{ item.Status }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+                        <tbody id="dataTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -93,14 +97,27 @@
             const searchInput = document.getElementById('searchProjNr');
             const hideProcessedCheckbox = document.getElementById('hideProcessed');
             let currentData = [];
+            let freshSyncs = new Set(); // Track items synced in current session
 
             // Load initial data
             fetch('/combinedData')
                 .then(response => response.json())
                 .then(data => {
-                    currentData = data.combined_data;
+                    currentData = data.combined_data.map(item => ({
+                        ...item,
+                        Status: item.Status || 'new'
+                    }));
                     updateTable();
                 });
+
+            function getStatusClass(status, projNr) {
+                if (freshSyncs.has(projNr)) return 'status-fresh-sync';
+                switch (status.toLowerCase()) {
+                    case 'synced': return 'status-synced';
+                    case 'new': return 'status-new';
+                    default: return '';
+                }
+            }
 
             // Search and filter function
             function updateTable() {
@@ -109,8 +126,8 @@
 
                 const filteredData = currentData.filter(item => {
                     const matchesSearch = item.ProjNr.toString().toLowerCase().includes(searchTerm);
-                    const isProcessed = item.Status === 'Processed';
-                    return matchesSearch && (!hideProcessed || !isProcessed);
+                    const isSynced = item.Status.toLowerCase() === 'synced';
+                    return matchesSearch && (!hideProcessed || !isSynced);
                 });
 
                 const tbody = document.getElementById('dataTableBody');
@@ -123,9 +140,30 @@
                         <td>${item.KSumme || ''}</td>
                         <td>${item.ADatum || ''}</td>
                         <td>${item.ASumme || ''}</td>
-                        <td>${item.Status || ''}</td>
+                        <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
+                        <td>
+                            ${item.Status.toLowerCase() === 'new' ? 
+                                `<button class="btn btn-sm btn-outline-success sync-btn" data-projnr="${item.ProjNr}">
+                                    Confirm Sync
+                                </button>` : 
+                                ''
+                            }
+                        </td>
                     </tr>
                 `).join('');
+
+                // Add event listeners to sync buttons
+                document.querySelectorAll('.sync-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const projNr = this.dataset.projnr;
+                        const item = currentData.find(i => i.ProjNr.toString() === projNr);
+                        if (item) {
+                            item.Status = 'synced';
+                            freshSyncs.add(projNr);
+                            updateTable();
+                        }
+                    });
+                });
             }
 
             // Add event listeners
@@ -141,7 +179,7 @@
 
                     currentData.sort((a, b) => {
                         if (isDate) {
-                            return new Date(a[column]) - new Date(b[column]);
+                            return new Date(a[column] || 0) - new Date(b[column] || 0);
                         } else if (isNumber) {
                             return parseFloat(a[column] || 0) - parseFloat(b[column] || 0);
                         } else {
@@ -181,7 +219,6 @@
                         alert(`Error: ${data.error}`);
                     } else {
                         alert('Reports started successfully. Please wait while data is being processed.');
-                        // Poll for updates
                         pollForUpdates();
                     }
                 });
@@ -195,14 +232,16 @@
                             const allFinished = data.reports.every(
                                 report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
                             );
-                            
+
                             if (allFinished) {
                                 clearInterval(interval);
-                                // Reload data
                                 fetch('/combinedData')
                                     .then(response => response.json())
                                     .then(data => {
-                                        currentData = data.combined_data;
+                                        currentData = data.combined_data.map(item => ({
+                                            ...item,
+                                            Status: item.Status || 'new'
+                                        }));
                                         updateTable();
                                     });
                             }
