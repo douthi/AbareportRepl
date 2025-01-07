@@ -91,7 +91,7 @@ def get_report_data(report_id):
 def not_found_error(error):
     return jsonify({'error': 'Not found'}), 404
 
-@app.route('/combinedData', methods=['GET'])
+@app.route('/combinedData', methods=['GET', 'POST'])
 def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
