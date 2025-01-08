@@ -65,9 +65,15 @@
             border-color: var(--bs-primary);
         }
 
-        .table thead th {
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
+        [data-bs-theme="dark"] .table thead th {
+            background-color: var(--bs-dark);
+            color: var(--bs-light);
+            border-color: var(--bs-border-color);
+        }
+
+        [data-bs-theme="light"] .table thead th {
+            background-color: var(--bs-light);
+            color: var(--bs-dark);
             border-color: var(--bs-border-color);
         }
 
