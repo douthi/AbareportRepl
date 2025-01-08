@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, render_template, send_file
 from config import Config
 from helpers import ReportManager
+from pipedrive_helper import PipedriveHelper
 import logging
 from datetime import datetime
 import csv
@@ -15,8 +16,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize report manager
+# Initialize managers
 report_manager = ReportManager(app.config)
+pipedrive_helper = PipedriveHelper()
 
 @app.route('/')
 def index():
@@ -135,6 +137,40 @@ def get_reports():
     except Exception as e:
         logger.error(f"Error getting reports: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/sync', methods=['POST'])
+def sync_to_pipedrive():
+    """Sync a record to Pipedrive."""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Create organization
+        org_result = pipedrive_helper.create_organization(data)
+        if not org_result.get('success'):
+            return jsonify({'error': 'Failed to create organization'}), 500
+        
+        org_id = org_result['data']['id']
+        
+        # Create person if name exists
+        if data.get('VORNAME') or data.get('NAME'):
+            person_result = pipedrive_helper.create_person(data, org_id)
+            if not person_result.get('success'):
+                return jsonify({'error': 'Failed to create person'}), 500
+
+        # Create deal
+        deal_result = pipedrive_helper.create_deal(data, org_id)
+        if not deal_result.get('success'):
+            return jsonify({'error': 'Failed to create deal'}), 500
+
+        return jsonify({'success': True, 'message': 'Data synced to Pipedrive'}), 200
+
+    except Exception as e:
+        logger.error(f"Error syncing to Pipedrive: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/reportData/<report_id>', methods=['GET'])
 def get_report_data(report_id):
