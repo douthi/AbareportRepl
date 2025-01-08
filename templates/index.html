@@ -5,7 +5,22 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Theme-aware status colors */
+        :root[data-bs-theme="dark"] {
+            --bg-color: var(--bs-dark);
+            --text-color: var(--bs-light);
+        }
+
+        :root[data-bs-theme="light"] {
+            --bg-color: var(--bs-light);
+            --text-color: var(--bs-dark);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
         .status-new {
             color: var(--bs-info);
         }
@@ -17,6 +32,25 @@
         }
 
         /* Theme-aware component styles */
+        .card {
+            background-color: var(--bg-color);
+            border-color: var(--bs-border-color);
+        }
+
+        .table {
+            color: var(--text-color);
+        }
+
+        .form-control, .form-select {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border-color: var(--bs-border-color);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
         .form-control {
             background-color: var(--bs-body-bg);
             color: var(--bs-body-color);
