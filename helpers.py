@@ -210,7 +210,6 @@ class ReportManager:
     def get_combined_data(self) -> List[Dict[str, Any]]:
         """Get combined and matched data from NPO, ADR, and AKP reports."""
         combined_data = []
-        logger.debug("Starting get_combined_data")
 
         # Define the exact columns we want from each table
         NPO_COLUMNS = [
@@ -246,11 +245,8 @@ class ReportManager:
                 elif status['report_key'] == 'akp':
                     akp_data = self.report_data_store.get(report_id)
 
-        if not any([npo_data, adr_data]):
-            logger.debug(f"Missing required data - NPO: {bool(npo_data)}, ADR: {bool(adr_data)}")
-            return []  # Return empty if no data is available
-
-        logger.debug(f"NPO records: {len(npo_data) if npo_data else 0}, ADR records: {len(adr_data) if adr_data else 0}")
+        if not all([npo_data, adr_data]):
+            return []  # Return empty if required data is missing
 
         # Create lookup dictionaries
         npo_dict = {}
@@ -285,12 +281,12 @@ class ReportManager:
         combined_data = []
         processed_records = set()
 
-        # Process all NPO records
+        # First pass: Process NPO records
         for inr, npo in npo_dict.items():
             adr = adr_dict.get(inr)
             akp_entries = akp_dict.get(inr, [])
             
-            # Include record even if ADR data is missing
+            if adr:
                 # Create combined record
                 combined_record = {
                     'ProjNr': npo.get('ProjNr', ''),
