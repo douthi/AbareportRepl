@@ -6,19 +6,37 @@
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root[data-bs-theme="dark"] {
-            --bg-color: var(--bs-dark);
-            --text-color: var(--bs-light);
+            --bg-color: #212529;
+            --text-color: #f8f9fa;
+            --input-bg: #343a40;
+            --input-color: #f8f9fa;
+            --border-color: #495057;
         }
 
         :root[data-bs-theme="light"] {
-            --bg-color: var(--bs-light);
-            --text-color: var(--bs-dark);
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --input-bg: #ffffff;
+            --input-color: #212529;
+            --border-color: #dee2e6;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .form-select, .form-control {
+            background-color: var(--input-bg) !important;
+            color: var(--input-color) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+            color: var(--text-color);
         }
 
         .status-new {
