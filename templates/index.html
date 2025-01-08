@@ -295,12 +295,20 @@
             fetch('/combinedData')
                 .then(response => response.json())
                 .then(data => {
-                    currentData = data.combined_data.map(item => ({
-                        ...item,
-                        Status: item.Status || 'new'
-                    }));
-                    updateTable();
-                    updateProjNrSuggestions();
+                    console.log('Received data:', data);
+                    if (data && data.combined_data) {
+                        currentData = data.combined_data.map(item => ({
+                            ...item,
+                            Status: item.Status || 'new'
+                        }));
+                        updateTable();
+                        updateProjNrSuggestions();
+                    } else {
+                        console.error('Invalid data format received');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
                 })
                 .finally(() => {
                     initialLoadingOverlay.style.display = 'none';
@@ -325,11 +333,16 @@
 
             // Search and filter function
             function updateTable() {
+                console.log('Updating table with data:', currentData);
                 const searchTerm = searchInput.value.toLowerCase();
                 const hideProcessed = hideProcessedCheckbox.checked;
 
-                const filteredData = currentData.filter(item => {
-                    const matchesSearch = (item.ProjNr || '').toString().toLowerCase().includes(searchTerm);
+                // Ensure currentData is an array
+                const dataToFilter = Array.isArray(currentData) ? currentData : [];
+                
+                const filteredData = dataToFilter.filter(item => {
+                    const projNr = item.ProjNr ? item.ProjNr.toString().toLowerCase() : '';
+                    const matchesSearch = projNr.includes(searchTerm);
                     const isSynced = (item.Status || '').toLowerCase() === 'synced';
                     return matchesSearch && (!hideProcessed || !isSynced);
                 });
