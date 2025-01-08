@@ -35,5 +35,5 @@ args = "python main.py"
 waitForPort = 8000
 
 [[ports]]
-localPort = 8000
+localPort = 3000
 externalPort = 80
