@@ -5,6 +5,7 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* Theme-aware status colors */
         .status-new {
             color: var(--bs-info);
         }
@@ -13,6 +14,46 @@
         }
         .status-fresh-sync {
             color: var(--bs-success);
+        }
+
+        /* Theme-aware component styles */
+        .form-control {
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            border-color: var(--bs-border-color);
+        }
+        
+        .form-control:focus {
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+        }
+
+        .form-select {
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            border-color: var(--bs-border-color);
+        }
+
+        .card {
+            background-color: var(--bs-body-bg);
+            border-color: var(--bs-border-color);
+        }
+
+        .table {
+            color: var(--bs-body-color);
+            border-color: var(--bs-border-color);
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--bs-tertiary-bg);
+        }
+
+        .loading-overlay {
+            background-color: rgba(var(--bs-dark-rgb), 0.7);
+        }
+
+        [data-bs-theme="light"] .loading-overlay {
+            background-color: rgba(var(--bs-light-rgb), 0.7);
         }
         .btn-underline {
             text-decoration: underline;
