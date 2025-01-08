@@ -18,30 +18,38 @@ class ReportManager:
 
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
-        try:
-            logger.debug(f"Using CLIENT_ID: {self.config['CLIENT_ID']}")
-            logger.debug(f"Using CLIENT_SECRET length: {len(self.config['CLIENT_SECRET']) if self.config['CLIENT_SECRET'] else 0}")
-            # Encode credentials for basic auth
-            credentials = f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}"
-            auth_header = f"Basic {base64.b64encode(credentials.encode()).decode()}"
+        max_retries = 3
+        timeout = 30
+        
+        for attempt in range(max_retries):
+            try:
+                logger.debug(f"Using CLIENT_ID: {self.config['CLIENT_ID']}")
+                logger.debug(f"Using CLIENT_SECRET length: {len(self.config['CLIENT_SECRET']) if self.config['CLIENT_SECRET'] else 0}")
+                # Encode credentials for basic auth
+                credentials = f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}"
+                auth_header = f"Basic {base64.b64encode(credentials.encode()).decode()}"
 
-            response = requests.post(
-                self.config['TOKEN_URL'],
-                data='grant_type=client_credentials',
-                headers={
-                    'Accept-Charset': 'UTF-8',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': auth_header,
-                    'Accept': '*/*'
-                }
-            )
+                response = requests.post(
+                    self.config['TOKEN_URL'],
+                    data='grant_type=client_credentials',
+                    headers={
+                        'Accept-Charset': 'UTF-8',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': auth_header,
+                        'Accept': '*/*'
+                    },
+                    timeout=timeout
+                )
             response.raise_for_status()
-            access_token = response.json().get('access_token')
-            logger.debug("Access token obtained successfully")
-            return access_token
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error obtaining access token: {e}")
-            raise
+                access_token = response.json().get('access_token')
+                logger.debug("Access token obtained successfully")
+                return access_token
+            except requests.exceptions.RequestException as e:
+                if attempt == max_retries - 1:
+                    logger.error(f"Error obtaining access token after {max_retries} attempts: {e}")
+                    raise
+                logger.warning(f"Attempt {attempt + 1} failed, retrying: {e}")
+                time.sleep(2 ** attempt)  # Exponential backoff
 
     def start_report(self, mandant: str, report_key: str, year: str) -> str:
         """Start a report and return the report ID."""
