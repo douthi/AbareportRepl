@@ -246,9 +246,11 @@ class ReportManager:
                 elif status['report_key'] == 'akp':
                     akp_data = self.report_data_store.get(report_id)
 
-        if not all([npo_data, adr_data]):
+        if not any([npo_data, adr_data]):
             logger.debug(f"Missing required data - NPO: {bool(npo_data)}, ADR: {bool(adr_data)}")
-            return []  # Return empty if required data is missing
+            return []  # Return empty if no data is available
+
+        logger.debug(f"NPO records: {len(npo_data) if npo_data else 0}, ADR records: {len(adr_data) if adr_data else 0}")
 
         # Create lookup dictionaries
         npo_dict = {}
@@ -283,12 +285,12 @@ class ReportManager:
         combined_data = []
         processed_records = set()
 
-        # First pass: Process NPO records
+        # Process all NPO records
         for inr, npo in npo_dict.items():
             adr = adr_dict.get(inr)
             akp_entries = akp_dict.get(inr, [])
             
-            if adr:
+            # Include record even if ADR data is missing
                 # Create combined record
                 combined_record = {
                     'ProjNr': npo.get('ProjNr', ''),
