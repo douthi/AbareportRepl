@@ -22,7 +22,7 @@
             color: var(--bs-body-color);
             border-color: var(--bs-border-color);
         }
-        
+
         .form-control:focus {
             background-color: var(--bs-body-bg);
             color: var(--bs-body-color);
@@ -359,7 +359,7 @@
                 const datalist = document.getElementById('projNrSuggestions');
                 const uniqueProjNrs = [...new Set(currentData.map(item => item.ProjNr))];
                 datalist.innerHTML = uniqueProjNrs
-                    .map(projNr => `<option value="${projNr}">`)
+                    .map(projNr => `<option value="${projNr}"></option>`)
                     .join('');
             }
 
@@ -380,7 +380,7 @@
 
                 // Ensure currentData is an array
                 const dataToFilter = Array.isArray(currentData) ? currentData : [];
-                
+
                 const filteredData = dataToFilter.filter(item => {
                     const projNr = item.ProjNr ? item.ProjNr.toString().toLowerCase() : '';
                     const matchesSearch = projNr.includes(searchTerm);
@@ -564,7 +564,7 @@
             // Update form submission handler to check cooldown
             document.getElementById('reportForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 const timeSinceLastReport = Date.now() - lastReportTime;
                 if (timeSinceLastReport < REPORT_COOLDOWN) {
                     const remainingSeconds = Math.ceil((REPORT_COOLDOWN - timeSinceLastReport) / 1000);
