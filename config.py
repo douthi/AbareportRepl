@@ -14,7 +14,7 @@ class Config:
     CLIENT_SECRET = os.getenv('CLIENT_SECRET')
     TOKEN_URL = 'https://abacus.indutrade.ch/oauth/oauth2/v1/token'
     BASE_URL = os.getenv('BASE_URL', 'https://abacus.indutrade.ch')
-    PAGE_SIZE = int(os.getenv('PAGE_SIZE', '200'))
+    PAGE_SIZE = int(os.getenv('PAGE_SIZE', '1000')) # Changed page size to 1000
 
     # Report keys mapping
     REPORT_KEYS = {
