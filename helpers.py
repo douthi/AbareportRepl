@@ -306,10 +306,6 @@ class ReportManager:
 
         return combined_data
 
-                combined_data.append(combined_record)
-
-        return combined_data
-
     def get_all_reports(self) -> List[Dict[str, Any]]:
         """Get status of all reports."""
         return [
