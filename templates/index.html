@@ -463,6 +463,9 @@
                 });
             });
 
+            let lastReportTime = 0;
+            const REPORT_COOLDOWN = 300000; // 300 seconds in milliseconds
+
             function pollForUpdates() {
                 const interval = setInterval(() => {
                     fetch('/reports')
@@ -472,17 +475,35 @@
                                 report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
                             );
 
-                            // Update loading message based on progress
-                            const finishedCount = data.reports.filter(
-                                report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
-                            ).length;
-                            loadingMessage.textContent = `Processing reports... (${finishedCount}/${data.reports.length} completed)`;
+                            // Find report with most pages
+                            let maxProgress = { current: 0, total: 0 };
+                            data.reports.forEach(report => {
+                                if (report.message) {
+                                    const pageMatch = report.message.match(/page (\d+) for report/i);
+                                    const totalMatch = report.message.match(/rows=(\d+)/i);
+                                    if (pageMatch && totalMatch) {
+                                        const currentPage = parseInt(pageMatch[1]);
+                                        const totalRows = parseInt(totalMatch[1]);
+                                        const totalPages = Math.ceil(totalRows / 200); // Assuming 200 rows per page
+                                        if (totalPages > maxProgress.total) {
+                                            maxProgress = { current: currentPage, total: totalPages };
+                                        }
+                                    }
+                                }
+                            });
+
+                            // Calculate and display progress
+                            if (maxProgress.total > 0) {
+                                const percent = Math.round((maxProgress.current / maxProgress.total) * 100);
+                                loadingMessage.textContent = `Processing reports... Page ${maxProgress.current}/${maxProgress.total} (${percent}%)`;
+                            }
 
                             if (allFinished) {
                                 clearInterval(interval);
                                 loadingIndicator.classList.add('d-none');
                                 generateBtn.disabled = false;
                                 generateBtnSpinner.classList.add('d-none');
+                                lastReportTime = Date.now();
 
                                 fetch('/combinedData')
                                     .then(response => response.json())
@@ -498,6 +519,46 @@
                         });
                 }, 5000);
             }
+
+            // Update form submission handler to check cooldown
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const timeSinceLastReport = Date.now() - lastReportTime;
+                if (timeSinceLastReport < REPORT_COOLDOWN) {
+                    const remainingSeconds = Math.ceil((REPORT_COOLDOWN - timeSinceLastReport) / 1000);
+                    alert(`Please wait ${remainingSeconds} seconds before generating new reports.`);
+                    return;
+                }
+
+                const formData = new FormData(this);
+                const jsonData = Object.fromEntries(formData.entries());
+
+                loadingIndicator.classList.remove('d-none');
+                loadingMessage.textContent = 'Starting reports...';
+                generateBtn.disabled = true;
+                generateBtnSpinner.classList.remove('d-none');
+
+                fetch('/startAllReports', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                        loadingIndicator.classList.add('d-none');
+                        generateBtn.disabled = false;
+                        generateBtnSpinner.classList.add('d-none');
+                    } else {
+                        loadingMessage.textContent = 'Reports started successfully. Processing data...';
+                        pollForUpdates();
+                    }
+                });
+            });
 
             // Added export button functionality
             document.getElementById('exportBtn').addEventListener('click', function() {
