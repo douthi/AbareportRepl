@@ -20,32 +20,7 @@ app.config.from_object(Config)
 report_manager = ReportManager(app.config)
 pipedrive_helper = PipedriveHelper()
 
-@app.route('/pipedrive-fields', methods=['GET'])
-def get_pipedrive_fields():
-    """Get available Pipedrive fields with friendly names."""
-    try:
-        fields = pipedrive_helper.get_available_fields()
-        return jsonify(fields), 200
-    except Exception as e:
-        logger.error(f"Error getting Pipedrive fields: {e}")
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/pipedrive-config', methods=['GET', 'POST'])
-def pipedrive_config():
-    """Handle Pipedrive field mapping configuration."""
-    if request.method == 'GET':
-        if request.headers.get('Accept') == 'application/json':
-            return jsonify(pipedrive_helper.get_field_mappings())
-        return render_template('config.html')
-
-    if request.method == 'POST':
-        try:
-            mappings = request.json
-            pipedrive_helper.save_field_mappings(mappings)
-            return jsonify({'status': 'success'})
-        except Exception as e:
-            logger.error(f"Error saving field mappings: {e}")
-            return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():
