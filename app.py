@@ -20,6 +20,19 @@ app.config.from_object(Config)
 report_manager = ReportManager(app.config)
 pipedrive_helper = PipedriveHelper()
 
+@app.route('/pipedrive-config', methods=['GET', 'POST'])
+def pipedrive_config():
+    """Handle Pipedrive field mapping configuration."""
+    if request.method == 'GET':
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify(pipedrive_helper.get_field_mappings())
+        return render_template('config.html')
+    
+    if request.method == 'POST':
+        mappings = request.json
+        pipedrive_helper.save_field_mappings(mappings)
+        return jsonify({'status': 'success'})
+
 @app.route('/')
 def index():
     """Render the main page."""
