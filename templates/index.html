@@ -695,29 +695,66 @@
                             }
 
                             if (allFinished) {
-                                // Wait a moment for backend processing to complete
+                                // Increase wait time for larger datasets
                                 setTimeout(() => {
                                     fetch('/combinedData')
                                         .then(response => response.json())
                                         .then(data => {
-                                            if (data && data.combined_data) {
+                                            if (data && data.combined_data && data.combined_data.length > 0) {
                                                 currentData = data.combined_data.map(item => ({
                                                     ...item,
                                                     Status: item.Status || 'new'
                                                 }));
                                                 updateTable();
                                                 updateProjNrSuggestions();
+                                                clearInterval(interval);
+                                                loadingIndicator.classList.add('d-none');
+                                                generateBtn.disabled = false;
+                                                generateBtnSpinner.classList.add('d-none');
+                                                lastReportTime = Date.now();
+                                            } else {
+                                                // If no data, keep polling for a bit longer
+                                                let retryCount = 0;
+                                                const maxRetries = 3;
+                                                const retryInterval = setInterval(() => {
+                                                    if (retryCount >= maxRetries) {
+                                                        clearInterval(retryInterval);
+                                                        clearInterval(interval);
+                                                        loadingIndicator.classList.add('d-none');
+                                                        generateBtn.disabled = false;
+                                                        generateBtnSpinner.classList.add('d-none');
+                                                        return;
+                                                    }
+                                                    fetch('/combinedData')
+                                                        .then(response => response.json())
+                                                        .then(retryData => {
+                                                            if (retryData && retryData.combined_data && retryData.combined_data.length > 0) {
+                                                                currentData = retryData.combined_data.map(item => ({
+                                                                    ...item,
+                                                                    Status: item.Status || 'new'
+                                                                }));
+                                                                updateTable();
+                                                                updateProjNrSuggestions();
+                                                                clearInterval(retryInterval);
+                                                                clearInterval(interval);
+                                                                loadingIndicator.classList.add('d-none');
+                                                                generateBtn.disabled = false;
+                                                                generateBtnSpinner.classList.add('d-none');
+                                                                lastReportTime = Date.now();
+                                                            }
+                                                            retryCount++;
+                                                        });
+                                                }, 3000);
                                             }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error fetching combined data:', error);
                                             clearInterval(interval);
                                             loadingIndicator.classList.add('d-none');
                                             generateBtn.disabled = false;
                                             generateBtnSpinner.classList.add('d-none');
-                                            lastReportTime = Date.now();
-                                        })
-                                        .catch(error => {
-                                            console.error('Error fetching combined data:', error);
                                         });
-                                }, 2000); // Wait 2 seconds after reports finish
+                                }, 5000); // Increased wait time to 5 seconds
                             }
                         });
                 }, 5000);
