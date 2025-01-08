@@ -105,6 +105,14 @@ def start_all_reports():
 
         mandant = data.get('mandant')
         year = data.get('year', 'none')
+        report_key = data.get('report_key') # Added to get report key
+        user_id = request.headers.get('X-User-ID', 'anonymous')
+        if not report_manager.rate_limiter.can_make_request(user_id, report_key):
+            return jsonify({
+                'error': f'Rate limit exceeded for report {report_key}',
+                'retry_after': 300
+            }), 429
+
 
         if not mandant or mandant not in app.config['SUPPORTED_MANDANTS']:
             return jsonify({'error': 'Invalid mandant'}), 400
