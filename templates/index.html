@@ -490,7 +490,7 @@
 
             function updateProjNrSuggestions() {
                 const datalist = document.getElementById('projNrSuggestions');
-                const uniqueProjNrs = [...new Set(currentData.map(item => item.ProjNr))];
+                const uniqueProjNrs = [...new Set(currentData.map(item => item.ProjNr))].slice(0, 10);
                 datalist.innerHTML = uniqueProjNrs
                     .map(projNr => `<option value="${projNr}"></option>`)
                     .join('');
