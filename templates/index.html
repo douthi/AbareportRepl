@@ -32,12 +32,20 @@
         }
 
         /* Theme-aware component styles */
-        .card, 
-        .card .card-body,
-        .table-container {
-            background-color: var(--bs-body-bg) !important;
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .card-body,
+        [data-bs-theme="dark"] .table-container {
+            background-color: var(--bs-dark) !important;
             border-color: var(--bs-border-color) !important;
-            color: var(--bs-body-color) !important;
+            color: var(--bs-light) !important;
+        }
+        
+        [data-bs-theme="light"] .card,
+        [data-bs-theme="light"] .card-body,
+        [data-bs-theme="light"] .table-container {
+            background-color: var(--bs-light) !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-dark) !important;
         }
 
         .table {
