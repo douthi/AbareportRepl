@@ -249,10 +249,17 @@ class ReportManager:
 
         adr_dict = {str(adr.get('INR', '')): adr for adr in adr_data if adr.get('INR')}
 
-        # Create AKP lookup dictionary with ANR mapping
+        # Create AKP lookup dictionary
         akp_dict = {}
-        anr_dict = {str(anr.get('NR')): anr.get('ANR_NR') for anr in anr_data if anr.get('NR')}
-        
+        anr_dict = {}
+
+        # Get ANR data from report store if available
+        for report_id, status in self.report_status_store.items():
+            if status['report_key'] == 'anr' and status['status'] == 'FinishedSuccess':
+                anr_data = self.report_data_store.get(report_id, [])
+                anr_dict = {str(anr.get('NR')): anr.get('ANR_NR') for anr in anr_data if anr.get('NR')}
+                break
+
         if akp_data:
             for akp in akp_data:
                 adr_inr = str(akp.get('ADR_INR', ''))
