@@ -567,9 +567,9 @@
                         <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
                         <td>
                             ${item.Status.toLowerCase() === 'new' ? 
-                                `<button class="btn btn-sm btn-outline-success sync-btn" data-projnr="${item.ProjNr}">
+                                `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
                                     <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-                                    <span class="btn-text">Confirm Sync</span>
+                                    <span class="btn-text text-light">Confirm Sync</span>
                                 </button>` : 
                                 ''
                             }
