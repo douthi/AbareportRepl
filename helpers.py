@@ -40,7 +40,7 @@ class ReportManager:
                     },
                     timeout=timeout
                 )
-            response.raise_for_status()
+                response.raise_for_status()
                 access_token = response.json().get('access_token')
                 logger.debug("Access token obtained successfully")
                 return access_token
