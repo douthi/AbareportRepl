@@ -243,43 +243,68 @@ class ReportManager:
         # Create lookup dictionaries
         npo_dict = {}
         for npo in npo_data:
-            key = npo.get('KdINR') if npo.get('Person1') == '0' else npo.get('Person1')
+            key = str(npo.get('KdINR', '')) if npo.get('Person1') == '0' else str(npo.get('Person1', ''))
             if key:
                 npo_dict[key] = npo
 
-        adr_dict = {adr.get('INR'): adr for adr in adr_data if adr.get('INR')}
+        adr_dict = {str(adr.get('INR', '')): adr for adr in adr_data if adr.get('INR')}
 
-        # Create AKP lookup dictionary
+        # Create AKP lookup dictionary with ANR mapping
         akp_dict = {}
+        anr_dict = {str(anr.get('NR')): anr.get('ANR_NR') for anr in anr_data if anr.get('NR')}
+        
         if akp_data:
             for akp in akp_data:
-                adr_inr = akp.get('ADR_INR')
+                adr_inr = str(akp.get('ADR_INR', ''))
+                akp['ANR_NR'] = anr_dict.get(str(akp.get('NR', '')), '')
                 if adr_inr:
                     if adr_inr not in akp_dict:
                         akp_dict[adr_inr] = []
                     akp_dict[adr_inr].append(akp)
 
         # Combine data based on matching keys
-        for inr, adr in adr_dict.items():
-            if inr in npo_dict:
-                npo = npo_dict[inr]
-                akp_entries = akp_dict.get(inr, [])
+        combined_data = []
+        processed_records = set()
 
-                # Filter NPO data
-                filtered_npo = {k: npo.get(k) for k in NPO_COLUMNS if k in npo}
-
-                # Filter ADR data
-                filtered_adr = {k: adr.get(k) for k in ADR_COLUMNS if k in adr}
-
-                # Combine NPO and ADR data
-                combined_record = {**filtered_adr, **filtered_npo}
+        # First pass: Process NPO records
+        for inr, npo in npo_dict.items():
+            adr = adr_dict.get(inr)
+            akp_entries = akp_dict.get(inr, [])
+            
+            if adr:
+                # Create combined record
+                combined_record = {
+                    'ProjNr': npo.get('ProjNr', ''),
+                    'ProjName': npo.get('ProjName', ''),
+                    'NAME': adr.get('NAME', ''),
+                    'VORNAME': '',  # Will be populated from AKP if available
+                    'EMAIL': '',    # Will be populated from AKP if available
+                    'TEL': adr.get('TEL', ''),
+                    'LAND': adr.get('LAND', ''),
+                    'PLZ': adr.get('PLZ', ''),
+                    'ORT': adr.get('ORT', ''),
+                    'STREET': adr.get('STREET', ''),
+                    'HOUSE_NUMBER': adr.get('HOUSE_NUMBER', ''),
+                    'KDatum': npo.get('KDatum', ''),
+                    'KSumme': npo.get('KSumme', ''),
+                    'ADatum': npo.get('ADatum', ''),
+                    'ASumme': npo.get('ASumme', ''),
+                    'Status': 'new'
+                }
 
                 # Add AKP data if available
-                if akp_entries and len(akp_entries) > 0:
+                if akp_entries:
                     akp = akp_entries[0]  # Take first AKP entry
-                    for k in AKP_COLUMNS:
-                        if k in akp:
-                            combined_record[f'AKP_{k}'] = akp.get(k)
+                    combined_record.update({
+                        'VORNAME': akp.get('AKP_VORNAME', ''),
+                        'EMAIL': akp.get('AKP_MAIL', ''),
+                        'TEL': akp.get('AKP_TEL', '') or combined_record['TEL']
+                    })
+
+                combined_data.append(combined_record)
+                processed_records.add(inr)
+
+        return combined_data
 
                 combined_data.append(combined_record)
 
