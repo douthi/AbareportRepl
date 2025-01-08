@@ -32,10 +32,12 @@
         }
 
         /* Theme-aware component styles */
-        .card, .card-body {
-            background-color: var(--bs-body-bg);
-            border-color: var(--bs-border-color);
-            color: var(--bs-body-color);
+        .card, 
+        .card .card-body,
+        .table-container {
+            background-color: var(--bs-body-bg) !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-body-color) !important;
         }
 
         .table {
