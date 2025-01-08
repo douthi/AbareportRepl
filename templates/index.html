@@ -301,6 +301,28 @@
         .table td {
             color: var(--bs-body-color);
         }
+
+        [data-bs-theme="dark"] .table tbody tr {
+            color: var(--bs-light);
+            background-color: var(--bs-dark);
+        }
+
+        [data-bs-theme="dark"] .table tbody tr:hover {
+            background-color: var(--bs-gray-800);
+        }
+
+        [data-bs-theme="light"] .table tbody tr {
+            color: var(--bs-dark);
+            background-color: var(--bs-light);
+        }
+
+        [data-bs-theme="light"] .table tbody tr:hover {
+            background-color: var(--bs-gray-200);
+        }
+
+        .table tbody tr td {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
