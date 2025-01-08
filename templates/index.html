@@ -673,22 +673,29 @@
                             }
 
                             if (allFinished) {
-                                clearInterval(interval);
-                                loadingIndicator.classList.add('d-none');
-                                generateBtn.disabled = false;
-                                generateBtnSpinner.classList.add('d-none');
-                                lastReportTime = Date.now();
-
-                                fetch('/combinedData')
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        currentData = data.combined_data.map(item => ({
-                                            ...item,
-                                            Status: item.Status || 'new'
-                                        }));
-                                        updateTable();
-                                        updateProjNrSuggestions();
-                                    });
+                                // Wait a moment for backend processing to complete
+                                setTimeout(() => {
+                                    fetch('/combinedData')
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data && data.combined_data) {
+                                                currentData = data.combined_data.map(item => ({
+                                                    ...item,
+                                                    Status: item.Status || 'new'
+                                                }));
+                                                updateTable();
+                                                updateProjNrSuggestions();
+                                            }
+                                            clearInterval(interval);
+                                            loadingIndicator.classList.add('d-none');
+                                            generateBtn.disabled = false;
+                                            generateBtnSpinner.classList.add('d-none');
+                                            lastReportTime = Date.now();
+                                        })
+                                        .catch(error => {
+                                            console.error('Error fetching combined data:', error);
+                                        });
+                                }, 2000); // Wait 2 seconds after reports finish
                             }
                         });
                 }, 5000);
