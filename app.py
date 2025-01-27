@@ -150,7 +150,7 @@ def start_all_reports():
             return jsonify({'error': f'Invalid mandant for company {company}'}), 400
 
         report_ids = {}
-        for report_key in app.config['REPORT_KEYS'].keys():
+        for report_key in Config.COMPANIES[company]['report_keys'].keys():
             try:
                 report_id = report_manager.start_report(mandant, report_key, year)
                 report_ids[report_key] = report_id
