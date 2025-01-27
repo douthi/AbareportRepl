@@ -1,0 +1,320 @@
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function initializeCRMSync() {
+    // Cache DOM elements
+    const elements = {
+        searchInput: document.getElementById('searchProjNr'),
+        hideProcessedCheckbox: document.getElementById('hideProcessed'),
+        loadingIndicator: document.getElementById('loadingIndicator'),
+        loadingMessage: document.getElementById('loadingMessage'),
+        initialLoadingOverlay: document.getElementById('initialLoadingOverlay'),
+        generateBtn: document.getElementById('generateBtn'),
+        dataTableBody: document.getElementById('dataTableBody'),
+        reportForm: document.getElementById('reportForm'),
+        exportBtn: document.getElementById('exportBtn')
+    };
+
+    // Check if required elements exist
+    if (!elements.dataTableBody || !elements.reportForm) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+
+    // State management
+    const state = {
+        currentData: [],
+        freshSyncs: new Set(),
+        lastReportTime: 0,
+        REPORT_COOLDOWN: 300000
+    };
+
+    // Initialize theme
+    function initializeTheme() {
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const htmlElement = document.documentElement;
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                themeToggle.checked = savedTheme === 'light';
+            }
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'light' : 'dark';
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+    }
+
+    // Update table with current data
+    function updateTable() {
+        if (!elements.dataTableBody) return;
+
+        const searchTerm = elements.searchInput ? elements.searchInput.value.toLowerCase() : '';
+        const hideProcessed = elements.hideProcessedCheckbox ? elements.hideProcessedCheckbox.checked : false;
+
+        const filteredData = state.currentData.filter(item => {
+            const projNr = (item.ProjNr || '').toString().toLowerCase();
+            const matchesSearch = projNr.includes(searchTerm);
+            const isSynced = (item.Status || '').toLowerCase() === 'synced';
+            return matchesSearch && (!hideProcessed || !isSynced);
+        });
+
+        elements.dataTableBody.innerHTML = filteredData.map(item => `
+            <tr>
+                <td>${item.ProjNr || ''}</td>
+                <td>${item.ProjName || ''}</td>
+                <td>${item.NAME || ''}</td>
+                <td>${item.VORNAME || ''}</td>
+                <td>${item.EMAIL || ''}</td>
+                <td>${item.TEL || ''}</td>
+                <td>${item.KDatum || ''}</td>
+                <td>${item.KSumme || ''}</td>
+                <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
+                <td>
+                    ${item.Status.toLowerCase() === 'new' ? 
+                        `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
+                            <span class="spinner-border spinner-border-sm d-none"></span>
+                            <span class="btn-text">Sync</span>
+                        </button>` : 
+                        ''
+                    }
+                </td>
+            </tr>
+        `).join('');
+
+        // Add sync button handlers
+        document.querySelectorAll('.sync-btn').forEach(btn => {
+            btn.addEventListener('click', handleSyncClick);
+        });
+    }
+
+    // Handle sync button click
+    function handleSyncClick() {
+        const spinner = this.querySelector('.spinner-border');
+        const btnText = this.querySelector('.btn-text');
+        const projNr = this.dataset.projnr;
+
+        this.disabled = true;
+        spinner.classList.remove('d-none');
+        btnText.textContent = 'Syncing...';
+
+        // Simulate sync (replace with actual API call)
+        setTimeout(() => {
+            const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
+            if (item) {
+                item.Status = 'synced';
+                state.freshSyncs.add(projNr);
+                updateTable();
+            }
+        }, 1000);
+    }
+
+    // Get status class for table row
+    function getStatusClass(status, projNr) {
+        if (state.freshSyncs.has(projNr)) return 'text-success';
+        return status.toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
+    }
+
+    // Load initial data
+    function loadInitialData() {
+        fetch('/combinedData')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.combined_data) {
+                    state.currentData = data.combined_data.map(item => ({
+                        ...item,
+                        Status: item.Status || 'new'
+                    }));
+                    updateTable();
+                    updateProjNrSuggestions();
+                }
+            })
+            .finally(() => {
+                if (elements.initialLoadingOverlay) {
+                    elements.initialLoadingOverlay.style.display = 'none';
+                }
+            });
+    }
+
+    // Update project number suggestions
+    function updateProjNrSuggestions() {
+        const datalist = document.getElementById('projNrSuggestions');
+        if (!datalist) return;
+
+        const uniqueProjNrs = [...new Set(state.currentData.map(item => item.ProjNr))].slice(0, 10);
+        datalist.innerHTML = uniqueProjNrs
+            .map(projNr => `<option value="${projNr}"></option>`)
+            .join('');
+    }
+
+    // Poll for report updates
+    function pollForUpdates() {
+        const interval = setInterval(() => {
+            fetch('/reports')
+                .then(response => response.json())
+                .then(data => {
+                    const allFinished = data.reports.every(
+                        report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
+                    );
+
+                    if (allFinished) {
+                        setTimeout(() => {
+                            fetch('/combinedData')
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data?.combined_data?.length > 0) {
+                                        state.currentData = data.combined_data.map(item => ({
+                                            ...item,
+                                            Status: item.Status || 'new'
+                                        }));
+                                        updateTable();
+                                        updateProjNrSuggestions();
+                                        clearInterval(interval);
+                                        if (elements.loadingIndicator) {
+                                            elements.loadingIndicator.classList.add('d-none');
+                                        }
+                                        if (elements.generateBtn) {
+                                            elements.generateBtn.disabled = false;
+                                            elements.generateBtn.querySelector('.spinner-border')?.classList.add('d-none');
+                                        }
+                                        state.lastReportTime = Date.now();
+                                    }
+                                });
+                        }, 2000);
+                    }
+                });
+        }, 5000);
+    }
+
+    // Initialize event listeners
+    function initializeEventListeners() {
+        // Search input
+        if (elements.searchInput) {
+            elements.searchInput.addEventListener('input', updateTable);
+        }
+
+        // Hide processed checkbox
+        if (elements.hideProcessedCheckbox) {
+            elements.hideProcessedCheckbox.addEventListener('change', updateTable);
+        }
+
+        // Sorting
+        document.querySelectorAll('th[data-sort]').forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.dataset.sort;
+                state.currentData.sort((a, b) => {
+                    const aVal = a[column] || '';
+                    const bVal = b[column] || '';
+                    return aVal.toString().localeCompare(bVal.toString());
+                });
+                if (this.classList.contains('asc')) {
+                    state.currentData.reverse();
+                    this.classList.remove('asc');
+                    this.classList.add('desc');
+                } else {
+                    this.classList.remove('desc');
+                    this.classList.add('asc');
+                }
+                updateTable();
+            });
+        });
+
+        // Report form
+        if (elements.reportForm) {
+            elements.reportForm.addEventListener('submit', handleReportSubmit);
+        }
+
+        // Export button
+        if (elements.exportBtn) {
+            elements.exportBtn.addEventListener('click', handleExport);
+        }
+    }
+
+    // Handle report form submission
+    function handleReportSubmit(e) {
+        e.preventDefault();
+
+        const timeSinceLastReport = Date.now() - state.lastReportTime;
+        if (timeSinceLastReport < state.REPORT_COOLDOWN) {
+            const remainingSeconds = Math.ceil((state.REPORT_COOLDOWN - timeSinceLastReport) / 1000);
+            alert(`Please wait ${remainingSeconds} seconds before generating new reports.`);
+            return;
+        }
+
+        const formData = new FormData(this);
+        const jsonData = Object.fromEntries(formData.entries());
+
+        if (elements.loadingIndicator) {
+            elements.loadingIndicator.classList.remove('d-none');
+        }
+        if (elements.loadingMessage) {
+            elements.loadingMessage.textContent = 'Starting reports...';
+        }
+        if (elements.generateBtn) {
+            elements.generateBtn.disabled = true;
+            elements.generateBtn.querySelector('.spinner-border')?.classList.remove('d-none');
+        }
+
+        fetch('/startAllReports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(jsonData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+                if (elements.loadingIndicator) {
+                    elements.loadingIndicator.classList.add('d-none');
+                }
+                if (elements.generateBtn) {
+                    elements.generateBtn.disabled = false;
+                    elements.generateBtn.querySelector('.spinner-border')?.classList.add('d-none');
+                }
+            } else {
+                if (elements.loadingMessage) {
+                    elements.loadingMessage.textContent = 'Reports started successfully. Processing data...';
+                }
+                pollForUpdates();
+            }
+        });
+    }
+
+    // Handle export button click
+    function handleExport() {
+        const button = elements.exportBtn;
+        const spinner = button.querySelector('.spinner-border');
+        const btnText = button.querySelector('.btn-text');
+
+        button.disabled = true;
+        spinner.classList.remove('d-none');
+        btnText.textContent = 'Exporting...';
+
+        fetch('/export')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'export.csv';
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                alert('Failed to export data. Please try again.');
+            })
+            .finally(() => {
+                button.disabled = false;
+                spinner.classList.add('d-none');
+                btnText.textContent = 'Export Data';
+            });
+    }
+
+    // Initialize everything
+    initializeTheme();
+    loadInitialData();
+    initializeEventListeners();
+});
