@@ -783,8 +783,14 @@
                 if (!selectedCompany) {
                     mandantSelect.innerHTML = '<option value="">Select Company First</option>';
                     mandantSelect.disabled = true;
+                    document.getElementById('companyName').textContent = 'Select Company';
+                    currentData = [];
+                    updateTable();
                     return;
                 }
+
+                // Update company name in header
+                document.getElementById('companyName').textContent = selectedCompany === 'uniska' ? 'Uniska AG' : 'Novisol';
 
                 // Enable mandant select and populate options
                 mandantSelect.disabled = false;
@@ -804,6 +810,12 @@
                     Object.entries(mandants)
                         .map(([id, name]) => `<option value="${id}">${name}</option>`)
                         .join('');
+                
+                // Clear current data and refresh table
+                currentData = [];
+                updateTable();
+                document.getElementById('dataTableBody').innerHTML = '';
+                initialLoadingOverlay.style.display = 'none';
             });
 
             // Update form submission handler to check cooldown
