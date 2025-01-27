@@ -60,16 +60,30 @@ class PipedriveHelper:
         return response.json()
 
     def get_fields(self, entity_type: str) -> List[Dict[str, Any]]:
-        """Get fields for a specific entity type."""
-        endpoint = f"{self.base_url}/{entity_type}Fields"
-        params = {'api_token': self.api_key}
+        """Get fields for a specific entity type with company-specific caching."""
+        cache_file = f'pipedrive_fields_{self.company_key}_{entity_type}.json'
         
-        response = requests.get(endpoint, params=params)
-        if response.ok:
-            data = response.json()
-            return [{'key': field['key'], 'name': field['name']} 
-                   for field in data.get('data', [])]
-        return []
+        try:
+            # Try to load from cache first
+            with open(cache_file, 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # If cache missing or invalid, fetch from API
+            endpoint = f"{self.base_url}/{entity_type}Fields"
+            params = {'api_token': self.api_key}
+            
+            response = requests.get(endpoint, params=params)
+            if response.ok:
+                data = response.json()
+                fields = [{'key': field['key'], 'name': field['name']} 
+                         for field in data.get('data', [])]
+                
+                # Save to cache
+                with open(cache_file, 'w') as f:
+                    json.dump(fields, f, indent=2)
+                    
+                return fields
+            return []
 
     def get_organization_fields(self) -> List[Dict[str, Any]]:
         return self.get_fields('organization')
