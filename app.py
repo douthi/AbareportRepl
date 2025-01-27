@@ -139,7 +139,6 @@ def start_all_reports():
             return jsonify({'error': 'No JSON data provided'}), 400
 
         mandant = data.get('mandant')
-        year = data.get('year', 'none')
         report_key = data.get('report_key')
 
 

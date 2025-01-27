@@ -374,20 +374,8 @@
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
                     <div class="col-md-6">
                         <label for="mandant" class="form-label">Mandant</label>
-                        <select class="form-select" id="mandant" name="mandant" required>
-                            <option value="">Select Mandant</option>
-                            {% for id, name in config.SUPPORTED_MANDANTS.items() %}
-                            <option value="{{ id }}">{{ name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="year" class="form-label">Year</label>
-                        <select class="form-select" id="year" name="year">
-                            <option value="none">All Years</option>
-                            {% for year in range(current_year, current_year - 5, -1) %}
-                            <option value="{{ year }}">{{ year }}</option>
-                            {% endfor %}
+                        <select class="form-select" id="mandant" name="mandant" required disabled>
+                            <option value="">Select Company First</option>
                         </select>
                     </div>
                     <div class="col-12">
@@ -785,6 +773,38 @@
                         });
                 }, 5000);
             }
+
+            // Handle company selection change
+            document.getElementById('company').addEventListener('change', function() {
+                const mandantSelect = document.getElementById('mandant');
+                const selectedCompany = this.value;
+                
+                // Clear and disable mandant select if no company selected
+                if (!selectedCompany) {
+                    mandantSelect.innerHTML = '<option value="">Select Company First</option>';
+                    mandantSelect.disabled = true;
+                    return;
+                }
+
+                // Enable mandant select and populate options
+                mandantSelect.disabled = false;
+                const companyMandants = {
+                    'uniska': {
+                        "19": "Uniska Interiors",
+                        "20": "Uniska AG"
+                    },
+                    'novisol': {
+                        "2": "Novisol AG, Rheinfelden",
+                        "7": "Novisol GmbH, Weil am Rhein"
+                    }
+                };
+
+                const mandants = companyMandants[selectedCompany] || {};
+                mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
+                    Object.entries(mandants)
+                        .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                        .join('');
+            });
 
             // Update form submission handler to check cooldown
             document.getElementById('reportForm').addEventListener('submit', function(e) {
