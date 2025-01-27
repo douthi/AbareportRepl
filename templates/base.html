@@ -6,14 +6,27 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        .navbar-nav .nav-link.active {
+        .nav-link.active {
+            background-color: var(--bs-primary);
+            color: white !important;
+            border-radius: 4px;
+        }
+        .subnav {
+            border-top: 1px solid var(--bs-border-color);
+            background-color: rgba(var(--bs-dark-rgb), 0.8);
+        }
+        .subnav .nav-link {
+            padding: 0.5rem 1rem;
+            color: var(--bs-secondary);
+        }
+        .subnav .nav-link:hover {
             color: var(--bs-primary);
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">CRM Sync</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -22,17 +35,37 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'uniska' %}active{% endif %}" href="/uniska">Uniska</a>
+                        <a class="nav-link {% if request.path.startswith('/uniska') %}active{% endif %}" href="/uniska">Uniska</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'novisol' %}active{% endif %}" href="/novisol">Novisol</a>
+                        <a class="nav-link {% if request.path.startswith('/novisol') %}active{% endif %}" href="/novisol">Novisol</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container">
+    <!-- Sub Navigation -->
+    {% if request.path.startswith('/uniska') or request.path.startswith('/novisol') %}
+    <div class="subnav py-2">
+        <div class="container">
+            <div class="nav">
+                {% set company = 'uniska' if request.path.startswith('/uniska') else 'novisol' %}
+                <a class="nav-link {% if request.path == '/' + company %}active{% endif %}" href="/{{ company }}">
+                    Dashboard
+                </a>
+                <a class="nav-link {% if request.path == '/' + company + '/config' %}active{% endif %}" href="/{{ company }}/config">
+                    API Configuration
+                </a>
+                <a class="nav-link {% if request.path == '/' + company + '/mapping' %}active{% endif %}" href="/{{ company }}/mapping">
+                    Field Mapping
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container mt-4">
         {% block content %}{% endblock %}
     </div>
 
