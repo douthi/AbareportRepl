@@ -139,11 +139,11 @@ def start_all_reports():
             return jsonify({'error': 'No JSON data provided'}), 400
 
         mandant = data.get('mandant')
-        company = data.get('company', 'uniska')  # Default to uniska if not specified
-        if not mandant or company not in Config.COMPANIES:
-            return jsonify({'error': 'Invalid company or mandant'}), 400
+        company = data.get('company')
+        if not company or company not in Config.COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
             
-        if mandant not in Config.COMPANIES[company]['mandants']:
+        if not mandant or mandant not in Config.COMPANIES[company]['mandants']:
             return jsonify({'error': f'Invalid mandant for company {company}'}), 400
 
         report_ids = {}
