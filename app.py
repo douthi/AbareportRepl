@@ -54,7 +54,7 @@ def pipedrive_config():
 def index():
     """Render the main page."""
     return render_template('index.html', 
-                         config=app.config['COMPANIES'],
+                         config=app.config,
                          current_year=datetime.now().year,
                          data=[])  # Empty initial data
 

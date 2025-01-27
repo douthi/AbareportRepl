@@ -351,7 +351,7 @@
         </div>
 
         <h1 class="mb-4"><span id="companyName">Select Company</span> – Abacus x CRM Sync</h1>
-        
+
         <!-- Company Selection -->
         <div class="card mb-4">
             <div class="card-body">
@@ -376,8 +376,8 @@
                         <label for="mandant" class="form-label">Mandant</label>
                         <select class="form-select" id="mandant" name="mandant" required>
                             <option value="">Select Mandant</option>
-                            {% for id, name in config.SUPPORTED_MANDANTS.items() %}
-                            <option value="{{ id }}">{{ name }}</option>
+                            {% for company in config['COMPANIES'] %}
+                            <option value="{{ company }}">{{ config['COMPANIES'][company]['name'] }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -860,7 +860,7 @@
                         alert('Failed to export data. Please try again.');
                     })
                     .finally(() => {
-                        // Reset button state
+                                                // Reset button state
                         button.disabled = false;
                         spinner.classList.add('d-none');
                         btnText.textContent = 'Export Data';
