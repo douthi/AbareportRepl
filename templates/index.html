@@ -359,8 +359,10 @@
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
                     <div class="col-md-6">
                         <label for="mandant" class="form-label">Mandant</label>
-                        <select class="form-select" id="mandant" name="mandant" required disabled>
-                            <option value="">Select Company First</option>
+                        <select class="form-select" id="mandant" name="mandant" required>
+                            {% for id, name in config.COMPANIES[company]['mandants'].items() %}
+                            <option value="{{ id }}">{{ name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-6">
