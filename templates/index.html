@@ -641,7 +641,7 @@
             });
 
             // Form submission
-            document.getElementById('reportForm').addEventListener('submit', function(e) {
+            document.getElementById('reportForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 const companySelect = document.getElementById('company');
@@ -651,19 +651,18 @@
 
                 if (!company || !mandant) {
                     alert('Please select both company and mandant');
-                    loadingIndicator.classList.add('d-none');
-                    generateBtn.disabled = false;
-                    generateBtnSpinner.classList.add('d-none');
                     return;
                 }
 
-                if (!['uniska', 'novisol'].includes(company)) {
+                const validCompanies = ['uniska', 'novisol'];
+                if (!validCompanies.includes(company)) {
                     alert('Invalid company selected');
-                    loadingIndicator.classList.add('d-none');
-                    generateBtn.disabled = false;
-                    generateBtnSpinner.classList.add('d-none');
                     return;
                 }
+
+                generateBtn.disabled = true;
+                generateBtnSpinner.classList.remove('d-none');
+                loadingIndicator.classList.remove('d-none');
 
                 fetch('/startAllReports', {
                     method: 'POST',
