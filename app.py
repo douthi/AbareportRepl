@@ -58,24 +58,55 @@ def index():
 
 @app.route('/uniska')
 def uniska():
-    """Render the Uniska page."""
+    """Render the Uniska dashboard."""
     return render_template('index.html',
                          company='uniska',
                          config=app.config,
                          current_year=datetime.now().year,
                          data=[])
 
+@app.route('/uniska/config', methods=['GET', 'POST'])
+def uniska_config():
+    """Handle Uniska API configuration."""
+    if request.method == 'POST':
+        data = request.get_json()
+        update_config({
+            'UNISKA_ABACUS_KEY': data.get('abacus_key'),
+            'UNISKA_PIPEDRIVE_API_KEY': data.get('pipedrive_key')
+        })
+        return jsonify({'status': 'success'})
+    return render_template('company_config.html', company='uniska', config=app.config)
+
+@app.route('/uniska/mapping')
+def uniska_mapping():
+    """Render Uniska field mapping page."""
+    return render_template('field_mapping.html', company='uniska')
+
 @app.route('/novisol')
 def novisol():
-    """Render the Novisol page."""
+    """Render the Novisol dashboard."""
     return render_template('index.html',
                          company='novisol',
                          config=app.config,
                          current_year=datetime.now().year,
                          data=[])
 
-@app.route('/api-config', methods=['GET', 'POST'])
-def api_config():
+@app.route('/novisol/config', methods=['GET', 'POST'])
+def novisol_config():
+    """Handle Novisol API configuration."""
+    if request.method == 'POST':
+        data = request.get_json()
+        update_config({
+            'NOVISOL_ABACUS_KEY': data.get('abacus_key'),
+            'NOVISOL_PIPEDRIVE_API_KEY': data.get('pipedrive_key')
+        })
+        return jsonify({'status': 'success'})
+    return render_template('company_config.html', company='novisol', config=app.config)
+
+@app.route('/novisol/mapping')
+def novisol_mapping():
+    """Render Novisol field mapping page."""
+    return render_template('field_mapping.html', company='novisol')
     """Handle API configuration."""
     if request.method == 'POST':
         data = request.get_json()

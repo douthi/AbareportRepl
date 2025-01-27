@@ -1,0 +1,49 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{ company|title }} Configuration{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h2>{{ company|title }} API Configuration</h2>
+        <form id="apiConfigForm" class="mt-4">
+            <div class="mb-3">
+                <label class="form-label">Abacus API Key</label>
+                <input type="password" class="form-control" name="abacus_key" value="{{ config.get(company|upper + '_ABACUS_KEY', '') }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Pipedrive API Key</label>
+                <input type="password" class="form-control" name="pipedrive_key" value="{{ config.get(company|upper + '_PIPEDRIVE_API_KEY', '') }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('apiConfigForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            alert('Configuration saved successfully!');
+        } else {
+            alert('Failed to save configuration');
+        }
+    } catch (error) {
+        alert('Error saving configuration');
+    }
+});
+</script>
+{% endblock %}
