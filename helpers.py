@@ -51,7 +51,7 @@ class ReportManager:
                 logger.warning(f"Attempt {attempt + 1} failed, retrying: {e}")
                 time.sleep(2 ** attempt)  # Exponential backoff
 
-    def start_report(self, mandant: str, report_key: str, year: str) -> str:
+    def start_report(self, mandant: str, report_key: str) -> str:
         """Start a report and return the report ID."""
         access_token = self.get_access_token()
         report_id = str(uuid.uuid4())
@@ -73,13 +73,6 @@ class ReportManager:
             "outputType": "json",
             "paging": self.config['PAGE_SIZE']
         }
-
-        # Add date parameters for dko report
-        if report_key == "dko" and year != "none":
-            body["parameters"] = {
-                "AUF_DATUM_VON": f"{year}-01-01",
-                "AUF_DATUM_BIS": f"{year}-12-31"
-            }
 
         try:
             response = requests.post(

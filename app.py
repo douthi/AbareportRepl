@@ -139,9 +139,6 @@ def start_all_reports():
             return jsonify({'error': 'No JSON data provided'}), 400
 
         mandant = data.get('mandant')
-        report_key = data.get('report_key')
-
-
         company = data.get('company', 'uniska')  # Default to uniska if not specified
         if not mandant or company not in Config.COMPANIES:
             return jsonify({'error': 'Invalid company or mandant'}), 400
@@ -152,7 +149,7 @@ def start_all_reports():
         report_ids = {}
         for report_key in Config.COMPANIES[company]['report_keys'].keys():
             try:
-                report_id = report_manager.start_report(mandant, report_key, year)
+                report_id = report_manager.start_report(mandant, report_key)
                 report_ids[report_key] = report_id
             except Exception as e:
                 logger.error(f"Error starting report {report_key}: {e}")
