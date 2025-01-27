@@ -217,12 +217,29 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchProjNr');
-        const hideProcessedCheckbox = document.getElementById('hideProcessed');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const initialLoadingOverlay = document.getElementById('initialLoadingOverlay');
-        const generateBtn = document.getElementById('generateBtn');
+        // Safely get DOM elements
+        const elements = {
+            searchInput: document.getElementById('searchProjNr'),
+            hideProcessedCheckbox: document.getElementById('hideProcessed'),
+            loadingIndicator: document.getElementById('loadingIndicator'),
+            loadingMessage: document.getElementById('loadingMessage'),
+            initialLoadingOverlay: document.getElementById('initialLoadingOverlay'),
+            generateBtn: document.getElementById('generateBtn'),
+            generateBtnSpinner: document.querySelector('#generateBtn .spinner-border'),
+            pipedriveConnect: document.getElementById('pipedriveConnect'),
+            exportBtn: document.getElementById('exportBtn')
+        };
+
+        // Initialize state
+        if (!window.state) {
+            window.state = {
+                currentData: [],
+                freshSyncs: new Set(),
+                lastReportTime: 0,
+                REPORT_COOLDOWN: 300000,
+                pollInterval: null
+            };
+        }
 
         // Theme toggle initialization
         function initializeTheme() {
@@ -350,8 +367,12 @@
         }
 
         // Event listeners
-        searchInput.addEventListener('input', updateTable);
-        hideProcessedCheckbox.addEventListener('change', updateTable);
+        if (elements.searchInput) {
+            elements.searchInput.addEventListener('input', updateTable);
+        }
+        if (elements.hideProcessedCheckbox) {
+            elements.hideProcessedCheckbox.addEventListener('change', updateTable);
+        }
 
         // Sorting
         document.querySelectorAll('th[data-sort]').forEach(header => {
