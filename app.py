@@ -37,17 +37,22 @@ def get_pipedrive_fields():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/config')
 @app.route('/pipedrive-config', methods=['GET', 'POST'])
 def pipedrive_config():
     """Handle Pipedrive field mapping configuration."""
     if request.method == 'GET':
-        if request.headers.get('Accept') == 'application/json':
-            return jsonify(pipedrive_helper.get_field_mappings())
-        return render_template('config.html')
+        if request.path == '/config' or request.headers.get('Accept') != 'application/json':
+            return render_template('config.html')
+        company_key = request.args.get('company', 'uniska')
+        pipedrive = PipedriveHelper(company_key)
+        return jsonify(pipedrive.get_field_mappings())
     
     if request.method == 'POST':
+        company_key = request.args.get('company', 'uniska')
+        pipedrive = PipedriveHelper(company_key)
         mappings = request.json
-        pipedrive_helper.save_field_mappings(mappings)
+        pipedrive.save_field_mappings(mappings)
         return jsonify({'status': 'success'})
 
 @app.route('/')

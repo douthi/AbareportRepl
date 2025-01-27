@@ -52,6 +52,14 @@
 
         <div class="card mt-4">
             <div class="card-body">
+                <div class="mb-3">
+                    <label for="company" class="form-label">Company</label>
+                    <select class="form-select" id="company" required>
+                        <option value="">Select Company</option>
+                        <option value="uniska">Uniska AG</option>
+                        <option value="novisol">Novisol</option>
+                    </select>
+                </div>
                 <form id="mappingForm" method="POST">
                     <div id="mappingContainer">
                         <!-- Mapping rows will be added here -->
@@ -177,18 +185,37 @@
             const addButton = document.getElementById('addMapping');
             const form = document.getElementById('mappingForm');
 
-            // Load existing mappings
-            fetch('/pipedrive-config')
-                .then(response => response.json())
-                .then(mappings => {
-                    if (mappings && mappings.length) {
-                        mappings.forEach(mapping => {
-                            container.appendChild(createMappingRow(mapping));
-                        });
-                    } else {
-                        container.appendChild(createMappingRow());
-                    }
-                });
+            // Company selector
+            const companySelect = document.getElementById('company');
+            
+            function loadMappingsForCompany() {
+                const company = companySelect.value;
+                container.innerHTML = '';
+                
+                if (!company) {
+                    alert('Please select a company first');
+                    return;
+                }
+                
+                fetch(`/pipedrive-config?company=${company}`)
+                    .then(response => response.json())
+                    .then(mappings => {
+                        if (mappings && mappings.length) {
+                            mappings.forEach(mapping => {
+                                container.appendChild(createMappingRow(mapping));
+                            });
+                        } else {
+                            container.appendChild(createMappingRow());
+                        }
+                    });
+            }
+            
+            companySelect.addEventListener('change', loadMappingsForCompany);
+            
+            // Initial load if company is selected
+            if (companySelect.value) {
+                loadMappingsForCompany();
+            }
 
             addButton.addEventListener('click', () => {
                 container.appendChild(createMappingRow());
@@ -208,7 +235,13 @@
                     entity: row.querySelector('.entity-type').value
                 }));
 
-                const response = await fetch('/pipedrive-config', {
+                const company = document.getElementById('company').value;
+                if (!company) {
+                    alert('Please select a company');
+                    return;
+                }
+                
+                const response = await fetch(`/pipedrive-config?company=${company}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
