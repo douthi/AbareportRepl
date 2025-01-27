@@ -7,179 +7,91 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --sidebar-width: 250px;
-            --sidebar-collapsed-width: 60px;
-        }
-
         body {
             min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bs-dark);
-            color: var(--bs-light);
-        }
-
-        #wrapper {
             display: flex;
-            width: 100%;
-            min-height: 100vh;
         }
 
         #sidebar {
-            width: var(--sidebar-width);
+            width: 250px;
+            background: #212529;
             min-height: 100vh;
-            background-color: #212529;
-            color: #fff;
-            transition: all 0.3s;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
             position: fixed;
-            z-index: 1030;
+            left: 0;
+            top: 0;
         }
 
-        #sidebar.collapsed {
-            width: var(--sidebar-collapsed-width);
+        #content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+            background: var(--bs-dark);
+            padding: 20px;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 10px 20px;
+            margin: 2px 0;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,.1);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background: var(--bs-primary);
         }
 
         .sidebar-header {
             padding: 20px;
-            background-color: rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #sidebar .nav-link {
-            padding: 12px 15px;
-            color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 2px 8px;
-            border-radius: 4px;
-            text-decoration: none;
-        }
-
-        #sidebar .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        #sidebar .nav-link.active {
-            background-color: var(--bs-primary);
-            color: white;
-        }
-
-        .nav-text {
-            transition: opacity 0.3s;
-            white-space: nowrap;
-        }
-
-        #sidebar.collapsed .nav-text {
-            display: none;
-        }
-
-        #content {
-            width: calc(100% - var(--sidebar-width));
-            margin-left: var(--sidebar-width);
-            transition: all 0.3s;
-            min-height: 100vh;
-            background-color: var(--bs-dark);
-        }
-
-        #content.expanded {
-            width: calc(100% - var(--sidebar-collapsed-width));
-            margin-left: var(--sidebar-collapsed-width);
-        }
-
-        .company-badge {
-            font-size: 0.9em;
-            padding: 0.3em 0.6em;
-            margin-left: 1em;
-            background: var(--bs-primary);
-            color: white;
-            border-radius: 4px;
+            border-bottom: 1px solid rgba(255,255,255,.1);
         }
     </style>
-    {% block additional_styles %}{% endblock %}
 </head>
 <body>
-    <div id="wrapper">
-        <!-- Sidebar -->
-        <nav id="sidebar">
-            <div class="sidebar-header">
-                <a href="/" class="text-decoration-none text-light d-flex align-items-center">
-                    <i class="fas fa-sync"></i>
-                    <span class="nav-text ms-2">CRM Sync</span>
-                </a>
-                <button id="sidebarCollapse" class="btn btn-link text-light p-0">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-            <ul class="nav flex-column mt-3">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path.startswith('/uniska') %}active{% endif %}" href="/uniska">
-                        <i class="fas fa-building"></i>
-                        <span class="nav-text">Uniska</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path.startswith('/novisol') %}active{% endif %}" href="/novisol">
-                        <i class="fas fa-industry"></i>
-                        <span class="nav-text">Novisol</span>
-                    </a>
-                </li>
-                {% if request.path.startswith('/uniska') or request.path.startswith('/novisol') %}
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path.endswith('/config') %}active{% endif %}" 
-                       href="{{ '/' + company + '/config' if company else '#' }}">
-                        <i class="fas fa-cog"></i>
-                        <span class="nav-text">Config</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path.endswith('/mapping') %}active{% endif %}" 
-                       href="{{ '/' + company + '/mapping' if company else '#' }}">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span class="nav-text">Mapping</span>
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="text-decoration-none text-light">
+                <i class="fas fa-sync"></i>
+                <span class="ms-2">CRM Sync</span>
+            </a>
+        </div>
+        <div class="nav flex-column mt-3">
+            <a class="nav-link {% if request.path.startswith('/uniska') %}active{% endif %}" href="/uniska">
+                <i class="fas fa-building me-2"></i>Uniska
+            </a>
+            <a class="nav-link {% if request.path.startswith('/novisol') %}active{% endif %}" href="/novisol">
+                <i class="fas fa-industry me-2"></i>Novisol
+            </a>
+            {% if request.path.startswith('/uniska') or request.path.startswith('/novisol') %}
+            <a class="nav-link {% if request.path.endswith('/config') %}active{% endif %}" 
+               href="/{{ company }}/config">
+                <i class="fas fa-cog me-2"></i>Config
+            </a>
+            <a class="nav-link {% if request.path.endswith('/mapping') %}active{% endif %}" 
+               href="/{{ company }}/mapping">
+                <i class="fas fa-exchange-alt me-2"></i>Mapping
+            </a>
+            {% endif %}
+        </div>
+    </nav>
 
-        <!-- Page Content -->
-        <div id="content">
-            {% if company %}
+    <main id="content">
+        {% if company %}
             <div class="bg-dark border-bottom border-secondary py-2">
                 <div class="container">
                     <span class="text-light">Current Company: <strong>{{ company|title }}</strong></span>
                 </div>
             </div>
-            {% endif %}
-
-            <div class="container my-4">
-                {% block content %}{% endblock %}
-            </div>
+        {% endif %}
+        <div class="container my-4">
+            {% block content %}{% endblock %}
         </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarCollapse = document.getElementById('sidebarCollapse');
-            const sidebar = document.getElementById('sidebar');
-            const content = document.getElementById('content');
-
-            if (sidebarCollapse && sidebar && content) {
-                sidebarCollapse.addEventListener('click', function() {
-                    sidebar.classList.toggle('collapsed');
-                    content.classList.toggle('expanded');
-                });
-            }
-        });
-    </script>
-    {% block scripts %}{% endblock %}
 </body>
 </html>
