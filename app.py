@@ -37,64 +37,24 @@ def get_pipedrive_fields():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/update-api-key', methods=['POST'])
-def update_api_key():
-    """Update Pipedrive API key for a company."""
-    try:
-        data = request.json
-        company = data.get('company', '').upper()
-        api_key = data.get('api_key')
-
-        if not company or not api_key:
-            return jsonify({'error': 'Missing company or API key'}), 400
-
-        # Store in environment variable
-        os.environ[f'{company}_PIPEDRIVE_API_KEY'] = api_key
-        
-        # Store securely using the secrets tool
-        with open('.env', 'a') as f:
-            f.write(f'\n{company}_PIPEDRIVE_API_KEY={api_key}')
-
-        return jsonify({'status': 'success'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/check-api-key')
-def check_api_key():
-    """Check if API key exists for a company."""
-    company = request.args.get('company', '').upper()
-    if not company:
-        return jsonify({'error': 'Company required'}), 400
-
-    key_exists = bool(os.getenv(f'{company}_PIPEDRIVE_API_KEY'))
-    return jsonify({'exists': key_exists})
-
-@app.route('/config')
 @app.route('/pipedrive-config', methods=['GET', 'POST'])
 def pipedrive_config():
     """Handle Pipedrive field mapping configuration."""
     if request.method == 'GET':
-        if request.path == '/config' or request.headers.get('Accept') != 'application/json':
-            return render_template('config.html')
-        company_key = request.args.get('company', 'uniska')
-        pipedrive = PipedriveHelper(company_key)
-        return jsonify(pipedrive.get_field_mappings())
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify(pipedrive_helper.get_field_mappings())
+        return render_template('config.html')
     
     if request.method == 'POST':
-        company_key = request.args.get('company', 'uniska')
-        pipedrive = PipedriveHelper(company_key)
         mappings = request.json
-        pipedrive.save_field_mappings(mappings)
+        pipedrive_helper.save_field_mappings(mappings)
         return jsonify({'status': 'success'})
 
 @app.route('/')
 def index():
     """Render the main page."""
-    supported_mandants = {}
-    for company in Config.COMPANIES.values():
-        supported_mandants.update(company['mandants'])
     return render_template('index.html', 
-                         config={'SUPPORTED_MANDANTS': supported_mandants},
+                         config=app.config['COMPANIES'],
                          current_year=datetime.now().year,
                          data=[])  # Empty initial data
 
@@ -176,23 +136,17 @@ def start_all_reports():
             return jsonify({'error': 'No JSON data provided'}), 400
 
         mandant = data.get('mandant')
-        company = data.get('company', '')
-        
-        # Debug logging
-        print(f"Received company: {company}, mandant: {mandant}")
-        print(f"Available companies: {list(Config.COMPANIES.keys())}")
-        
-        if not company or company.lower() not in Config.COMPANIES:
-            return jsonify({'error': 'Invalid company'}), 400
-            
-        company = company.lower()
-        if not mandant or mandant not in Config.COMPANIES[company]['mandants']:
-            return jsonify({'error': f'Invalid mandant for company {company}'}), 400
+        year = data.get('year', 'none')
+        report_key = data.get('report_key')
+
+
+        if not mandant or mandant not in app.config['SUPPORTED_MANDANTS']:
+            return jsonify({'error': 'Invalid mandant'}), 400
 
         report_ids = {}
-        for report_key in Config.COMPANIES[company]['report_keys'].keys():
+        for report_key in app.config['REPORT_KEYS'].keys():
             try:
-                report_id = report_manager.start_report(mandant, report_key)
+                report_id = report_manager.start_report(mandant, report_key, year)
                 report_ids[report_key] = report_id
             except Exception as e:
                 logger.error(f"Error starting report {report_key}: {e}")

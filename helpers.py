@@ -2,7 +2,6 @@ import logging
 import re
 import time
 import uuid
-from config import Config
 import threading
 import requests
 import base64
@@ -52,7 +51,7 @@ class ReportManager:
                 logger.warning(f"Attempt {attempt + 1} failed, retrying: {e}")
                 time.sleep(2 ** attempt)  # Exponential backoff
 
-    def start_report(self, mandant: str, report_key: str) -> str:
+    def start_report(self, mandant: str, report_key: str, year: str) -> str:
         """Start a report and return the report ID."""
         access_token = self.get_access_token()
         report_id = str(uuid.uuid4())
@@ -66,17 +65,7 @@ class ReportManager:
             'total_pages': 1
         }
 
-        # Get company from mandant
-        company = None
-        for comp_key, comp_data in Config.COMPANIES.items():
-            if mandant in comp_data['mandants']:
-                company = comp_key
-                break
-        
-        if not company:
-            raise ValueError(f"Invalid mandant: {mandant}")
-            
-        report_name = Config.COMPANIES[company]['report_keys'][report_key]
+        report_name = self.config['REPORT_KEYS'][report_key]
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
 
         # Build request body
@@ -84,6 +73,13 @@ class ReportManager:
             "outputType": "json",
             "paging": self.config['PAGE_SIZE']
         }
+
+        # Add date parameters for dko report
+        if report_key == "dko" and year != "none":
+            body["parameters"] = {
+                "AUF_DATUM_VON": f"{year}-01-01",
+                "AUF_DATUM_BIS": f"{year}-12-31"
+            }
 
         try:
             response = requests.post(

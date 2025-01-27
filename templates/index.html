@@ -1,81 +1,10 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title><span id="companyName">Select Company</span> – Abacus x CRM Sync</title>
+    <title>Uniska AG – Abacus x CRM Sync</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Theme and UI styles */
-        :root[data-bs-theme="dark"] {
-            --bg-color: #212529;
-            --text-color: #f8f9fa;
-            --input-bg: #343a40;
-            --input-color: #f8f9fa;
-            --border-color: #495057;
-        }
-
-        :root[data-bs-theme="light"] {
-            --bg-color: #f8f9fa;
-            --text-color: #212529;
-            --input-bg: #ffffff;
-            --input-color: #212529;
-            --border-color: #dee2e6;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .nav-tabs .nav-link {
-            color: var(--text-color);
-        }
-
-        .nav-tabs .nav-link.active {
-            background-color: var(--bg-color);
-            color: var(--bs-primary);
-            border-color: var(--border-color);
-        }
-
-        .form-select, .form-control {
-            background-color: var(--input-bg) !important;
-            color: var(--input-color) !important;
-            border-color: var(--border-color) !important;
-        }
-
-        .card {
-            background-color: var(--bg-color);
-            border-color: var(--border-color);
-        }
-
-        .status-new { color: var(--bs-info); }
-        .status-synced { color: var(--bs-secondary); }
-        .status-fresh-sync { color: var(--bs-success); }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(var(--bs-dark-rgb), 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .table-container {
-            position: relative;
-            min-height: 200px;
-        }
-
-        .theme-toggle {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-        }
         :root[data-bs-theme="dark"] {
             --bg-color: #212529;
             --text-color: #f8f9fa;
@@ -406,17 +335,23 @@
         }
     </style>
 </head>
-<body>
-    <div class="container mt-4">
-        <nav>
-            <div class="nav nav-tabs mb-4" id="nav-tab" role="tablist">
-                <a class="nav-link active" href="/">Sync Data</a>
-                <a class="nav-link" href="/config">Configure Pipedrive</a>
-            </div>
-        </nav>
+<body class="d-flex flex-column min-vh-100">
+    <div class="container mt-4 flex-grow-1">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle">
+            <label class="theme-switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider">
+                    <div class="theme-icons">
+                        <i class="fas fa-moon"></i>
+                        <i class="fas fa-sun"></i>
+                    </div>
+                </span>
+            </label>
+        </div>
 
         <h1 class="mb-4"><span id="companyName">Select Company</span> – Abacus x CRM Sync</h1>
-
+        
         <!-- Company Selection -->
         <div class="card mb-4">
             <div class="card-body">
@@ -439,8 +374,20 @@
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
                     <div class="col-md-6">
                         <label for="mandant" class="form-label">Mandant</label>
-                        <select class="form-select" id="mandant" name="mandant" required disabled>
-                            <option value="">Select Company First</option>
+                        <select class="form-select" id="mandant" name="mandant" required>
+                            <option value="">Select Mandant</option>
+                            {% for id, name in config.SUPPORTED_MANDANTS.items() %}
+                            <option value="{{ id }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="year" class="form-label">Year</label>
+                        <select class="form-select" id="year" name="year">
+                            <option value="none">All Years</option>
+                            {% for year in range(current_year, current_year - 5, -1) %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-12">
@@ -482,13 +429,12 @@
             </div>
         </div>
 
-
         <!-- Data Table -->
         <div class="card mb-4">
             <div class="card-body">
                 <div class="table-container">
                     <!-- Initial Data Loading Overlay -->
-                    <div id="initialLoadingOverlay" class="loading-overlay d-none">
+                    <div id="initialLoadingOverlay" class="loading-overlay">
                         <div class="text-center">
                             <div class="spinner-border text-primary mb-2" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -529,43 +475,30 @@
         </div>
     </div>
 
-    <!-- Theme Toggle -->
-    <div class="theme-toggle">
-        <label class="theme-switch">
-            <input type="checkbox" id="themeToggle">
-            <span class="slider">
-                <div class="theme-icons">
-                    <i class="fas fa-moon"></i>
-                    <i class="fas fa-sun"></i>
-                </div>
-            </span>
-        </label>
-    </div>
-
     <!-- Footer -->
     <footer class="mt-auto py-3">
         <div class="container text-center">
+            <button id="pipedriveConnect" class="btn btn-underline">
+                Add Pipedrive Connection
+            </button>
+            <a href="/pipedrive-config" class="btn btn-underline ms-3">
+                Configure Field Mapping
+            </a>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentData = [];
-        let freshSyncs = new Set();
-        let lastReportTime = 0;
-        const REPORT_COOLDOWN = 30000;
-
-        function initializeApp() {
+        document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchProjNr');
             const hideProcessedCheckbox = document.getElementById('hideProcessed');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const loadingMessage = document.getElementById('loadingMessage');
             const initialLoadingOverlay = document.getElementById('initialLoadingOverlay');
             const generateBtn = document.getElementById('generateBtn');
-            const generateBtnSpinner = generateBtn?.querySelector('.spinner-border');
-            const companySelect = document.getElementById('company');
-            const mandantSelect = document.getElementById('mandant');
-            const themeToggle = document.getElementById('themeToggle');
+            const generateBtnSpinner = generateBtn.querySelector('.spinner-border');
+            let currentData = [];
+            let freshSyncs = new Set(); // Track items synced in current session
 
             // Pipedrive connection handler
             document.getElementById('pipedriveConnect').addEventListener('click', function() {
@@ -720,17 +653,12 @@
             });
 
             // Form submission
-            document.getElementById('reportForm')?.addEventListener('submit', function(e) {
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
                 e.preventDefault();
+                const formData = new FormData(this);
+                const jsonData = Object.fromEntries(formData.entries());
 
-                const company = document.getElementById('company').value;
-                const mandant = document.getElementById('mandant').value;
-
-                const jsonData = {
-                    company: company,
-                    mandant: mandant
-                };
-
+                // Show loading indicators
                 loadingIndicator.classList.remove('d-none');
                 loadingMessage.textContent = 'Starting reports...';
                 generateBtn.disabled = true;
@@ -739,7 +667,7 @@
                 fetch('/startAllReports', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(jsonData)
                 })
@@ -758,7 +686,7 @@
             });
 
             let lastReportTime = 0;
-            const REPORT_COOLDOWN = 30000; // 30 seconds in milliseconds
+            const REPORT_COOLDOWN = 300000; // 300 seconds in milliseconds
 
             function pollForUpdates() {
                 const interval = setInterval(() => {
@@ -850,70 +778,13 @@
                                             clearInterval(interval);
                                             loadingIndicator.classList.add('d-none');
                                             generateBtn.disabled = false;
-                                            generateBtnSpinner.classList.add('d-none');});
+                                            generateBtnSpinner.classList.add('d-none');
+                                        });
                                 }, 5000); // Increased wait time to 5 seconds
                             }
                         });
                 }, 5000);
             }
-
-            // Handle company selection change
-            document.getElementById('company').addEventListener('change', function() {
-                const mandantSelect = document.getElementById('mandant');
-                const selectedCompany = this.value.toLowerCase();
-                console.log("Selected company:", selectedCompany);
-
-                // Company configurations
-                const companyConfigs = {
-                    'uniska': {
-                        name: 'Uniska AG',
-                        mandants: {
-                            "19": "Uniska Interiors",
-                            "20": "Uniska AG"
-                        }
-                    },
-                    'novisol': {
-                        name: 'Novisol',
-                        mandants: {
-                            "2": "Novisol AG, Rheinfelden",
-                            "7": "Novisol GmbH, Weil am Rhein"
-                        }
-                    }
-                };
-
-                // Clear and disable mandant select if no company selected
-                if (!selectedCompany || !companyConfigs[selectedCompany]) {
-                    mandantSelect.innerHTML = '<option value="">Select Company First</option>';
-                    mandantSelect.disabled = true;
-                    document.getElementById('companyName').textContent = 'Select Company';
-                    document.title = 'Select Company – Abacus x CRM Sync';
-                    currentData = [];
-                    updateTable();
-                    return;
-                }
-
-                // Update company name in header and page title
-                const config = companyConfigs[selectedCompany];
-                document.getElementById('companyName').textContent = config.name;
-                document.title = `${config.name} – Abacus x CRM Sync`;
-
-                // Enable mandant select and populate options
-                mandantSelect.disabled = false;
-                mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
-                    Object.entries(config.mandants)
-                        .map(([id, name]) => `<option value="${id}">${name}</option>`)
-                        .join('');
-
-                // Clear current data when company changes
-                currentData = [];
-                updateTable();
-
-                // Clear current data and refresh table
-                currentData = [];
-                updateTable();
-                document.getElementById('dataTableBody').innerHTML = '';
-                initialLoadingOverlay.style.display = 'none';
-            });
 
             // Update form submission handler to check cooldown
             document.getElementById('reportForm').addEventListener('submit', function(e) {
@@ -996,117 +867,23 @@
                     });
             });
 
-            // Configuration data
-            const companyConfigs = {
-                'uniska': {
-                    name: 'Uniska AG',
-                    mandants: {
-                        "19": "Uniska Interiors",
-                        "20": "Uniska AG"
-                    }
-                },
-                'novisol': {
-                    name: 'Novisol',
-                    mandants: {
-                        "2": "Novisol AG, Rheinfelden",
-                        "7": "Novisol GmbH, Weil am Rhein"
-                    }
-                }
-            };
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const htmlElement = document.documentElement;
 
-            // Theme handling
-            function initializeTheme() {
-                const themeToggle = document.getElementById('themeToggle');
-                const htmlElement = document.documentElement;
-                if (!themeToggle) return;
-
-                const savedTheme = localStorage.getItem('theme') || 'dark';
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
                 htmlElement.setAttribute('data-bs-theme', savedTheme);
                 themeToggle.checked = savedTheme === 'light';
-
-                themeToggle.addEventListener('change', () => {
-                    const newTheme = themeToggle.checked ? 'light' : 'dark';
-                    htmlElement.setAttribute('data-bs-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                });
             }
 
-            // Company selection handling
-            function updateMandantOptions(selectedCompany) {
-                const mandantSelect = document.getElementById('mandant');
-                const companyNameElement = document.getElementById('companyName');
-
-                if (!selectedCompany || !companyConfigs[selectedCompany]) {
-                    mandantSelect.innerHTML = '<option value="">Select Company First</option>';
-                    mandantSelect.disabled = true;
-                    companyNameElement.textContent = 'Select Company';
-                    document.title = 'Select Company – Abacus x CRM Sync';
-                    return;
-                }
-
-                const config = companyConfigs[selectedCompany];
-                companyNameElement.textContent = config.name;
-                document.title = `${config.name} – Abacus x CRM Sync`;
-
-                mandantSelect.disabled = false;
-                mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
-                    Object.entries(config.mandants)
-                        .map(([id, name]) => `<option value="${id}">${name}</option>`)
-                        .join('');
-            }
-
-            // Single initialization point
-            const init = () => {
-                initializeTheme();
-                
-                const companySelect = document.getElementById('company');
-                if (companySelect) {
-                    companySelect.addEventListener('change', (e) => {
-                        updateMandantOptions(e.target.value.toLowerCase());
-                        // Clear table data when company changes
-                        const dataTableBody = document.getElementById('dataTableBody');
-                        if (dataTableBody) {
-                            dataTableBody.innerHTML = '';
-                            currentData = [];
-                        }
-                    });
-                }
-            };
-
-            // Single initialization point when DOM is loaded
-            document.addEventListener('DOMContentLoaded', () => {
-                const searchInput = document.getElementById('searchInput');
-                const hideProcessedCheckbox = document.getElementById('hideProcessed');
-                const companySelect = document.getElementById('company');
-                const themeToggle = document.getElementById('themeToggle');
-                const reportForm = document.getElementById('reportForm');
-                const exportBtn = document.getElementById('exportBtn');
-
-                if (searchInput) searchInput.addEventListener('input', updateTable);
-                if (hideProcessedCheckbox) hideProcessedCheckbox.addEventListener('change', updateTable);
-                if (companySelect) companySelect.addEventListener('change', handleCompanyChange);
-                if (themeToggle) initializeTheme();
-                
-                // Initialize sorting
-                document.querySelectorAll('th[data-sort]').forEach(header => {
-                    header.addEventListener('click', handleSort);
-                });
-
-                if (reportForm) {
-                    reportForm.addEventListener('submit', handleFormSubmit);
-                }
-
-                if (exportBtn) {
-                    exportBtn.addEventListener('click', handleExport);
-                }
-
-                // Initial table update
-                updateTable();
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'light' : 'dark';
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
             });
-        }
-
-        // Single entry point for initialization
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        });
     </script>
 </body>
 </html>

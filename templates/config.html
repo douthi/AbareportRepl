@@ -1,78 +1,27 @@
+
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Pipedrive Configuration – Abacus x CRM Sync</title>
+    <title>Pipedrive Field Mapping Configuration</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
-        .mapping-row { margin-bottom: 15px; }
-
-        :root[data-bs-theme="dark"] {
-            --bg-color: #212529;
-            --text-color: #f8f9fa;
-        }
-
-        :root[data-bs-theme="light"] {
-            --bg-color: #f8f9fa;
-            --text-color: #212529;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        .nav-tabs .nav-link {
-            color: var(--text-color);
-        }
-
-        .nav-tabs .nav-link.active {
-            background-color: var(--bg-color);
-            color: var(--bs-primary);
-            border-color: var(--border-color);
+        .mapping-row {
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container mt-4">
-        <nav>
-            <div class="nav nav-tabs mb-4" id="nav-tab" role="tablist">
-                <a class="nav-link" href="/">Sync Data</a>
-                <a class="nav-link active" href="/config">Configure Pipedrive</a>
-            </div>
-        </nav>
-
         <div class="d-flex justify-content-between align-items-center">
             <h2>Pipedrive Field Mapping Configuration</h2>
             <button type="button" class="btn btn-primary" id="refreshFields">
                 <i class="fas fa-sync-alt"></i> Refresh Pipedrive Fields
             </button>
         </div>
-
         <div class="card mt-4">
             <div class="card-body">
-                <!-- API Key Management -->
-                <div class="mb-4 api-key-section">
-                    <h3>API Key Management</h3>
-                    <div class="mb-3">
-                        <label for="apiKey" class="form-label">Pipedrive API Key</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="apiKey" placeholder="Enter API Key">
-                            <button class="btn btn-primary" id="updateApiKey">Update API Key</button>
-                        </div>
-                        <small class="text-muted">API key will be securely stored for the selected company</small>
-                    </div>
-                </div>
-                <hr class="my-4">
-                <div class="mb-3">
-                    <label for="company" class="form-label">Company</label>
-                    <select class="form-select" id="company" required>
-                        <option value="">Select Company</option>
-                        <option value="uniska">Uniska AG</option>
-                        <option value="novisol">Novisol</option>
-                    </select>
-                </div>
                 <form id="mappingForm" method="POST">
                     <div id="mappingContainer">
                         <!-- Mapping rows will be added here -->
@@ -179,68 +128,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // API Key Management
-            const updateApiKeyBtn = document.getElementById('updateApiKey');
-            const apiKeyInput = document.getElementById('apiKey');
-            const companySelect = document.getElementById('company');
-
-            updateApiKeyBtn.addEventListener('click', async function() {
-                const company = companySelect.value;
-                const apiKey = apiKeyInput.value;
-
-                if (!company) {
-                    alert('Please select a company first');
-                    return;
-                }
-
-                if (!apiKey) {
-                    alert('Please enter an API key');
-                    return;
-                }
-
-                if (!confirm('Are you sure you want to update the API key for ' + companySelect.options[companySelect.selectedIndex].text + '?')) {
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/update-api-key', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            company: company,
-                            api_key: apiKey
-                        })
-                    });
-
-                    if (response.ok) {
-                        alert('API key updated successfully');
-                        apiKeyInput.value = '';
-                        // Refresh fields
-                        fetchPipedriveFields();
-                    } else {
-                        alert('Failed to update API key');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error updating API key');
-                }
-            });
-
-            // Load existing API key (masked)
-            companySelect.addEventListener('change', async function() {
-                const company = this.value;
-                if (company) {
-                    try {
-                        const response = await fetch(`/check-api-key?company=${company}`);
-                        const data = await response.json();
-                        apiKeyInput.placeholder = data.exists ? '********' : 'Enter API Key';
-                    } catch (error) {
-                        console.error('Error:', error);
-                    }
-                }
-            });
             const container = document.getElementById('mappingContainer');
             const refreshButton = document.getElementById('refreshFields');
 
@@ -260,37 +147,18 @@
             const addButton = document.getElementById('addMapping');
             const form = document.getElementById('mappingForm');
 
-            // Company selector
-            const companySelect = document.getElementById('company');
-            
-            function loadMappingsForCompany() {
-                const company = companySelect.value;
-                container.innerHTML = '';
-                
-                if (!company) {
-                    alert('Please select a company first');
-                    return;
-                }
-                
-                fetch(`/pipedrive-config?company=${company}`)
-                    .then(response => response.json())
-                    .then(mappings => {
-                        if (mappings && mappings.length) {
-                            mappings.forEach(mapping => {
-                                container.appendChild(createMappingRow(mapping));
-                            });
-                        } else {
-                            container.appendChild(createMappingRow());
-                        }
-                    });
-            }
-            
-            companySelect.addEventListener('change', loadMappingsForCompany);
-            
-            // Initial load if company is selected
-            if (companySelect.value) {
-                loadMappingsForCompany();
-            }
+            // Load existing mappings
+            fetch('/pipedrive-config')
+                .then(response => response.json())
+                .then(mappings => {
+                    if (mappings && mappings.length) {
+                        mappings.forEach(mapping => {
+                            container.appendChild(createMappingRow(mapping));
+                        });
+                    } else {
+                        container.appendChild(createMappingRow());
+                    }
+                });
 
             addButton.addEventListener('click', () => {
                 container.appendChild(createMappingRow());
@@ -310,13 +178,7 @@
                     entity: row.querySelector('.entity-type').value
                 }));
 
-                const company = document.getElementById('company').value;
-                if (!company) {
-                    alert('Please select a company');
-                    return;
-                }
-                
-                const response = await fetch(`/pipedrive-config?company=${company}`, {
+                const response = await fetch('/pipedrive-config', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
