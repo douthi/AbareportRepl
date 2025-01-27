@@ -199,6 +199,23 @@
     </div>
 
     <script>
+    const state = {
+        currentData: [],
+        freshSyncs: new Set(),
+        lastReportTime: 0,
+        REPORT_COOLDOWN: 300000,
+        pollInterval: null
+    };
+
+    function setButtonLoading(button, isLoading, loadingText = 'Loading...', defaultText = 'Generate Reports') {
+        if (!button) return;
+        const spinner = button.querySelector('.spinner-border');
+        const text = button.querySelector('.btn-text');
+        button.disabled = isLoading;
+        if (spinner) spinner.classList.toggle('d-none', !isLoading);
+        if (text) text.textContent = isLoading ? loadingText : defaultText;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchProjNr');
         const hideProcessedCheckbox = document.getElementById('hideProcessed');
@@ -206,25 +223,27 @@
         const loadingMessage = document.getElementById('loadingMessage');
         const initialLoadingOverlay = document.getElementById('initialLoadingOverlay');
         const generateBtn = document.getElementById('generateBtn');
-        const generateBtnSpinner = generateBtn.querySelector('.spinner-border');
-        let currentData = [];
-        let freshSyncs = new Set();
-        let lastReportTime = 0;
-        const REPORT_COOLDOWN = 300000;
 
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const htmlElement = document.documentElement;
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            htmlElement.setAttribute('data-bs-theme', savedTheme);
-            themeToggle.checked = savedTheme === 'light';
+        // Theme toggle initialization
+        function initializeTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) return;
+            
+            const htmlElement = document.documentElement;
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                themeToggle.checked = savedTheme === 'light';
+            }
+            
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'light' : 'dark';
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
         }
-        themeToggle.addEventListener('change', () => {
-            const newTheme = themeToggle.checked ? 'light' : 'dark';
-            htmlElement.setAttribute('data-bs-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
+        
+        initializeTheme();
 
         // Pipedrive connection
         document.getElementById('pipedriveConnect').addEventListener('click', function() {
@@ -237,21 +256,28 @@
         });
 
         // Load initial data
-        fetch('/combinedData')
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.combined_data) {
-                    currentData = data.combined_data.map(item => ({
+        async function loadInitialData() {
+            try {
+                const response = await fetch('/combinedData');
+                const data = await response.json();
+                if (data?.combined_data) {
+                    state.currentData = data.combined_data.map(item => ({
                         ...item,
                         Status: item.Status || 'new'
                     }));
                     updateTable();
                     updateProjNrSuggestions();
                 }
-            })
-            .finally(() => {
-                initialLoadingOverlay.style.display = 'none';
-            });
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            } finally {
+                if (initialLoadingOverlay) {
+                    initialLoadingOverlay.style.display = 'none';
+                }
+            }
+        }
+        
+        loadInitialData();
 
         function updateProjNrSuggestions() {
             const datalist = document.getElementById('projNrSuggestions');
@@ -419,11 +445,19 @@
                 });
         });
 
+        function stopPolling() {
+            if (state.pollInterval) {
+                clearInterval(state.pollInterval);
+                state.pollInterval = null;
+            }
+        }
+
         function pollForUpdates() {
-            const interval = setInterval(() => {
-                fetch('/reports')
-                    .then(response => response.json())
-                    .then(data => {
+            stopPolling();
+            state.pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/reports');
+                    const data = await response.json();
                         const allFinished = data.reports.every(
                             report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
                         );
