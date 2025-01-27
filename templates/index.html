@@ -646,17 +646,17 @@
 
                 const companySelect = document.getElementById('company');
                 const mandantSelect = document.getElementById('mandant');
-                const company = companySelect.value.toLowerCase();
+                const company = (companySelect.value || '').toLowerCase();
                 const mandant = mandantSelect.value;
 
-                if (!company || !mandant) {
-                    alert('Please select both company and mandant');
+                const validCompanies = ['uniska', 'novisol'];
+                if (!company || !validCompanies.includes(company)) {
+                    alert('Please select a valid company (Uniska AG or Novisol)');
                     return;
                 }
 
-                const validCompanies = ['uniska', 'novisol'];
-                if (!validCompanies.includes(company)) {
-                    alert('Invalid company selected');
+                if (!mandant) {
+                    alert('Please select a mandant');
                     return;
                 }
 
