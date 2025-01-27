@@ -990,32 +990,29 @@
                     });
             });
 
-            // Initialize theme toggle
-            function initializeThemeToggle() {
-                const themeToggle = document.getElementById('themeToggle');
-                const htmlElement = document.documentElement;
-                
-                if (themeToggle) {
-                    // Check for saved theme preference
-                    const savedTheme = localStorage.getItem('theme') || 'dark';
-                    htmlElement.setAttribute('data-bs-theme', savedTheme);
-                    themeToggle.checked = savedTheme === 'light';
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const htmlElement = document.documentElement;
 
-                    themeToggle.addEventListener('change', () => {
-                        const newTheme = themeToggle.checked ? 'light' : 'dark';
-                        htmlElement.setAttribute('data-bs-theme', newTheme);
-                        localStorage.setItem('theme', newTheme);
-                    });
-                }
+            if (themeToggle) {
+                // Check for saved theme preference
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                themeToggle.checked = savedTheme === 'light';
+
+                themeToggle.addEventListener('change', () => {
+                    const newTheme = themeToggle.checked ? 'light' : 'dark';
+                    htmlElement.setAttribute('data-bs-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                });
             }
 
-            // Initialize company and mandant selection
-            function initializeSelectors() {
-                const companySelect = document.getElementById('company');
-                const mandantSelect = document.getElementById('mandant');
+            // Company selection change handler
+            const companySelect = document.getElementById('company');
+            const mandantSelect = document.getElementById('mandant');
 
-                if (companySelect && mandantSelect) {
-                    companySelect.addEventListener('change', function() {
+            if (companySelect) {
+                companySelect.addEventListener('change', function() {
                         const selectedCompany = this.value.toLowerCase();
                         console.log("Selected company:", selectedCompany);
 
