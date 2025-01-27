@@ -157,7 +157,12 @@ def start_all_reports():
         report_key = data.get('report_key')
 
 
-        if not mandant or mandant not in app.config['SUPPORTED_MANDANTS']:
+        # Get company from request
+        company = data.get('company', 'uniska')
+        company_config = app.config['COMPANIES'].get(company, {})
+        company_mandants = company_config.get('mandants', {})
+
+        if not mandant or mandant not in company_mandants:
             return jsonify({'error': 'Invalid mandant'}), 400
 
         report_ids = {}
