@@ -6,6 +6,7 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* Base styles */
         .navbar-nav .nav-link.active {
             background-color: var(--bs-primary);
             color: white !important;
@@ -22,7 +23,12 @@
         .subnav .nav-link:hover {
             color: var(--bs-primary);
         }
+        .subnav .nav-link.active {
+            color: var(--bs-primary);
+            font-weight: bold;
+        }
     </style>
+    {% block additional_styles %}{% endblock %}
 </head>
 <body>
     <!-- Main Navigation -->
@@ -47,7 +53,7 @@
 
     <!-- Sub Navigation -->
     {% if request.path.startswith('/uniska') or request.path.startswith('/novisol') %}
-    <div class="subnav py-2">
+    <nav class="subnav">
         <div class="container">
             <div class="nav">
                 {% set company = 'uniska' if request.path.startswith('/uniska') else 'novisol' %}
@@ -62,7 +68,7 @@
                 </a>
             </div>
         </div>
-    </div>
+    </nav>
     {% endif %}
 
     <div class="container mt-4">
