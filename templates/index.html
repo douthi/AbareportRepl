@@ -644,11 +644,21 @@
             document.getElementById('reportForm').addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                const company = document.getElementById('company').value;
-                const mandant = document.getElementById('mandant').value;
+                const companySelect = document.getElementById('company');
+                const mandantSelect = document.getElementById('mandant');
+                const company = companySelect.value.toLowerCase();
+                const mandant = mandantSelect.value;
 
                 if (!company || !mandant) {
                     alert('Please select both company and mandant');
+                    loadingIndicator.classList.add('d-none');
+                    generateBtn.disabled = false;
+                    generateBtnSpinner.classList.add('d-none');
+                    return;
+                }
+
+                if (!['uniska', 'novisol'].includes(company)) {
+                    alert('Invalid company selected');
                     loadingIndicator.classList.add('d-none');
                     generateBtn.disabled = false;
                     generateBtnSpinner.classList.add('d-none');
@@ -661,7 +671,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        company: company.toLowerCase(),
+                        company: company,
                         mandant: mandant
                     })
                 })
@@ -861,7 +871,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                        alert(`Error: ${data.error}`);
+                                                alert(`Error: ${data.error}`);
                         loadingIndicator.classList.add('d-none');
                         generateBtn.disabled = false;
                         generateBtnSpinner.classList.add('d-none');
