@@ -199,15 +199,32 @@
     </div>
 
     <script>
-    const state = {
-        currentData: [],
-        freshSyncs: new Set(),
-        lastReportTime: 0,
-        REPORT_COOLDOWN: 300000,
-        pollInterval: null
-    };
+    document.addEventListener('DOMContentLoaded', function initializeCRMSync() {
+        const elements = {
+            searchInput: document.getElementById('searchProjNr'),
+            hideProcessedCheckbox: document.getElementById('hideProcessed'),
+            loadingIndicator: document.getElementById('loadingIndicator'),
+            loadingMessage: document.getElementById('loadingMessage'),
+            initialLoadingOverlay: document.getElementById('initialLoadingOverlay'),
+            generateBtn: document.getElementById('generateBtn'),
+            dataTableBody: document.getElementById('dataTableBody'),
+            reportForm: document.getElementById('reportForm'),
+            exportBtn: document.getElementById('exportBtn')
+        };
 
-    function setButtonLoading(button, isLoading, loadingText = 'Loading...', defaultText = 'Generate Reports') {
+        if (!elements.dataTableBody || !elements.reportForm) {
+            console.error('Required DOM elements not found');
+            return;
+        }
+
+        const state = {
+            currentData: [],
+            freshSyncs: new Set(),
+            lastReportTime: 0,
+            REPORT_COOLDOWN: 300000
+        };
+
+        function setButtonLoading(button, isLoading, loadingText = 'Loading...', defaultText = 'Generate Reports') {
         if (!button) return;
         const spinner = button.querySelector('.spinner-border');
         const text = button.querySelector('.btn-text');
