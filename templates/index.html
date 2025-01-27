@@ -714,38 +714,28 @@
             });
 
             // Form submission
-            document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            document.getElementById('reportForm')?.addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                const companySelect = document.getElementById('company');
-                const mandantSelect = document.getElementById('mandant');
-                const company = (companySelect.value || '').toLowerCase();
-                const mandant = mandantSelect.value;
+                const company = document.getElementById('company').value;
+                const mandant = document.getElementById('mandant').value;
 
-                const validCompanies = ['uniska', 'novisol'];
-                if (!company || !validCompanies.includes(company)) {
-                    alert('Please select a valid company (Uniska AG or Novisol)');
-                    return;
-                }
+                const jsonData = {
+                    company: company,
+                    mandant: mandant
+                };
 
-                if (!mandant) {
-                    alert('Please select a mandant');
-                    return;
-                }
-
+                loadingIndicator.classList.remove('d-none');
+                loadingMessage.textContent = 'Starting reports...';
                 generateBtn.disabled = true;
                 generateBtnSpinner.classList.remove('d-none');
-                loadingIndicator.classList.remove('d-none');
 
                 fetch('/startAllReports', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        company: company,
-                        mandant: mandant
-                    })
+                    body: JSON.stringify(jsonData)
                 })
                 .then(response => response.json())
                 .then(data => {
