@@ -3,7 +3,7 @@ from time import time
 from typing import Dict
 
 class RateLimiter:
-    def __init__(self, cooldown_seconds: int = 30):
+    def __init__(self, cooldown_seconds: int = 5):
         self.cooldown = cooldown_seconds
         self.last_request_time: Dict[str, Dict[str, float]] = {}
         self.lock = threading.Lock()
