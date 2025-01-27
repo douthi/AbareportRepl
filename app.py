@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['SUPPORTED_MANDANTS'] = {
+    'uniska': {'name': 'Uniska Interiors'},
+    'novisol': {'name': 'Novisol'}
+}
 
 # Initialize managers
 report_manager = ReportManager(app.config)
