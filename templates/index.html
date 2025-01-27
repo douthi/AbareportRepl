@@ -550,16 +550,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        let currentData = [];
+        let freshSyncs = new Set();
+        let lastReportTime = 0;
+        const REPORT_COOLDOWN = 30000;
+
+        function initializeApp() {
             const searchInput = document.getElementById('searchProjNr');
             const hideProcessedCheckbox = document.getElementById('hideProcessed');
             const loadingIndicator = document.getElementById('loadingIndicator');
             const loadingMessage = document.getElementById('loadingMessage');
             const initialLoadingOverlay = document.getElementById('initialLoadingOverlay');
             const generateBtn = document.getElementById('generateBtn');
-            const generateBtnSpinner = generateBtn.querySelector('.spinner-border');
-            let currentData = [];
-            let freshSyncs = new Set(); // Track items synced in current session
+            const generateBtnSpinner = generateBtn?.querySelector('.spinner-border');
+            const companySelect = document.getElementById('company');
+            const mandantSelect = document.getElementById('mandant');
+            const themeToggle = document.getElementById('themeToggle');
 
             // Pipedrive connection handler
             document.getElementById('pipedriveConnect').addEventListener('click', function() {
@@ -1067,13 +1073,36 @@
                 }
             };
 
-            // Wait for DOM content to load
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
+            // Initialize everything when DOM is loaded
+            if (searchInput) searchInput.addEventListener('input', updateTable);
+            if (hideProcessedCheckbox) hideProcessedCheckbox.addEventListener('change', updateTable);
+            if (companySelect) companySelect.addEventListener('change', handleCompanyChange);
+            if (themeToggle) initializeTheme();
+
+            // Initialize sorting
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.addEventListener('click', handleSort);
+            });
+
+            // Initialize form
+            const reportForm = document.getElementById('reportForm');
+            if (reportForm) {
+                reportForm.addEventListener('submit', handleFormSubmit);
             }
-        });
+
+            // Initialize export button
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', handleExport);
+            }
+        }
+
+        // Wait for DOM content to load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
     </script>
 </body>
 </html>
