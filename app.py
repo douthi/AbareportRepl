@@ -37,7 +37,7 @@ def pipedrive_config():
 def index():
     """Render the main page."""
     return render_template('index.html', 
-                         config=app.config,
+                         config=app.config['COMPANIES'],
                          current_year=datetime.now().year,
                          data=[])  # Empty initial data
 
@@ -157,6 +157,8 @@ def sync_to_pipedrive():
     """Sync a record to Pipedrive."""
     try:
         data = request.json
+        company_key = data.pop('company_key', 'uniska')
+        pipedrive_helper = PipedriveHelper(company_key)
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 

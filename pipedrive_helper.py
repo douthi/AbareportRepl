@@ -5,10 +5,11 @@ import requests
 from typing import Dict, Any, List
 
 class PipedriveHelper:
-    def __init__(self):
-        self.api_key = os.getenv('PIPEDRIVE_API_KEY')
+    def __init__(self, company_key='uniska'):
+        self.company_key = company_key
+        self.api_key = os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY')
         self.base_url = 'https://api.pipedrive.com/v1'
-        self.mapping_file = 'pipedrive_mappings.json'
+        self.mapping_file = f'pipedrive_mappings_{company_key}.json'
         self._load_field_mappings()
 
     def _load_field_mappings(self):

@@ -350,7 +350,23 @@
             </label>
         </div>
 
-        <h1 class="mb-4">Uniska AG – Abacus x CRM Sync</h1>
+        <h1 class="mb-4"><span id="companyName">Select Company</span> – Abacus x CRM Sync</h1>
+        
+        <!-- Company Selection -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="company" class="form-label">Company</label>
+                        <select class="form-select" id="company" name="company" required>
+                            <option value="">Select Company</option>
+                            <option value="uniska">Uniska AG</option>
+                            <option value="novisol">Novisol</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Selection Form -->
         <div class="card mb-4">
