@@ -171,9 +171,7 @@ def start_all_reports():
 
         for report_key in report_keys.keys():
             try:
-                report_name = report_keys[report_key]
-                endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
-                report_id = report_manager.start_report(mandant, report_key, year, endpoint)
+                report_id = report_manager.start_report(mandant, report_key, year)
                 report_ids[report_key] = report_id
             except Exception as e:
                 logger.error(f"Error starting report {report_key}: {e}")
