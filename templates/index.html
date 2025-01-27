@@ -1049,10 +1049,10 @@
                         .join('');
             }
 
-            // Initialize everything when DOM is loaded
-            document.addEventListener('DOMContentLoaded', () => {
+            // Single initialization point
+            const init = () => {
                 initializeTheme();
-
+                
                 const companySelect = document.getElementById('company');
                 if (companySelect) {
                     companySelect.addEventListener('change', (e) => {
@@ -1061,10 +1061,18 @@
                         const dataTableBody = document.getElementById('dataTableBody');
                         if (dataTableBody) {
                             dataTableBody.innerHTML = '';
+                            currentData = [];
                         }
                     });
                 }
-            });
+            };
+
+            // Wait for DOM content to load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
         });
     </script>
 </body>
