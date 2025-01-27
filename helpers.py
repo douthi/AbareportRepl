@@ -65,7 +65,7 @@ class ReportManager:
             'total_pages': 1
         }
 
-        report_name = self.config['REPORT_KEYS'][report_key]
+        report_name = report_key
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
 
         # Build request body
