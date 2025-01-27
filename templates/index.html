@@ -374,11 +374,8 @@
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
                     <div class="col-md-6">
                         <label for="mandant" class="form-label">Mandant</label>
-                        <select class="form-select" id="mandant" name="mandant" required>
-                            <option value="">Select Mandant</option>
-                            {% for company in config['COMPANIES'] %}
-                            <option value="{{ company }}">{{ config['COMPANIES'][company]['name'] }}</option>
-                            {% endfor %}
+                        <select class="form-select" id="mandant" name="mandant" required disabled>
+                            <option value="">Select Company First</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -865,6 +862,29 @@
                         spinner.classList.add('d-none');
                         btnText.textContent = 'Export Data';
                     });
+            });
+
+            // Company and mandant handling
+            const companySelect = document.getElementById('company');
+            const mandantSelect = document.getElementById('mandant');
+
+            companySelect.addEventListener('change', function() {
+                const company = this.value;
+                mandantSelect.innerHTML = '<option value="">Select Mandant</option>';
+                mandantSelect.disabled = !company;
+                
+                if (company) {
+                    const mandants = {{ config['COMPANIES']|tojson }};
+                    for (const [id, name] of Object.entries(mandants[company].mandants)) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = name;
+                        mandantSelect.appendChild(option);
+                    }
+                    document.getElementById('companyName').textContent = mandants[company].name;
+                } else {
+                    document.getElementById('companyName').textContent = 'Select Company';
+                }
             });
 
             // Theme toggle functionality
