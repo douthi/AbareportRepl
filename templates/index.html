@@ -990,68 +990,76 @@
                     });
             });
 
-            // Theme toggle functionality
-            const themeToggle = document.getElementById('themeToggle');
-            const htmlElement = document.documentElement;
+            // Let the DOM fully load before initializing
+            window.addEventListener('load', function() {
+                // Theme toggle functionality
+                const themeToggle = document.getElementById('themeToggle');
+                const htmlElement = document.documentElement;
 
-            if (themeToggle) {
-                // Check for saved theme preference
-                const savedTheme = localStorage.getItem('theme') || 'dark';
-                htmlElement.setAttribute('data-bs-theme', savedTheme);
-                themeToggle.checked = savedTheme === 'light';
+                if (themeToggle) {
+                    // Check for saved theme preference
+                    const savedTheme = localStorage.getItem('theme') || 'dark';
+                    htmlElement.setAttribute('data-bs-theme', savedTheme);
+                    themeToggle.checked = savedTheme === 'light';
 
-                themeToggle.addEventListener('change', () => {
-                    const newTheme = themeToggle.checked ? 'light' : 'dark';
-                    htmlElement.setAttribute('data-bs-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-                });
-            }
+                    themeToggle.addEventListener('change', () => {
+                        const newTheme = themeToggle.checked ? 'light' : 'dark';
+                        htmlElement.setAttribute('data-bs-theme', newTheme);
+                        localStorage.setItem('theme', newTheme);
+                    });
+                }
 
-            // Company selection change handler
-            const companySelect = document.getElementById('company');
-            const mandantSelect = document.getElementById('mandant');
+                // Company selection change handler
+                const companySelect = document.getElementById('company');
+                const mandantSelect = document.getElementById('mandant');
 
-            if (companySelect) {
-                companySelect.addEventListener('change', function() {
-                    const selectedCompany = this.value.toLowerCase();
-                    console.log("Selected company:", selectedCompany);
+                if (companySelect) {
+                    // Remove any existing event listeners
+                    companySelect.replaceWith(companySelect.cloneNode(true));
+                    const newCompanySelect = document.getElementById('company');
+                    
+                    newCompanySelect.addEventListener('change', function() {
+                        const selectedCompany = this.value.toLowerCase();
+                        console.log("Selected company:", selectedCompany);
 
-                    // Company configurations
-                    const companyConfigs = {
-                        'uniska': {
-                            name: 'Uniska AG',
-                            mandants: {
-                                "19": "Uniska Interiors",
-                                "20": "Uniska AG"
+                        // Company configurations
+                        const companyConfigs = {
+                            'uniska': {
+                                name: 'Uniska AG',
+                                mandants: {
+                                    "19": "Uniska Interiors",
+                                    "20": "Uniska AG"
+                                }
+                            },
+                            'novisol': {
+                                name: 'Novisol',
+                                mandants: {
+                                    "2": "Novisol AG, Rheinfelden",
+                                    "7": "Novisol GmbH, Weil am Rhein"
+                                }
                             }
-                        },
-                        'novisol': {
-                            name: 'Novisol',
-                            mandants: {
-                                "2": "Novisol AG, Rheinfelden",
-                                "7": "Novisol GmbH, Weil am Rhein"
-                            }
+                        };
+
+                        if (!selectedCompany || !companyConfigs[selectedCompany]) {
+                            mandantSelect.innerHTML = '<option value="">Select Company First</option>';
+                            mandantSelect.disabled = true;
+                            document.getElementById('companyName').textContent = 'Select Company';
+                            document.title = 'Select Company – Abacus x CRM Sync';
+                            return;
                         }
-                    };
 
-                    if (!selectedCompany || !companyConfigs[selectedCompany]) {
-                        mandantSelect.innerHTML = '<option value="">Select Company First</option>';
-                        mandantSelect.disabled = true;
-                        document.getElementById('companyName').textContent = 'Select Company';
-                        return;
-                    }
+                        const config = companyConfigs[selectedCompany];
+                        document.getElementById('companyName').textContent = config.name;
+                        document.title = `${config.name} – Abacus x CRM Sync`;
 
-                    const config = companyConfigs[selectedCompany];
-                    document.getElementById('companyName').textContent = config.name;
-                    document.title = `${config.name} – Abacus x CRM Sync`;
-
-                    mandantSelect.disabled = false;
-                    mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
-                        Object.entries(config.mandants)
-                            .map(([id, name]) => `<option value="${id}">${name}</option>`)
-                            .join('');
-                });
-            }
+                        mandantSelect.disabled = false;
+                        mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
+                            Object.entries(config.mandants)
+                                .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                                .join('');
+                    });
+                }
+            });
         });
     </script>
 </body>
