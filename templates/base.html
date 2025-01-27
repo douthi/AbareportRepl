@@ -5,48 +5,29 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        .navbar-nav .nav-link.active {
+        .navbar .nav-link.active {
             background-color: var(--bs-primary);
             color: white !important;
             border-radius: 4px;
         }
-        .subnav {
-            border-top: 1px solid var(--bs-border-color);
-            background-color: rgba(var(--bs-dark-rgb), 0.8);
+        .company-nav {
+            border-bottom: 1px solid var(--bs-border-color);
+            background-color: var(--bs-dark);
+            padding: 0.5rem 0;
         }
-        .subnav .nav-link {
+        .company-nav .nav-link {
+            color: var(--bs-light);
             padding: 0.5rem 1rem;
-            color: var(--bs-secondary);
         }
-        .subnav .nav-link:hover {
+        .company-nav .nav-link:hover {
             color: var(--bs-primary);
         }
     </style>
     {% block additional_styles %}{% endblock %}
 </head>
-<body>
-    <!-- Sidebar -->
-    <div class="d-flex flex-column flex-shrink-0 p-3 bg-dark" style="width: 200px; min-height: 100vh;">
-        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-            <span class="fs-4">CRM Sync</span>
-        </a>
-        <hr>
-        <ul class="nav nav-pills flex-column mb-auto">
-            <li class="nav-item">
-                <a href="/uniska" class="nav-link text-white {% if request.path.startswith('/uniska') %}active{% endif %}">
-                    Uniska
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/novisol" class="nav-link text-white {% if request.path.startswith('/novisol') %}active{% endif %}">
-                    Novisol
-                </a>
-            </li>
-        </ul>
-    </div>
-
+<body class="d-flex flex-column min-vh-100">
     <!-- Main Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">CRM Sync</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -69,20 +50,19 @@
         </div>
     </nav>
 
-    <!-- Sub Navigation -->
     {% if request.path.startswith('/uniska') or request.path.startswith('/novisol') %}
-    <div class="subnav mb-3">
+    <div class="company-nav">
         <div class="container">
             <div class="nav">
                 {% set company = 'uniska' if request.path.startswith('/uniska') else 'novisol' %}
                 <a class="nav-link {% if request.path == '/' + company %}active{% endif %}" href="/{{ company }}">
-                    <i class="fas fa-home me-1"></i> Dashboard
+                    Dashboard
                 </a>
                 <a class="nav-link {% if request.path == '/' + company + '/config' %}active{% endif %}" href="/{{ company }}/config">
-                    <i class="fas fa-cog me-1"></i> API Configuration
+                    Config
                 </a>
                 <a class="nav-link {% if request.path == '/' + company + '/mapping' %}active{% endif %}" href="/{{ company }}/mapping">
-                    <i class="fas fa-exchange-alt me-1"></i> Field Mapping
+                    Mapping
                 </a>
             </div>
         </div>
@@ -90,7 +70,7 @@
     {% endif %}
 
     <!-- Main Content -->
-    <div class="container">
+    <div class="container mt-4 flex-grow-1">
         {% block content %}{% endblock %}
     </div>
 
