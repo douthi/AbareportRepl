@@ -990,22 +990,76 @@
                     });
             });
 
-            // Theme toggle functionality
-            const themeToggle = document.getElementById('themeToggle');
-            const htmlElement = document.documentElement;
+            // Initialize theme toggle
+            function initializeThemeToggle() {
+                const themeToggle = document.getElementById('themeToggle');
+                const htmlElement = document.documentElement;
+                
+                if (themeToggle) {
+                    // Check for saved theme preference
+                    const savedTheme = localStorage.getItem('theme') || 'dark';
+                    htmlElement.setAttribute('data-bs-theme', savedTheme);
+                    themeToggle.checked = savedTheme === 'light';
 
-            // Check for saved theme preference
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                htmlElement.setAttribute('data-bs-theme', savedTheme);
-                themeToggle.checked = savedTheme === 'light';
+                    themeToggle.addEventListener('change', () => {
+                        const newTheme = themeToggle.checked ? 'light' : 'dark';
+                        htmlElement.setAttribute('data-bs-theme', newTheme);
+                        localStorage.setItem('theme', newTheme);
+                    });
+                }
             }
 
-            themeToggle.addEventListener('change', () => {
-                const newTheme = themeToggle.checked ? 'light' : 'dark';
-                htmlElement.setAttribute('data-bs-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-            });
+            // Initialize company and mandant selection
+            function initializeSelectors() {
+                const companySelect = document.getElementById('company');
+                const mandantSelect = document.getElementById('mandant');
+
+                if (companySelect && mandantSelect) {
+                    companySelect.addEventListener('change', function() {
+                        const selectedCompany = this.value.toLowerCase();
+                        console.log("Selected company:", selectedCompany);
+
+                        // Company configurations
+                        const companyConfigs = {
+                            'uniska': {
+                                name: 'Uniska AG',
+                                mandants: {
+                                    "19": "Uniska Interiors",
+                                    "20": "Uniska AG"
+                                }
+                            },
+                            'novisol': {
+                                name: 'Novisol',
+                                mandants: {
+                                    "2": "Novisol AG, Rheinfelden",
+                                    "7": "Novisol GmbH, Weil am Rhein"
+                                }
+                            }
+                        };
+
+                        if (!selectedCompany || !companyConfigs[selectedCompany]) {
+                            mandantSelect.innerHTML = '<option value="">Select Company First</option>';
+                            mandantSelect.disabled = true;
+                            document.getElementById('companyName').textContent = 'Select Company';
+                            return;
+                        }
+
+                        const config = companyConfigs[selectedCompany];
+                        document.getElementById('companyName').textContent = config.name;
+                        document.title = `${config.name} – Abacus x CRM Sync`;
+
+                        mandantSelect.disabled = false;
+                        mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
+                            Object.entries(config.mandants)
+                                .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                                .join('');
+                    });
+                }
+            }
+
+            // Initialize all components
+            initializeThemeToggle();
+            initializeSelectors();
         });
     </script>
 </body>
