@@ -429,6 +429,9 @@
                             <option value="novisol">Novisol</option>
                         </select>
                     </div>
+                    <div class="col-md-6">
+                        <button id="confirmCompany" class="btn btn-primary" disabled>Confirm Company</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -851,16 +854,24 @@
                 }, 5000);
             }
 
-            // Handle company selection change
-            document.getElementById('company').addEventListener('change', function() {
-                const mandantSelect = document.getElementById('mandant');
-                const selectedCompany = this.value.toLowerCase();
+            // Company selection handlers
+            const companySelect = document.getElementById('company');
+            const confirmBtn = document.getElementById('confirmCompany');
+            const mandantSelect = document.getElementById('mandant');
+
+            companySelect.addEventListener('change', function() {
+                confirmBtn.disabled = !this.value;
+                mandantSelect.disabled = true;
+                mandantSelect.innerHTML = '<option value="">Select Company First</option>';
+            });
+
+            confirmBtn.addEventListener('click', function() {
+                const selectedCompany = companySelect.value.toLowerCase();
                 console.log("Selected company:", selectedCompany);
 
                 // Company configurations
                 const companyConfigs = {
-                    'uniska': {
-                        name: 'Uniska AG',
+                    'uniska': {name: 'Uniska AG',
                         mandants: {
                             "19": "Uniska Interiors",
                             "20": "Uniska AG"
@@ -875,7 +886,6 @@
                     }
                 };
 
-                // Clear and disable mandant select if no company selected
                 if (!selectedCompany || !companyConfigs[selectedCompany]) {
                     mandantSelect.innerHTML = '<option value="">Select Company First</option>';
                     mandantSelect.disabled = true;
@@ -886,67 +896,18 @@
                     return;
                 }
 
-                // Update company name in header and page title
                 const config = companyConfigs[selectedCompany];
                 document.getElementById('companyName').textContent = config.name;
                 document.title = `${config.name} – Abacus x CRM Sync`;
 
-                // Enable mandant select and populate options
                 mandantSelect.disabled = false;
                 mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
                     Object.entries(config.mandants)
                         .map(([id, name]) => `<option value="${id}">${name}</option>`)
                         .join('');
 
-                // Clear current data when company changes
                 currentData = [];
                 updateTable();
-
-                // Clear current data and refresh table
-                currentData = [];
-                updateTable();
-                document.getElementById('dataTableBody').innerHTML = '';
-                initialLoadingOverlay.style.display = 'none';
-            });
-
-            // Update form submission handler to check cooldown
-            document.getElementById('reportForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                const timeSinceLastReport = Date.now() - lastReportTime;
-                if (timeSinceLastReport < REPORT_COOLDOWN) {
-                    const remainingSeconds = Math.ceil((REPORT_COOLDOWN - timeSinceLastReport) / 1000);
-                    alert(`Please wait ${remainingSeconds} seconds before generating new reports.`);
-                    return;
-                }
-
-                const formData = new FormData(this);
-                const jsonData = Object.fromEntries(formData.entries());
-
-                loadingIndicator.classList.remove('d-none');
-                loadingMessage.textContent = 'Starting reports...';
-                generateBtn.disabled = true;
-                generateBtnSpinner.classList.remove('d-none');
-
-                fetch('/startAllReports', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(jsonData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(`Error: ${data.error}`);
-                        loadingIndicator.classList.add('d-none');
-                        generateBtn.disabled = false;
-                        generateBtnSpinner.classList.add('d-none');
-                    } else {
-                        loadingMessage.textContent = 'Reports started successfully. Processing data...';
-                        pollForUpdates();
-                    }
-                });
             });
 
             // Added export button functionality
@@ -1017,7 +978,7 @@
                     // Remove any existing event listeners
                     companySelect.replaceWith(companySelect.cloneNode(true));
                     const newCompanySelect = document.getElementById('company');
-                    
+
                     newCompanySelect.addEventListener('change', function() {
                         const selectedCompany = this.value.toLowerCase();
                         console.log("Selected company:", selectedCompany);
