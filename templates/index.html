@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html lang="en" data-bs-theme="dark">
 <head>
-    {% block head %}
-    <title>{% block title %}{{ company|title }} - CRM Sync{% endblock %}</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ company|title }} - CRM Sync</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-    {% endblock %}
-    {% block additional_styles %}
     <style>
         .theme-toggle {
-            position: absolute;
+            position: fixed;
             top: 1rem;
             right: 1rem;
+            z-index: 1050;
         }
         .theme-switch {
             position: relative;
@@ -19,11 +19,7 @@
             width: 60px;
             height: 30px;
         }
-        .theme-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute;
             cursor: pointer;
@@ -54,43 +50,51 @@
             transform: translateX(30px);
             background-color: var(--bs-dark);
         }
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 10px 20px;
+            transition: all 0.3s;
         }
-        .table-container {
-            position: relative;
-            min-height: 200px;
+        .nav-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,.1);
         }
-        .btn-underline {
-            text-decoration: underline;
-            background: none;
-            border: none;
-            padding: 0.5rem 1rem;
-            color: var(--bs-secondary);
-        }
-        .btn-underline:hover {
-            color: var(--bs-primary);
+        .nav-link.active {
+            color: #fff;
+            background: var(--bs-primary);
         }
     </style>
-    {% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
-    {% block content %}
-    <div class="container-fluid">
+    <div class="theme-toggle">
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
 
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">CRM Sync</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path.startswith('/uniska') %}active{% endif %}" href="/uniska">Uniska</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path.startswith('/novisol') %}active{% endif %}" href="/novisol">Novisol</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
+    <div class="container-fluid mt-4">
         <h1 class="mb-4">{{ company|title }} – Abacus x CRM Sync</h1>
 
-        <!-- Selection Form -->
         <div class="card mb-4">
             <div class="card-body">
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
@@ -121,7 +125,6 @@
             </div>
         </div>
 
-        <!-- Filters -->
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row g-3">
@@ -148,38 +151,27 @@
             </div>
         </div>
 
-        <!-- Data Table -->
         <div class="card">
             <div class="card-body">
-                <div class="table-container">
-                    <div id="initialLoadingOverlay" class="loading-overlay">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary mb-2"></div>
-                            <p class="mb-0">Loading data...</p>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th data-sort="ProjNr">ProjNr <i class="fas fa-sort"></i></th>
-                                    <th>Project Name</th>
-                                    <th data-sort="NAME">Name <i class="fas fa-sort"></i></th>
-                                    <th data-sort="VORNAME">First Name <i class="fas fa-sort"></i></th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th data-sort="KDatum">KDatum <i class="fas fa-sort"></i></th>
-                                    <th data-sort="KSumme">KSumme <i class="fas fa-sort"></i></th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dataTableBody"></tbody>
-                        </table>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th data-sort="ProjNr">ProjNr <i class="fas fa-sort"></i></th>
+                                <th>Project Name</th>
+                                <th data-sort="NAME">Name <i class="fas fa-sort"></i></th>
+                                <th data-sort="VORNAME">First Name <i class="fas fa-sort"></i></th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th data-sort="KDatum">KDatum <i class="fas fa-sort"></i></th>
+                                <th data-sort="KSumme">KSumme <i class="fas fa-sort"></i></th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody"></tbody>
+                    </table>
                 </div>
-
                 <div id="loadingIndicator" class="text-center mt-3 d-none">
                     <div class="spinner-border text-primary"></div>
                     <p class="mt-2" id="loadingMessage">Processing reports...</p>
@@ -187,113 +179,57 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer class="mt-4 text-center">
-            <button id="pipedriveConnect" class="btn btn-underline">
+            <button id="pipedriveConnect" class="btn btn-link">
                 Add Pipedrive Connection
             </button>
-            <a href="/pipedrive-config" class="btn btn-underline ms-3">
+            <a href="/pipedrive-config" class="btn btn-link ms-3">
                 Configure Field Mapping
             </a>
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function initializeCRMSync() {
+    document.addEventListener('DOMContentLoaded', function() {
         const elements = {
             searchInput: document.getElementById('searchProjNr'),
             hideProcessedCheckbox: document.getElementById('hideProcessed'),
             loadingIndicator: document.getElementById('loadingIndicator'),
             loadingMessage: document.getElementById('loadingMessage'),
-            initialLoadingOverlay: document.getElementById('initialLoadingOverlay'),
             generateBtn: document.getElementById('generateBtn'),
+            generateBtnSpinner: document.querySelector('#generateBtn .spinner-border'),
             dataTableBody: document.getElementById('dataTableBody'),
-            reportForm: document.getElementById('reportForm'),
-            exportBtn: document.getElementById('exportBtn')
+            exportBtn: document.getElementById('exportBtn'),
+            pipedriveConnect: document.getElementById('pipedriveConnect'),
+            themeToggle: document.getElementById('themeToggle')
         };
 
-        if (!elements.dataTableBody || !elements.reportForm) {
-            console.error('Required DOM elements not found');
-            return;
-        }
-
-        const state = {
+        let state = {
             currentData: [],
             freshSyncs: new Set(),
             lastReportTime: 0,
             REPORT_COOLDOWN: 300000
         };
 
-        function setButtonLoading(button, isLoading, loadingText = 'Loading...', defaultText = 'Generate Reports') {
-        if (!button) return;
-        const spinner = button.querySelector('.spinner-border');
-        const text = button.querySelector('.btn-text');
-        button.disabled = isLoading;
-        if (spinner) spinner.classList.toggle('d-none', !isLoading);
-        if (text) text.textContent = isLoading ? loadingText : defaultText;
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Safely get DOM elements
-        const elements = {
-            searchInput: document.getElementById('searchProjNr'),
-            hideProcessedCheckbox: document.getElementById('hideProcessed'),
-            loadingIndicator: document.getElementById('loadingIndicator'),
-            loadingMessage: document.getElementById('loadingMessage'),
-            initialLoadingOverlay: document.getElementById('initialLoadingOverlay'),
-            generateBtn: document.getElementById('generateBtn'),
-            generateBtnSpinner: document.querySelector('#generateBtn .spinner-border'),
-            pipedriveConnect: document.getElementById('pipedriveConnect'),
-            exportBtn: document.getElementById('exportBtn')
-        };
-
-        // Initialize state
-        if (!window.state) {
-            window.state = {
-                currentData: [],
-                freshSyncs: new Set(),
-                lastReportTime: 0,
-                REPORT_COOLDOWN: 300000,
-                pollInterval: null
-            };
-        }
-
-        // Theme toggle initialization
-        function initializeTheme() {
-            const themeToggle = document.getElementById('themeToggle');
-            if (!themeToggle) return;
-            
-            const htmlElement = document.documentElement;
+        // Theme initialization
+        if (elements.themeToggle) {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
-                htmlElement.setAttribute('data-bs-theme', savedTheme);
-                themeToggle.checked = savedTheme === 'light';
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                elements.themeToggle.checked = savedTheme === 'light';
             }
-            
-            themeToggle.addEventListener('change', () => {
-                const newTheme = themeToggle.checked ? 'light' : 'dark';
-                htmlElement.setAttribute('data-bs-theme', newTheme);
+            elements.themeToggle.addEventListener('change', () => {
+                const newTheme = elements.themeToggle.checked ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
             });
         }
-        
-        initializeTheme();
-
-        // Pipedrive connection
-        document.getElementById('pipedriveConnect').addEventListener('click', function() {
-            if (confirm('Do you want to connect a Pipedrive account?')) {
-                const apiKey = prompt('Please enter your Pipedrive API key:');
-                if (apiKey && confirm('Are you sure you want to use this API key?')) {
-                    alert('Pipedrive connection successful!');
-                }
-            }
-        });
 
         // Load initial data
-        async function loadInitialData() {
-            try {
-                const response = await fetch('/combinedData');
-                const data = await response.json();
+        fetch('/combinedData')
+            .then(response => response.json())
+            .then(data => {
                 if (data?.combined_data) {
                     state.currentData = data.combined_data.map(item => ({
                         ...item,
@@ -302,85 +238,84 @@
                     updateTable();
                     updateProjNrSuggestions();
                 }
-            } catch (error) {
-                console.error('Error loading initial data:', error);
-            } finally {
-                if (initialLoadingOverlay) {
-                    initialLoadingOverlay.style.display = 'none';
-                }
-            }
-        }
-        
-        loadInitialData();
-
-        function updateProjNrSuggestions() {
-            const datalist = document.getElementById('projNrSuggestions');
-            const uniqueProjNrs = [...new Set(currentData.map(item => item.ProjNr))].slice(0, 10);
-            datalist.innerHTML = uniqueProjNrs
-                .map(projNr => `<option value="${projNr}"></option>`)
-                .join('');
-        }
-
-        function getStatusClass(status, projNr) {
-            if (freshSyncs.has(projNr)) return 'text-success';
-            return status.toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
-        }
+            })
+            .catch(error => console.error('Error loading data:', error));
 
         function updateTable() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const hideProcessed = hideProcessedCheckbox.checked;
-            const filteredData = currentData.filter(item => {
+            const searchTerm = elements.searchInput?.value?.toLowerCase() || '';
+            const hideProcessed = elements.hideProcessedCheckbox?.checked || false;
+
+            const filteredData = state.currentData.filter(item => {
                 const projNr = (item.ProjNr || '').toString().toLowerCase();
                 const matchesSearch = projNr.includes(searchTerm);
                 const isSynced = (item.Status || '').toLowerCase() === 'synced';
                 return matchesSearch && (!hideProcessed || !isSynced);
             });
 
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = filteredData.map(item => `
-                <tr>
-                    <td>${item.ProjNr || ''}</td>
-                    <td>${item.ProjName || ''}</td>
-                    <td>${item.NAME || ''}</td>
-                    <td>${item.VORNAME || ''}</td>
-                    <td>${item.EMAIL || ''}</td>
-                    <td>${item.TEL || ''}</td>
-                    <td>${item.KDatum || ''}</td>
-                    <td>${item.KSumme || ''}</td>
-                    <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
-                    <td>
-                        ${item.Status.toLowerCase() === 'new' ? 
-                            `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
-                                <span class="spinner-border spinner-border-sm d-none"></span>
-                                <span class="btn-text">Sync</span>
-                            </button>` : 
-                            ''
-                        }
-                    </td>
-                </tr>
-            `).join('');
+            if (elements.dataTableBody) {
+                elements.dataTableBody.innerHTML = filteredData.map(item => `
+                    <tr>
+                        <td>${item.ProjNr || ''}</td>
+                        <td>${item.ProjName || ''}</td>
+                        <td>${item.NAME || ''}</td>
+                        <td>${item.VORNAME || ''}</td>
+                        <td>${item.EMAIL || ''}</td>
+                        <td>${item.TEL || ''}</td>
+                        <td>${item.KDatum || ''}</td>
+                        <td>${item.KSumme || ''}</td>
+                        <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
+                        <td>
+                            ${item.Status.toLowerCase() === 'new' ? 
+                                `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
+                                    <span class="spinner-border spinner-border-sm d-none"></span>
+                                    <span class="btn-text">Sync</span>
+                                </button>` : 
+                                ''
+                            }
+                        </td>
+                    </tr>
+                `).join('');
 
-            // Add sync button handlers
-            document.querySelectorAll('.sync-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const spinner = this.querySelector('.spinner-border');
-                    const btnText = this.querySelector('.btn-text');
-                    const projNr = this.dataset.projnr;
-
-                    this.disabled = true;
-                    spinner.classList.remove('d-none');
-                    btnText.textContent = 'Syncing...';
-
-                    setTimeout(() => {
-                        const item = currentData.find(i => i.ProjNr.toString() === projNr);
-                        if (item) {
-                            item.Status = 'synced';
-                            freshSyncs.add(projNr);
-                            updateTable();
-                        }
-                    }, 1000);
+                // Add sync button handlers
+                document.querySelectorAll('.sync-btn').forEach(btn => {
+                    btn.addEventListener('click', handleSync);
                 });
-            });
+            }
+        }
+
+        function getStatusClass(status, projNr) {
+            if (state.freshSyncs.has(projNr)) return 'text-success';
+            return status.toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
+        }
+
+        function updateProjNrSuggestions() {
+            const datalist = document.getElementById('projNrSuggestions');
+            if (datalist) {
+                const uniqueProjNrs = [...new Set(state.currentData.map(item => item.ProjNr))].slice(0, 10);
+                datalist.innerHTML = uniqueProjNrs
+                    .map(projNr => `<option value="${projNr}"></option>`)
+                    .join('');
+            }
+        }
+
+        function handleSync(event) {
+            const btn = event.currentTarget;
+            const spinner = btn.querySelector('.spinner-border');
+            const btnText = btn.querySelector('.btn-text');
+            const projNr = btn.dataset.projnr;
+
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+            btnText.textContent = 'Syncing...';
+
+            setTimeout(() => {
+                const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
+                if (item) {
+                    item.Status = 'synced';
+                    state.freshSyncs.add(projNr);
+                    updateTable();
+                }
+            }, 1000);
         }
 
         // Event listeners
@@ -390,35 +325,24 @@
         if (elements.hideProcessedCheckbox) {
             elements.hideProcessedCheckbox.addEventListener('change', updateTable);
         }
-
-        // Sorting
-        document.querySelectorAll('th[data-sort]').forEach(header => {
-            header.addEventListener('click', function() {
-                const column = this.dataset.sort;
-                currentData.sort((a, b) => {
-                    const aVal = a[column] || '';
-                    const bVal = b[column] || '';
-                    return aVal.toString().localeCompare(bVal.toString());
-                });
-                if (this.classList.contains('asc')) {
-                    currentData.reverse();
-                    this.classList.remove('asc');
-                    this.classList.add('desc');
-                } else {
-                    this.classList.remove('desc');
-                    this.classList.add('asc');
+        if (elements.pipedriveConnect) {
+            elements.pipedriveConnect.addEventListener('click', () => {
+                if (confirm('Do you want to connect a Pipedrive account?')) {
+                    const apiKey = prompt('Please enter your Pipedrive API key:');
+                    if (apiKey && confirm('Are you sure you want to use this API key?')) {
+                        alert('Pipedrive connection successful!');
+                    }
                 }
-                updateTable();
             });
-        });
+        }
 
         // Form submission
-        document.getElementById('reportForm').addEventListener('submit', function(e) {
+        document.getElementById('reportForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const timeSinceLastReport = Date.now() - lastReportTime;
-            if (timeSinceLastReport < REPORT_COOLDOWN) {
-                const remainingSeconds = Math.ceil((REPORT_COOLDOWN - timeSinceLastReport) / 1000);
+            const timeSinceLastReport = Date.now() - state.lastReportTime;
+            if (timeSinceLastReport < state.REPORT_COOLDOWN) {
+                const remainingSeconds = Math.ceil((state.REPORT_COOLDOWN - timeSinceLastReport) / 1000);
                 alert(`Please wait ${remainingSeconds} seconds before generating new reports.`);
                 return;
             }
@@ -426,10 +350,10 @@
             const formData = new FormData(this);
             const jsonData = Object.fromEntries(formData.entries());
 
-            loadingIndicator.classList.remove('d-none');
-            loadingMessage.textContent = 'Starting reports...';
-            generateBtn.disabled = true;
-            generateBtnSpinner.classList.remove('d-none');
+            if (elements.loadingIndicator) elements.loadingIndicator.classList.remove('d-none');
+            if (elements.loadingMessage) elements.loadingMessage.textContent = 'Starting reports...';
+            if (elements.generateBtn) elements.generateBtn.disabled = true;
+            if (elements.generateBtnSpinner) elements.generateBtnSpinner.classList.remove('d-none');
 
             fetch('/startAllReports', {
                 method: 'POST',
@@ -440,62 +364,77 @@
             .then(data => {
                 if (data.error) {
                     alert(`Error: ${data.error}`);
-                    loadingIndicator.classList.add('d-none');
-                    generateBtn.disabled = false;
-                    generateBtnSpinner.classList.add('d-none');
+                    if (elements.loadingIndicator) elements.loadingIndicator.classList.add('d-none');
+                    if (elements.generateBtn) elements.generateBtn.disabled = false;
+                    if (elements.generateBtnSpinner) elements.generateBtnSpinner.classList.add('d-none');
                 } else {
-                    loadingMessage.textContent = 'Reports started successfully. Processing data...';
+                    if (elements.loadingMessage) {
+                        elements.loadingMessage.textContent = 'Reports started successfully. Processing data...';
+                    }
                     pollForUpdates();
                 }
             });
         });
 
-        // Export functionality
-        document.getElementById('exportBtn').addEventListener('click', function() {
-            const button = this;
-            const spinner = button.querySelector('.spinner-border');
-            const btnText = button.querySelector('.btn-text');
-
-            button.disabled = true;
-            spinner.classList.remove('d-none');
-            btnText.textContent = 'Exporting...';
-
-            fetch('/export')
-                .then(response => response.blob())
-                .then(blob => {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'export.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    a.remove();
-                })
-                .catch(error => {
-                    console.error('Export error:', error);
-                    alert('Failed to export data. Please try again.');
-                })
-                .finally(() => {
-                    button.disabled = false;
-                    spinner.classList.add('d-none');
-                    btnText.textContent = 'Export Data';
+        // Sorting
+        document.querySelectorAll('th[data-sort]').forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.dataset.sort;
+                state.currentData.sort((a, b) => {
+                    const aVal = a[column] || '';
+                    const bVal = b[column] || '';
+                    return aVal.toString().localeCompare(bVal.toString());
                 });
+                if (this.classList.contains('asc')) {
+                    state.currentData.reverse();
+                    this.classList.remove('asc');
+                    this.classList.add('desc');
+                } else {
+                    this.classList.remove('desc');
+                    this.classList.add('asc');
+                }
+                updateTable();
+            });
         });
 
-        function stopPolling() {
-            if (state.pollInterval) {
-                clearInterval(state.pollInterval);
-                state.pollInterval = null;
-            }
+        if (elements.exportBtn) {
+            elements.exportBtn.addEventListener('click', function() {
+                const spinner = this.querySelector('.spinner-border');
+                const btnText = this.querySelector('.btn-text');
+
+                this.disabled = true;
+                spinner.classList.remove('d-none');
+                btnText.textContent = 'Exporting...';
+
+                fetch('/export')
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'export.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        a.remove();
+                    })
+                    .catch(error => {
+                        console.error('Export error:', error);
+                        alert('Failed to export data. Please try again.');
+                    })
+                    .finally(() => {
+                        this.disabled = false;
+                        spinner.classList.add('d-none');
+                        btnText.textContent = 'Export Data';
+                    });
+            });
         }
 
         function pollForUpdates() {
-            stopPolling();
-            state.pollInterval = setInterval(async () => {
-                try {
-                    const response = await fetch('/reports');
-                    const data = await response.json();
+            const interval = setInterval(() => {
+                fetch('/reports')
+                    .then(response => response.json())
+                    .then(data => {
                         const allFinished = data.reports.every(
                             report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
                         );
@@ -506,17 +445,23 @@
                                     .then(response => response.json())
                                     .then(data => {
                                         if (data?.combined_data?.length > 0) {
-                                            currentData = data.combined_data.map(item => ({
+                                            state.currentData = data.combined_data.map(item => ({
                                                 ...item,
                                                 Status: item.Status || 'new'
                                             }));
                                             updateTable();
                                             updateProjNrSuggestions();
                                             clearInterval(interval);
-                                            loadingIndicator.classList.add('d-none');
-                                            generateBtn.disabled = false;
-                                            generateBtnSpinner.classList.add('d-none');
-                                            lastReportTime = Date.now();
+                                            if (elements.loadingIndicator) {
+                                                elements.loadingIndicator.classList.add('d-none');
+                                            }
+                                            if (elements.generateBtn) {
+                                                elements.generateBtn.disabled = false;
+                                            }
+                                            if (elements.generateBtnSpinner) {
+                                                elements.generateBtnSpinner.classList.add('d-none');
+                                            }
+                                            state.lastReportTime = Date.now();
                                         }
                                     });
                             }, 2000);
@@ -526,8 +471,5 @@
         }
     });
     </script>
-    {% endblock %}
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
