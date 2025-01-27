@@ -1073,36 +1073,40 @@
                 }
             };
 
-            // Initialize everything when DOM is loaded
-            if (searchInput) searchInput.addEventListener('input', updateTable);
-            if (hideProcessedCheckbox) hideProcessedCheckbox.addEventListener('change', updateTable);
-            if (companySelect) companySelect.addEventListener('change', handleCompanyChange);
-            if (themeToggle) initializeTheme();
+            // Single initialization point when DOM is loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                const searchInput = document.getElementById('searchInput');
+                const hideProcessedCheckbox = document.getElementById('hideProcessed');
+                const companySelect = document.getElementById('company');
+                const themeToggle = document.getElementById('themeToggle');
+                const reportForm = document.getElementById('reportForm');
+                const exportBtn = document.getElementById('exportBtn');
 
-            // Initialize sorting
-            document.querySelectorAll('th[data-sort]').forEach(header => {
-                header.addEventListener('click', handleSort);
+                if (searchInput) searchInput.addEventListener('input', updateTable);
+                if (hideProcessedCheckbox) hideProcessedCheckbox.addEventListener('change', updateTable);
+                if (companySelect) companySelect.addEventListener('change', handleCompanyChange);
+                if (themeToggle) initializeTheme();
+                
+                // Initialize sorting
+                document.querySelectorAll('th[data-sort]').forEach(header => {
+                    header.addEventListener('click', handleSort);
+                });
+
+                if (reportForm) {
+                    reportForm.addEventListener('submit', handleFormSubmit);
+                }
+
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', handleExport);
+                }
+
+                // Initial table update
+                updateTable();
             });
-
-            // Initialize form
-            const reportForm = document.getElementById('reportForm');
-            if (reportForm) {
-                reportForm.addEventListener('submit', handleFormSubmit);
-            }
-
-            // Initialize export button
-            const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) {
-                exportBtn.addEventListener('click', handleExport);
-            }
         }
 
-        // Wait for DOM content to load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
+        // Single entry point for initialization
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
