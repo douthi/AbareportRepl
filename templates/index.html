@@ -359,6 +359,35 @@
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
                     <div class="col-md-6">
                         <label for="mandant" class="form-label">Mandant</label>
+                        <select class="form-select" id="mandant" name="mandant" required>
+                            <option value="">Select Mandant</option>
+                            {% for id, name in config['COMPANIES'][company]['mandants'].items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="year" class="form-label">Year</label>
+                        <select class="form-select" id="year" name="year">
+                            <option value="none">All Years</option>
+                            {% for year in range(current_year, current_year - 5, -1) %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Generate Reports
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+            <div class="card-body">
+                <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="mandant" class="form-label">Mandant</label>
                         <select class="form-select" id="mandant" name="mandant" required disabled>
                             <option value="">Select Company First</option>
                         </select>
