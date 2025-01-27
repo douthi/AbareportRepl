@@ -1,0 +1,67 @@
+
+{% extends "base.html" %}
+
+{% block title %}API Configuration{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h2>API Configuration</h2>
+        <form id="apiConfigForm" class="mt-4">
+            <div class="mb-3">
+                <h4>Uniska</h4>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Abacus API Key</label>
+                        <input type="password" class="form-control" name="uniska_abacus_key" value="{{ config.get('UNISKA_ABACUS_KEY', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Pipedrive API Key</label>
+                        <input type="password" class="form-control" name="uniska_pipedrive_key" value="{{ config.get('UNISKA_PIPEDRIVE_API_KEY', '') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <h4>Novisol</h4>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Abacus API Key</label>
+                        <input type="password" class="form-control" name="novisol_abacus_key" value="{{ config.get('NOVISOL_ABACUS_KEY', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Pipedrive API Key</label>
+                        <input type="password" class="form-control" name="novisol_pipedrive_key" value="{{ config.get('NOVISOL_PIPEDRIVE_API_KEY', '') }}">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('apiConfigForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('/api-config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            alert('Configuration saved successfully!');
+        } else {
+            alert('Failed to save configuration');
+        }
+    } catch (error) {
+        alert('Error saving configuration');
+    }
+});
+</script>
+{% endblock %}

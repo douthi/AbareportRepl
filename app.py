@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request, render_template, send_file
+from flask import Flask, jsonify, request, render_template, send_file, redirect, url_for
+import os
 from config import Config
 from helpers import ReportManager
 from pipedrive_helper import PipedriveHelper
@@ -52,11 +53,44 @@ def pipedrive_config():
 
 @app.route('/')
 def index():
-    """Render the main page."""
-    return render_template('index.html', 
+    """Redirect to Uniska page by default."""
+    return redirect(url_for('uniska'))
+
+@app.route('/uniska')
+def uniska():
+    """Render the Uniska page."""
+    return render_template('index.html',
+                         company='uniska',
                          config=app.config,
                          current_year=datetime.now().year,
-                         data=[])  # Empty initial data
+                         data=[])
+
+@app.route('/novisol')
+def novisol():
+    """Render the Novisol page."""
+    return render_template('index.html',
+                         company='novisol',
+                         config=app.config,
+                         current_year=datetime.now().year,
+                         data=[])
+
+@app.route('/api-config', methods=['GET', 'POST'])
+def api_config():
+    """Handle API configuration."""
+    if request.method == 'POST':
+        data = request.get_json()
+        # Update configuration file
+        update_config(data)
+        return jsonify({'status': 'success'})
+    return render_template('api_config.html', config=app.config)
+
+def update_config(data):
+    """Update configuration file with new API keys."""
+    config_path = os.path.join(os.path.dirname(__file__), '.env')
+    with open(config_path, 'w') as f:
+        for key, value in data.items():
+            if value:  # Only write non-empty values
+                f.write(f"{key.upper()}={value}\n")
 
 @app.route('/export', methods=['GET'])
 def export_data():
