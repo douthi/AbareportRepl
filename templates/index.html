@@ -854,15 +854,29 @@
             // Handle company selection change
             document.getElementById('company').addEventListener('change', function() {
                 const mandantSelect = document.getElementById('mandant');
-                const selectedCompany = this.value;
+                const selectedCompany = this.value.toLowerCase();
+                console.log("Selected company:", selectedCompany);
 
-                // Clear and disable mandant select if no company selected
-                const companyNames = {
-                    'uniska': 'Uniska AG',
-                    'novisol': 'Novisol'
+                // Company configurations
+                const companyConfigs = {
+                    'uniska': {
+                        name: 'Uniska AG',
+                        mandants: {
+                            "19": "Uniska Interiors",
+                            "20": "Uniska AG"
+                        }
+                    },
+                    'novisol': {
+                        name: 'Novisol',
+                        mandants: {
+                            "2": "Novisol AG, Rheinfelden",
+                            "7": "Novisol GmbH, Weil am Rhein"
+                        }
+                    }
                 };
 
-                if (!selectedCompany) {
+                // Clear and disable mandant select if no company selected
+                if (!selectedCompany || !companyConfigs[selectedCompany]) {
                     mandantSelect.innerHTML = '<option value="">Select Company First</option>';
                     mandantSelect.disabled = true;
                     document.getElementById('companyName').textContent = 'Select Company';
@@ -873,28 +887,20 @@
                 }
 
                 // Update company name in header and page title
-                const companyName = companyNames[selectedCompany];
-                document.getElementById('companyName').textContent = companyName;
-                document.title = `${companyName} – Abacus x CRM Sync`;
+                const config = companyConfigs[selectedCompany];
+                document.getElementById('companyName').textContent = config.name;
+                document.title = `${config.name} – Abacus x CRM Sync`;
 
                 // Enable mandant select and populate options
                 mandantSelect.disabled = false;
-                const companyMandants = {
-                    'uniska': {
-                        "19": "Uniska Interiors",
-                        "20": "Uniska AG"
-                    },
-                    'novisol': {
-                        "2": "Novisol AG, Rheinfelden",
-                        "7": "Novisol GmbH, Weil am Rhein"
-                    }
-                };
-
-                const mandants = companyMandants[selectedCompany] || {};
                 mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
-                    Object.entries(mandants)
+                    Object.entries(config.mandants)
                         .map(([id, name]) => `<option value="${id}">${name}</option>`)
                         .join('');
+
+                // Clear current data when company changes
+                currentData = [];
+                updateTable();
 
                 // Clear current data and refresh table
                 currentData = [];
