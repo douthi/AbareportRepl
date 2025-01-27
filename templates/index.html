@@ -1013,50 +1013,45 @@
 
             if (companySelect) {
                 companySelect.addEventListener('change', function() {
-                        const selectedCompany = this.value.toLowerCase();
-                        console.log("Selected company:", selectedCompany);
+                    const selectedCompany = this.value.toLowerCase();
+                    console.log("Selected company:", selectedCompany);
 
-                        // Company configurations
-                        const companyConfigs = {
-                            'uniska': {
-                                name: 'Uniska AG',
-                                mandants: {
-                                    "19": "Uniska Interiors",
-                                    "20": "Uniska AG"
-                                }
-                            },
-                            'novisol': {
-                                name: 'Novisol',
-                                mandants: {
-                                    "2": "Novisol AG, Rheinfelden",
-                                    "7": "Novisol GmbH, Weil am Rhein"
-                                }
+                    // Company configurations
+                    const companyConfigs = {
+                        'uniska': {
+                            name: 'Uniska AG',
+                            mandants: {
+                                "19": "Uniska Interiors",
+                                "20": "Uniska AG"
                             }
-                        };
-
-                        if (!selectedCompany || !companyConfigs[selectedCompany]) {
-                            mandantSelect.innerHTML = '<option value="">Select Company First</option>';
-                            mandantSelect.disabled = true;
-                            document.getElementById('companyName').textContent = 'Select Company';
-                            return;
+                        },
+                        'novisol': {
+                            name: 'Novisol',
+                            mandants: {
+                                "2": "Novisol AG, Rheinfelden",
+                                "7": "Novisol GmbH, Weil am Rhein"
+                            }
                         }
+                    };
 
-                        const config = companyConfigs[selectedCompany];
-                        document.getElementById('companyName').textContent = config.name;
-                        document.title = `${config.name} – Abacus x CRM Sync`;
+                    if (!selectedCompany || !companyConfigs[selectedCompany]) {
+                        mandantSelect.innerHTML = '<option value="">Select Company First</option>';
+                        mandantSelect.disabled = true;
+                        document.getElementById('companyName').textContent = 'Select Company';
+                        return;
+                    }
 
-                        mandantSelect.disabled = false;
-                        mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
-                            Object.entries(config.mandants)
-                                .map(([id, name]) => `<option value="${id}">${name}</option>`)
-                                .join('');
-                    });
-                }
+                    const config = companyConfigs[selectedCompany];
+                    document.getElementById('companyName').textContent = config.name;
+                    document.title = `${config.name} – Abacus x CRM Sync`;
+
+                    mandantSelect.disabled = false;
+                    mandantSelect.innerHTML = '<option value="">Select Mandant</option>' +
+                        Object.entries(config.mandants)
+                            .map(([id, name]) => `<option value="${id}">${name}</option>`)
+                            .join('');
+                });
             }
-
-            // Initialize all components
-            initializeThemeToggle();
-            initializeSelectors();
         });
     </script>
 </body>
