@@ -7,7 +7,6 @@ import logging
 from datetime import datetime
 import csv
 import io
-import tempfile
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,14 +15,35 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config['SUPPORTED_MANDANTS'] = {
-    'uniska': {'name': 'Uniska Interiors'},
-    'novisol': {'name': 'Novisol'}
-}
 
 # Initialize managers
 report_manager = ReportManager(app.config)
-pipedrive_helper = PipedriveHelper()
+
+@app.route('/')
+def index():
+    """Redirect to Uniska page by default."""
+    return redirect(url_for('company_dashboard', company_name='uniska'))
+
+@app.route('/<company_name>')
+def company_dashboard(company_name):
+    """Render company dashboard."""
+    if company_name not in ['uniska', 'novisol']:
+        return redirect(url_for('company_dashboard', company_name='uniska'))
+    return render_template('index.html', company=company_name, config=app.config, current_year=datetime.now().year, data=[])
+
+@app.route('/<company_name>/config')
+def company_config(company_name):
+    """Render company configuration page."""
+    if company_name not in ['uniska', 'novisol']:
+        return redirect(url_for('company_dashboard', company_name='uniska'))
+    return render_template('company_config.html', company=company_name, config=app.config)
+
+@app.route('/<company_name>/mapping')
+def company_mapping(company_name):
+    """Render company field mapping page."""
+    if company_name not in ['uniska', 'novisol']:
+        return redirect(url_for('company_dashboard', company_name='uniska'))
+    return render_template('field_mapping.html', company=company_name)
 
 @app.route('/pipedrive-fields', methods=['GET'])
 def get_pipedrive_fields():
@@ -31,13 +51,13 @@ def get_pipedrive_fields():
     try:
         company_key = request.args.get('company', 'uniska')
         pipedrive = PipedriveHelper(company_key)
-        
+
         fields = {
             'organization': pipedrive.get_organization_fields(),
             'person': pipedrive.get_person_fields(),
             'deal': pipedrive.get_deal_fields()
         }
-        
+
         return jsonify(fields)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -49,83 +69,11 @@ def pipedrive_config():
         if request.headers.get('Accept') == 'application/json':
             return jsonify(pipedrive_helper.get_field_mappings())
         return render_template('config.html')
-    
+
     if request.method == 'POST':
         mappings = request.json
         pipedrive_helper.save_field_mappings(mappings)
         return jsonify({'status': 'success'})
-
-@app.route('/')
-def index():
-    """Redirect to Uniska page by default."""
-    return redirect(url_for('uniska'))
-
-@app.route('/uniska')
-def uniska():
-    """Render the Uniska dashboard."""
-    return render_template('index.html',
-                         company='uniska',
-                         config=app.config,
-                         current_year=datetime.now().year,
-                         data=[])
-
-@app.route('/uniska/config', methods=['GET', 'POST'])
-def uniska_config():
-    """Handle Uniska API configuration."""
-    if request.method == 'POST':
-        data = request.get_json()
-        update_config({
-            'UNISKA_ABACUS_KEY': data.get('abacus_key'),
-            'UNISKA_PIPEDRIVE_API_KEY': data.get('pipedrive_key')
-        })
-        return jsonify({'status': 'success'})
-    return render_template('company_config.html', company='uniska', config=app.config)
-
-@app.route('/uniska/mapping')
-def uniska_mapping():
-    """Render Uniska field mapping page."""
-    return render_template('field_mapping.html', company='uniska')
-
-@app.route('/novisol')
-def novisol():
-    """Render the Novisol dashboard."""
-    return render_template('index.html',
-                         company='novisol',
-                         config=app.config,
-                         current_year=datetime.now().year,
-                         data=[])
-
-@app.route('/novisol/config', methods=['GET', 'POST'])
-def novisol_config():
-    """Handle Novisol API configuration."""
-    if request.method == 'POST':
-        data = request.get_json()
-        update_config({
-            'NOVISOL_ABACUS_KEY': data.get('abacus_key'),
-            'NOVISOL_PIPEDRIVE_API_KEY': data.get('pipedrive_key')
-        })
-        return jsonify({'status': 'success'})
-    return render_template('company_config.html', company='novisol', config=app.config)
-
-@app.route('/novisol/mapping')
-def novisol_mapping():
-    """Render Novisol field mapping page."""
-    return render_template('field_mapping.html', company='novisol')
-    """Handle API configuration."""
-    if request.method == 'POST':
-        data = request.get_json()
-        # Update configuration file
-        update_config(data)
-        return jsonify({'status': 'success'})
-    return render_template('api_config.html', config=app.config)
-
-def update_config(data):
-    """Update configuration file with new API keys."""
-    config_path = os.path.join(os.path.dirname(__file__), '.env')
-    with open(config_path, 'w') as f:
-        for key, value in data.items():
-            if value:  # Only write non-empty values
-                f.write(f"{key.upper()}={value}\n")
 
 @app.route('/export', methods=['GET'])
 def export_data():
@@ -252,9 +200,9 @@ def sync_to_pipedrive():
         org_result = pipedrive_helper.create_organization(data)
         if not org_result.get('success'):
             return jsonify({'error': 'Failed to create organization'}), 500
-        
+
         org_id = org_result['data']['id']
-        
+
         # Create person if name exists
         if data.get('VORNAME') or data.get('NAME'):
             person_result = pipedrive_helper.create_person(data, org_id)
