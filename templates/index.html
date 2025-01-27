@@ -649,6 +649,9 @@
 
                 if (!company || !mandant) {
                     alert('Please select both company and mandant');
+                    loadingIndicator.classList.add('d-none');
+                    generateBtn.disabled = false;
+                    generateBtnSpinner.classList.add('d-none');
                     return;
                 }
 
