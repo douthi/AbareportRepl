@@ -2,6 +2,7 @@ import logging
 import re
 import time
 import uuid
+from config import Config
 import threading
 import requests
 import base64
@@ -65,7 +66,17 @@ class ReportManager:
             'total_pages': 1
         }
 
-        report_name = self.config['REPORT_KEYS'][report_key]
+        # Get company from mandant
+        company = None
+        for comp_key, comp_data in Config.COMPANIES.items():
+            if mandant in comp_data['mandants']:
+                company = comp_key
+                break
+        
+        if not company:
+            raise ValueError(f"Invalid mandant: {mandant}")
+            
+        report_name = Config.COMPANIES[company]['report_keys'][report_key]
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_name}"
 
         # Build request body
