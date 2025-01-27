@@ -53,8 +53,11 @@ def pipedrive_config():
 @app.route('/')
 def index():
     """Render the main page."""
+    all_mandants = {}
+    for company in app.config['COMPANIES'].values():
+        all_mandants.update(company['mandants'])
     return render_template('index.html', 
-                         config=app.config['COMPANIES'],
+                         config={'SUPPORTED_MANDANTS': all_mandants},
                          current_year=datetime.now().year,
                          data=[])  # Empty initial data
 
