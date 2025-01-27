@@ -59,6 +59,27 @@ class PipedriveHelper:
         response = requests.post(endpoint, params=params, json=person_data)
         return response.json()
 
+    def get_fields(self, entity_type: str) -> List[Dict[str, Any]]:
+        """Get fields for a specific entity type."""
+        endpoint = f"{self.base_url}/{entity_type}Fields"
+        params = {'api_token': self.api_key}
+        
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            data = response.json()
+            return [{'key': field['key'], 'name': field['name']} 
+                   for field in data.get('data', [])]
+        return []
+
+    def get_organization_fields(self) -> List[Dict[str, Any]]:
+        return self.get_fields('organization')
+
+    def get_person_fields(self) -> List[Dict[str, Any]]:
+        return self.get_fields('person')
+
+    def get_deal_fields(self) -> List[Dict[str, Any]]:
+        return self.get_fields('deal')
+
     def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/deals"
         params = {'api_token': self.api_key}

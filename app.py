@@ -20,6 +20,23 @@ app.config.from_object(Config)
 report_manager = ReportManager(app.config)
 pipedrive_helper = PipedriveHelper()
 
+@app.route('/pipedrive-fields', methods=['GET'])
+def get_pipedrive_fields():
+    """Get all available Pipedrive fields."""
+    try:
+        company_key = request.args.get('company', 'uniska')
+        pipedrive = PipedriveHelper(company_key)
+        
+        fields = {
+            'organization': pipedrive.get_organization_fields(),
+            'person': pipedrive.get_person_fields(),
+            'deal': pipedrive.get_deal_fields()
+        }
+        
+        return jsonify(fields)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/pipedrive-config', methods=['GET', 'POST'])
 def pipedrive_config():
     """Handle Pipedrive field mapping configuration."""
