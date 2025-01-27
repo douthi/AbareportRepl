@@ -52,6 +52,19 @@
 
         <div class="card mt-4">
             <div class="card-body">
+                <!-- API Key Management -->
+                <div class="mb-4 api-key-section">
+                    <h3>API Key Management</h3>
+                    <div class="mb-3">
+                        <label for="apiKey" class="form-label">Pipedrive API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="apiKey" placeholder="Enter API Key">
+                            <button class="btn btn-primary" id="updateApiKey">Update API Key</button>
+                        </div>
+                        <small class="text-muted">API key will be securely stored for the selected company</small>
+                    </div>
+                </div>
+                <hr class="my-4">
                 <div class="mb-3">
                     <label for="company" class="form-label">Company</label>
                     <select class="form-select" id="company" required>
@@ -166,6 +179,68 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // API Key Management
+            const updateApiKeyBtn = document.getElementById('updateApiKey');
+            const apiKeyInput = document.getElementById('apiKey');
+            const companySelect = document.getElementById('company');
+
+            updateApiKeyBtn.addEventListener('click', async function() {
+                const company = companySelect.value;
+                const apiKey = apiKeyInput.value;
+
+                if (!company) {
+                    alert('Please select a company first');
+                    return;
+                }
+
+                if (!apiKey) {
+                    alert('Please enter an API key');
+                    return;
+                }
+
+                if (!confirm('Are you sure you want to update the API key for ' + companySelect.options[companySelect.selectedIndex].text + '?')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/update-api-key', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            company: company,
+                            api_key: apiKey
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('API key updated successfully');
+                        apiKeyInput.value = '';
+                        // Refresh fields
+                        fetchPipedriveFields();
+                    } else {
+                        alert('Failed to update API key');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error updating API key');
+                }
+            });
+
+            // Load existing API key (masked)
+            companySelect.addEventListener('change', async function() {
+                const company = this.value;
+                if (company) {
+                    try {
+                        const response = await fetch(`/check-api-key?company=${company}`);
+                        const data = await response.json();
+                        apiKeyInput.placeholder = data.exists ? '********' : 'Enter API Key';
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                }
+            });
             const container = document.getElementById('mappingContainer');
             const refreshButton = document.getElementById('refreshFields');
 

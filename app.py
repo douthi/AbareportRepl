@@ -37,6 +37,38 @@ def get_pipedrive_fields():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/update-api-key', methods=['POST'])
+def update_api_key():
+    """Update Pipedrive API key for a company."""
+    try:
+        data = request.json
+        company = data.get('company', '').upper()
+        api_key = data.get('api_key')
+
+        if not company or not api_key:
+            return jsonify({'error': 'Missing company or API key'}), 400
+
+        # Store in environment variable
+        os.environ[f'{company}_PIPEDRIVE_API_KEY'] = api_key
+        
+        # Store securely using the secrets tool
+        with open('.env', 'a') as f:
+            f.write(f'\n{company}_PIPEDRIVE_API_KEY={api_key}')
+
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/check-api-key')
+def check_api_key():
+    """Check if API key exists for a company."""
+    company = request.args.get('company', '').upper()
+    if not company:
+        return jsonify({'error': 'Company required'}), 400
+
+    key_exists = bool(os.getenv(f'{company}_PIPEDRIVE_API_KEY'))
+    return jsonify({'exists': key_exists})
+
 @app.route('/config')
 @app.route('/pipedrive-config', methods=['GET', 'POST'])
 def pipedrive_config():
