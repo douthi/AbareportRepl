@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Uniska AG – Abacus x CRM Sync</title>
+    <title>{% block title %}{% endblock %}</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -336,6 +336,7 @@
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
+    {% block content %}
     <div class="container mt-4 flex-grow-1">
         <!-- Theme Toggle -->
         <div class="theme-toggle">
@@ -471,6 +472,8 @@
             </div>
         </div>
     </div>
+
+    {% endblock %}
 
     <!-- Footer -->
     <footer class="mt-auto py-3">
@@ -873,6 +876,7 @@
                 mandantSelect.innerHTML = '<option value="">Select Mandant</option>';
                 mandantSelect.disabled = !company;
                 
+
                 if (company) {
                     const mandants = {{ config['COMPANIES']|tojson }};
                     for (const [id, name] of Object.entries(mandants[company].mandants)) {
