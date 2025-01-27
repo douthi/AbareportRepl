@@ -139,10 +139,16 @@ def start_all_reports():
             return jsonify({'error': 'No JSON data provided'}), 400
 
         mandant = data.get('mandant')
-        company = data.get('company')
-        if not company or company not in Config.COMPANIES:
+        company = data.get('company', '')
+        
+        # Debug logging
+        print(f"Received company: {company}, mandant: {mandant}")
+        print(f"Available companies: {list(Config.COMPANIES.keys())}")
+        
+        if not company or company.lower() not in Config.COMPANIES:
             return jsonify({'error': 'Invalid company'}), 400
             
+        company = company.lower()
         if not mandant or mandant not in Config.COMPANIES[company]['mandants']:
             return jsonify({'error': f'Invalid mandant for company {company}'}), 400
 
