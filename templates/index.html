@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Uniska AG – Abacus x CRM Sync</title>
+    <title>Select Company – Abacus x CRM Sync</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -780,17 +780,25 @@
                 const selectedCompany = this.value;
                 
                 // Clear and disable mandant select if no company selected
+                const companyNames = {
+                    'uniska': 'Uniska AG',
+                    'novisol': 'Novisol'
+                };
+                
                 if (!selectedCompany) {
                     mandantSelect.innerHTML = '<option value="">Select Company First</option>';
                     mandantSelect.disabled = true;
                     document.getElementById('companyName').textContent = 'Select Company';
+                    document.title = 'Select Company – Abacus x CRM Sync';
                     currentData = [];
                     updateTable();
                     return;
                 }
 
-                // Update company name in header
-                document.getElementById('companyName').textContent = selectedCompany === 'uniska' ? 'Uniska AG' : 'Novisol';
+                // Update company name in header and page title
+                const companyName = companyNames[selectedCompany];
+                document.getElementById('companyName').textContent = companyName;
+                document.title = `${companyName} – Abacus x CRM Sync`;
 
                 // Enable mandant select and populate options
                 mandantSelect.disabled = false;
