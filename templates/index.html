@@ -1,10 +1,81 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Select Company – Abacus x CRM Sync</title>
+    <title><span id="companyName">Select Company</span> – Abacus x CRM Sync</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* Theme and UI styles */
+        :root[data-bs-theme="dark"] {
+            --bg-color: #212529;
+            --text-color: #f8f9fa;
+            --input-bg: #343a40;
+            --input-color: #f8f9fa;
+            --border-color: #495057;
+        }
+
+        :root[data-bs-theme="light"] {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --input-bg: #ffffff;
+            --input-color: #212529;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--text-color);
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: var(--bg-color);
+            color: var(--bs-primary);
+            border-color: var(--border-color);
+        }
+
+        .form-select, .form-control {
+            background-color: var(--input-bg) !important;
+            color: var(--input-color) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        .card {
+            background-color: var(--bg-color);
+            border-color: var(--border-color);
+        }
+
+        .status-new { color: var(--bs-info); }
+        .status-synced { color: var(--bs-secondary); }
+        .status-fresh-sync { color: var(--bs-success); }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(var(--bs-dark-rgb), 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .table-container {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
         :root[data-bs-theme="dark"] {
             --bg-color: #212529;
             --text-color: #f8f9fa;
@@ -335,20 +406,14 @@
         }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <div class="container mt-4 flex-grow-1">
-        <!-- Theme Toggle -->
-        <div class="theme-toggle">
-            <label class="theme-switch">
-                <input type="checkbox" id="themeToggle">
-                <span class="slider">
-                    <div class="theme-icons">
-                        <i class="fas fa-moon"></i>
-                        <i class="fas fa-sun"></i>
-                    </div>
-                </span>
-            </label>
-        </div>
+<body>
+    <div class="container mt-4">
+        <nav>
+            <div class="nav nav-tabs mb-4" id="nav-tab" role="tablist">
+                <a class="nav-link active" href="/">Sync Data</a>
+                <a class="nav-link" href="/config">Configure Pipedrive</a>
+            </div>
+        </nav>
 
         <h1 class="mb-4"><span id="companyName">Select Company</span> – Abacus x CRM Sync</h1>
 
@@ -417,6 +482,7 @@
             </div>
         </div>
 
+
         <!-- Data Table -->
         <div class="card mb-4">
             <div class="card-body">
@@ -461,6 +527,19 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider">
+                <div class="theme-icons">
+                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
+                </div>
+            </span>
+        </label>
     </div>
 
     <!-- Footer -->
@@ -781,8 +860,7 @@
                                             clearInterval(interval);
                                             loadingIndicator.classList.add('d-none');
                                             generateBtn.disabled = false;
-                                            generateBtnSpinner.classList.add('d-none');
-                                        });
+                                            generateBtnSpinner.classList.add('d-none');});
                                 }, 5000); // Increased wait time to 5 seconds
                             }
                         });
@@ -870,7 +948,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                                                alert(`Error: ${data.error}`);
+                        alert(`Error: ${data.error}`);
                         loadingIndicator.classList.add('d-none');
                         generateBtn.disabled = false;
                         generateBtnSpinner.classList.add('d-none');
