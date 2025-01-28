@@ -20,7 +20,7 @@ class ReportManager:
         """Get access token from Abacus ERP."""
         max_retries = 3
         timeout = 30
-        
+
         for attempt in range(max_retries):
             try:
                 logger.debug(f"Using CLIENT_ID: {self.config['CLIENT_ID']}")
@@ -66,7 +66,7 @@ class ReportManager:
             'total_pages': 1
         }
 
-        report_path = f"AbaReport/{report_key.upper()}"
+        report_path = f"AbaReport/{report_key}"
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_path}"
 
         # Build request body
@@ -291,7 +291,7 @@ class ReportManager:
         for inr, npo in npo_dict.items():
             adr = adr_dict.get(inr)
             akp_entries = akp_dict.get(inr, [])
-            
+
             if adr:
                 # Create combined record
                 combined_record = {
