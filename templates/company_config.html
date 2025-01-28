@@ -1,42 +1,120 @@
-
 {% extends "base.html" %}
 
 {% block title %}{{ company|title }} Configuration{% endblock %}
 
+{% block additional_styles %}
+<style>
+    .config-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    .config-section-header {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .config-section-body {
+        padding: 1.5rem;
+    }
+    .mapping-row {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    .mapping-row:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    .form-floating > label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    .invalid-feedback {
+        font-size: 0.85rem;
+    }
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .alert {
+        border-left: 4px solid;
+    }
+    .alert-info {
+        border-left-color: var(--bs-info);
+    }
+    .alert-success {
+        border-left-color: var(--bs-success);
+    }
+    .alert-warning {
+        border-left-color: var(--bs-warning);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">{{ company|title }} Configuration</h2>
+    <!-- API Configuration Section -->
+    <div class="config-section">
+        <div class="config-section-header">
+            <h4 class="mb-0">
+                <i class="fas fa-key me-2"></i>
+                API Configuration
+            </h4>
         </div>
-        <div class="card-body">
-            <form id="apiConfigForm" class="mb-4">
-                <div class="mb-4">
-                    <h4 class="border-bottom pb-2">API Keys</h4>
-                    <div class="mb-3">
-                        <label class="form-label">Pipedrive API Key</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" name="pipedrive_key" value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}">
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Save API Key</button>
-                </div>
-            </form>
-
-            <div>
-                <h4 class="border-bottom pb-2">Field Mapping</h4>
+        <div class="config-section-body">
+            <form id="apiConfigForm" class="needs-validation" novalidate>
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>Configure how Abacus fields map to Pipedrive fields
+                    <i class="fas fa-info-circle me-2"></i>
+                    Configure your API keys for integration with external services
                 </div>
-                <div id="fieldMappings"></div>
-                <button type="button" class="btn btn-secondary mt-3 me-2" id="addMapping">
-                    <i class="fas fa-plus me-2"></i>Add Mapping
+
+                <div class="form-floating mb-3">
+                    <input type="password" 
+                           class="form-control bg-dark text-light" 
+                           id="pipedriveKey" 
+                           name="pipedrive_key" 
+                           placeholder="Pipedrive API Key"
+                           value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}"
+                           required>
+                    <label for="pipedriveKey">Pipedrive API Key</label>
+                    <div class="invalid-feedback">
+                        Please provide a valid API key
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-icon">
+                    <i class="fas fa-save"></i>
+                    <span>Save API Configuration</span>
                 </button>
-                <button type="button" class="btn btn-primary mt-3" id="saveMapping">
-                    <i class="fas fa-save me-2"></i>Save Mapping
+            </form>
+        </div>
+    </div>
+
+    <!-- Field Mapping Section -->
+    <div class="config-section">
+        <div class="config-section-header">
+            <h4 class="mb-0">
+                <i class="fas fa-exchange-alt me-2"></i>
+                Field Mapping Configuration
+            </h4>
+        </div>
+        <div class="config-section-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Map fields between your data sources and Pipedrive
+            </div>
+
+            <div id="fieldMappings"></div>
+
+            <div class="mt-3">
+                <button type="button" class="btn btn-secondary btn-icon me-2" id="addMapping">
+                    <i class="fas fa-plus"></i>
+                    <span>Add New Mapping</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-icon" id="saveMapping">
+                    <i class="fas fa-save"></i>
+                    <span>Save Mappings</span>
                 </button>
             </div>
         </div>
@@ -58,68 +136,69 @@ const sourceFields = [
     'KDatum', 'KSumme', 'ADatum', 'ASumme'
 ];
 
-document.getElementById('togglePassword').addEventListener('click', function() {
-    const input = document.querySelector('input[name="pipedrive_key"]');
-    const icon = this.querySelector('i');
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-    }
-});
+function showToast(message, type = 'success') {
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
 
-document.getElementById('apiConfigForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    
-    try {
-        const response = await fetch(`/{{ company }}/config`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            alert('API key saved successfully!');
-            location.reload();
-        } else {
-            alert('Failed to save API key');
-        }
-    } catch (error) {
-        alert('Error saving API key');
-    }
-});
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    document.body.appendChild(toastEl);
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+
+    toastEl.addEventListener('hidden.bs.toast', () => {
+        toastEl.remove();
+    });
+}
 
 function createMappingRow(mapping = null) {
     const row = document.createElement('div');
-    row.className = 'row g-3 align-items-center mb-3 border-bottom pb-3';
+    row.className = 'mapping-row';
+
     row.innerHTML = `
-        <div class="col-md-4">
-            <select class="form-select source-field">
-                ${sourceFields.map(field => 
-                    `<option value="${field}" ${mapping && mapping.source === field ? 'selected' : ''}>${field}</option>`
-                ).join('')}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <select class="form-select entity-type">
-                <option value="organization" ${mapping && mapping.entity === 'organization' ? 'selected' : ''}>Organization</option>
-                <option value="person" ${mapping && mapping.entity === 'person' ? 'selected' : ''}>Person</option>
-                <option value="deal" ${mapping && mapping.entity === 'deal' ? 'selected' : ''}>Deal</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select class="form-select target-field"></select>
-        </div>
-        <div class="col-md-1">
-            <button type="button" class="btn btn-outline-danger remove-mapping">
-                <i class="fas fa-times"></i>
-            </button>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <select class="form-select source-field" required>
+                        ${sourceFields.map(field => 
+                            `<option value="${field}" ${mapping && mapping.source === field ? 'selected' : ''}>${field}</option>`
+                        ).join('')}
+                    </select>
+                    <label>Source Field</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <select class="form-select entity-type" required>
+                        <option value="organization" ${mapping && mapping.entity === 'organization' ? 'selected' : ''}>Organization</option>
+                        <option value="person" ${mapping && mapping.entity === 'person' ? 'selected' : ''}>Person</option>
+                        <option value="deal" ${mapping && mapping.entity === 'deal' ? 'selected' : ''}>Deal</option>
+                    </select>
+                    <label>Entity Type</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <select class="form-select target-field" required></select>
+                    <label>Target Field</label>
+                </div>
+            </div>
+            <div class="col-md-1 d-flex align-items-center">
+                <button type="button" class="btn btn-outline-danger remove-mapping" 
+                        data-bs-toggle="tooltip" title="Remove Mapping">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
     `;
 
@@ -130,24 +209,63 @@ function createMappingRow(mapping = null) {
         updateTargetFields(targetSelect, entitySelect.value, mapping?.target);
     });
 
+    // Initialize tooltip
+    const tooltip = new bootstrap.Tooltip(row.querySelector('[data-bs-toggle="tooltip"]'));
+
     updateTargetFields(targetSelect, entitySelect.value, mapping?.target);
     return row;
 }
 
 function updateTargetFields(select, entityType, selectedValue = null) {
-    select.innerHTML = pipedriveFields[entityType].map(field =>
+    select.innerHTML = pipedriveFields[entityType]?.map(field =>
         `<option value="${field.key}" ${selectedValue === field.key ? 'selected' : ''}>${field.name}</option>`
-    ).join('');
+    ).join('') || '';
 }
 
+// Form validation
+document.getElementById('apiConfigForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!e.target.checkValidity()) {
+        e.stopPropagation();
+        e.target.classList.add('was-validated');
+        return;
+    }
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const response = await fetch(`/{{ company }}/config`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showToast('API configuration saved successfully!');
+        } else {
+            showToast('Failed to save API configuration', 'danger');
+        }
+    } catch (error) {
+        showToast('Error saving API configuration', 'danger');
+    }
+});
+
+// Initialize tooltips
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    new bootstrap.Tooltip(el);
+});
+
+// Field mapping functionality
 async function loadMappings() {
     const container = document.getElementById('fieldMappings');
     container.innerHTML = '';
-    
+
     try {
         const response = await fetch(`/{{ company }}/field-mappings`);
         const mappings = await response.json();
-        
+
         if (mappings && mappings.length) {
             mappings.forEach(mapping => {
                 container.appendChild(createMappingRow(mapping));
@@ -169,6 +287,7 @@ async function fetchPipedriveFields() {
         await loadMappings();
     } catch (error) {
         console.error('Error fetching Pipedrive fields:', error);
+        showToast('Error loading Pipedrive fields', 'danger');
     }
 }
 
@@ -180,7 +299,9 @@ document.getElementById('addMapping').addEventListener('click', () => {
 
 document.getElementById('fieldMappings').addEventListener('click', (e) => {
     if (e.target.closest('.remove-mapping')) {
-        e.target.closest('.row').remove();
+        const row = e.target.closest('.mapping-row');
+        row.classList.add('fade');
+        setTimeout(() => row.remove(), 200);
     }
 });
 
@@ -199,12 +320,12 @@ document.getElementById('saveMapping').addEventListener('click', async () => {
         });
 
         if (response.ok) {
-            alert('Field mappings saved successfully!');
+            showToast('Field mappings saved successfully!');
         } else {
-            alert('Failed to save field mappings');
+            showToast('Failed to save field mappings', 'danger');
         }
     } catch (error) {
-        alert('Error saving field mappings');
+        showToast('Error saving field mappings', 'danger');
     }
 });
 </script>
