@@ -41,6 +41,19 @@
         </div>
         <div class="config-section-body">
             <form id="apiConfigForm" class="needs-validation" novalidate>
+                {% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="config-section">
+        <div class="config-section-header">
+            <h4 class="mb-0">
+                <i class="fas fa-key me-2"></i>
+                API Configuration
+            </h4>
+        </div>
+        <div class="config-section-body">
+            <form id="apiConfigForm">
                 <div class="form-floating mb-3">
                     <input type="password" 
                            class="form-control bg-dark text-light" 
@@ -53,6 +66,35 @@
                     <small class="text-muted">API key is managed through Secrets</small>
                     <label for="pipedriveKey">Pipedrive API Key</label>
                 </div>
+                <button type="button" class="btn btn-primary" onclick="fetchPipedriveFields()">
+                    <i class="fas fa-sync me-2"></i>Fetch Pipedrive Fields
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="config-section mt-4">
+        <div class="config-section-header">
+            <h4 class="mb-0">
+                <i class="fas fa-exchange-alt me-2"></i>
+                Field Mapping
+            </h4>
+            <button class="btn btn-sm btn-success" id="addMapping">
+                <i class="fas fa-plus me-2"></i>Add Mapping
+            </button>
+        </div>
+        <div class="config-section-body">
+            <div id="fieldMappings"></div>
+            <button class="btn btn-primary mt-3" id="saveMapping">Save Mappings</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const company = '{{ company }}';
+</script>
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+{% endblock %}
                 <button type="button" class="btn btn-primary" onclick="fetchPipedriveFields()">
                     <i class="fas fa-sync me-2"></i>Fetch Pipedrive Fields
                 </button>
