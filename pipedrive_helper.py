@@ -94,6 +94,38 @@ class PipedriveHelper:
     def get_deal_fields(self) -> List[Dict[str, Any]]:
         return self.get_fields('deal')
 
+    def get_recent_changes(self, since_timestamp: str, items: List[str] = None) -> Dict[str, Any]:
+        """Get recent changes in Pipedrive."""
+        endpoint = f"{self.base_url}/recents"
+        params = {
+            'api_token': self.api_key,
+            'since_timestamp': since_timestamp,
+            'items': ','.join(items) if items else None
+        }
+        response = requests.get(endpoint, params=params)
+        return response.json()
+
+    def update_organization(self, org_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing organization."""
+        endpoint = f"{self.base_url}/organizations/{org_id}"
+        params = {'api_token': self.api_key}
+        response = requests.put(endpoint, params=params, json=data)
+        return response.json()
+
+    def update_person(self, person_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing person."""
+        endpoint = f"{self.base_url}/persons/{person_id}"
+        params = {'api_token': self.api_key}
+        response = requests.put(endpoint, params=params, json=data)
+        return response.json()
+
+    def update_deal(self, deal_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing deal."""
+        endpoint = f"{self.base_url}/deals/{deal_id}"
+        params = {'api_token': self.api_key}
+        response = requests.put(endpoint, params=params, json=data)
+        return response.json()
+
     def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/deals"
         params = {'api_token': self.api_key}
@@ -106,6 +138,8 @@ class PipedriveHelper:
             'status': 'open',
             'probability': data.get('probability', None),
             'expected_close_date': data.get('expected_close_date', None),
+            'pipeline_id': data.get('pipeline_id', None),
+            'stage_id': data.get('stage_id', None)
         }
         
         # Add mapped custom fields from field mappings
