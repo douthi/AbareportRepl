@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}{{ company|title }} Configuration{% endblock %}
@@ -5,33 +6,120 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h2>{{ company|title }} API Configuration</h2>
-        <form id="apiConfigForm" class="mt-4">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Abacus API Key</label>
-                    <input type="password" class="form-control" name="abacus_key" value="{{ config.get(company|upper + '_ABACUS_KEY', '') }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Pipedrive API Key</label>
-                    <input type="password" class="form-control" name="pipedrive_key" value="{{ config.get(company|upper + '_PIPEDRIVE_API_KEY', '') }}">
-                </div>
+        <h2>{{ company|title }} Configuration</h2>
+        <form id="apiConfigForm">
+            <div class="mb-3">
+                <label class="form-label">Pipedrive API Key</label>
+                <input type="password" class="form-control" name="pipedrive_key" value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}">
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Save Configuration</button>
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
         </form>
+        
+        <hr>
+        
+        <h3>Field Mapping</h3>
+        <div id="fieldMappings"></div>
+        <button type="button" class="btn btn-primary mt-3" id="saveMapping">Save Mapping</button>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+let pipedriveFields = {
+    organization: [],
+    person: [],
+    deal: []
+};
+
+const sourceFields = [
+    'ProjNr', 'ProjName', 'NAME', 'VORNAME', 'EMAIL', 'TEL',
+    'LAND', 'PLZ', 'ORT', 'STREET', 'HOUSE_NUMBER',
+    'KDatum', 'KSumme', 'ADatum', 'ASumme'
+];
+
+async function fetchPipedriveFields() {
+    try {
+        const response = await fetch(`/pipedrive-fields?company={{ company }}`);
+        const fields = await response.json();
+        pipedriveFields = fields;
+        loadMappings();
+    } catch (error) {
+        console.error('Error fetching Pipedrive fields:', error);
+    }
+}
+
+function createMappingRow(mapping = null) {
+    const row = document.createElement('div');
+    row.className = 'row mb-3';
+    row.innerHTML = `
+        <div class="col-md-4">
+            <select class="form-select source-field">
+                ${sourceFields.map(field => 
+                    `<option value="${field}" ${mapping && mapping.source === field ? 'selected' : ''}>${field}</option>`
+                ).join('')}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select entity-type">
+                <option value="organization" ${mapping && mapping.entity === 'organization' ? 'selected' : ''}>Organization</option>
+                <option value="person" ${mapping && mapping.entity === 'person' ? 'selected' : ''}>Person</option>
+                <option value="deal" ${mapping && mapping.entity === 'deal' ? 'selected' : ''}>Deal</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select target-field">
+            </select>
+        </div>
+    `;
+    
+    const entitySelect = row.querySelector('.entity-type');
+    const targetSelect = row.querySelector('.target-field');
+    
+    entitySelect.addEventListener('change', () => {
+        updateTargetFields(targetSelect, entitySelect.value, mapping?.target);
+    });
+    
+    updateTargetFields(targetSelect, entitySelect.value, mapping?.target);
+    return row;
+}
+
+function updateTargetFields(select, entityType, selectedValue = null) {
+    select.innerHTML = pipedriveFields[entityType].map(field =>
+        `<option value="${field.key}" ${selectedValue === field.key ? 'selected' : ''}>${field.name}</option>`
+    ).join('');
+}
+
+async function loadMappings() {
+    const container = document.getElementById('fieldMappings');
+    container.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/{{ company }}/field-mappings`);
+        const mappings = await response.json();
+        
+        if (mappings && mappings.length) {
+            mappings.forEach(mapping => {
+                container.appendChild(createMappingRow(mapping));
+            });
+        } else {
+            container.appendChild(createMappingRow());
+        }
+    } catch (error) {
+        console.error('Error loading mappings:', error);
+        container.appendChild(createMappingRow());
+    }
+}
+
+document.addEventListener('DOMContentLoaded', fetchPipedriveFields);
+
 document.getElementById('apiConfigForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     
     try {
-        const response = await fetch(window.location.pathname, {
+        const response = await fetch(`/{{ company }}/config`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
@@ -44,6 +132,30 @@ document.getElementById('apiConfigForm').addEventListener('submit', async (e) =>
         }
     } catch (error) {
         alert('Error saving configuration');
+    }
+});
+
+document.getElementById('saveMapping').addEventListener('click', async () => {
+    const mappings = Array.from(document.getElementById('fieldMappings').children).map(row => ({
+        source: row.querySelector('.source-field').value,
+        target: row.querySelector('.target-field').value,
+        entity: row.querySelector('.entity-type').value
+    }));
+
+    try {
+        const response = await fetch(`/{{ company }}/field-mappings`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(mappings)
+        });
+
+        if (response.ok) {
+            alert('Field mappings saved successfully!');
+        } else {
+            alert('Failed to save field mappings');
+        }
+    } catch (error) {
+        alert('Error saving field mappings');
     }
 });
 </script>
