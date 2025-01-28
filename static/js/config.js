@@ -150,12 +150,17 @@ async function saveMappings() {
 
 // Initialize when document is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    fetchPipedriveFields();
-    
     // Add event listeners
+    document.getElementById('fetchFields').addEventListener('click', () => {
+        fetchPipedriveFields();
+    });
+    
     document.getElementById('addMapping').addEventListener('click', () => {
         document.getElementById('fieldMappings').appendChild(createMappingRow());
     });
 
     document.getElementById('saveMapping').addEventListener('click', saveMappings);
+    
+    // Add initial mapping row
+    document.getElementById('fieldMappings').appendChild(createMappingRow());
 });
