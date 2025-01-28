@@ -31,31 +31,7 @@
 
 {% block content %}
 <div class="container py-4">
-    <!-- API Configuration Section -->
-    <div class="config-section">
-        <div class="config-section-header">
-            <h4 class="mb-0">
-                <i class="fas fa-key me-2"></i>
-                API Configuration
-            </h4>
-        </div>
-        <div class="config-section-body">
-            <form id="apiConfigForm">
-                <div class="form-floating mb-3">
-                    <input type="password" 
-                           class="form-control bg-dark text-light" 
-                           id="pipedriveKey" 
-                           name="pipedrive_key" 
-                           placeholder="Pipedrive API Key"
-                           value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}"
-                           readonly
-                           required>
-                    <small class="text-muted">API key is managed through Secrets</small>
-                    <label for="pipedriveKey">Pipedrive API Key</label>
-                </div>
-            </form>
-        </div>
-    </div>
+    
 
     <div class="config-section mt-4">
         <div class="config-section-header">
