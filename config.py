@@ -37,8 +37,8 @@ class Config:
             'name': 'Novisol',
             'pipedrive_api_key': os.getenv('NOVISOL_PIPEDRIVE_API_KEY'),
             'mandants': {
-                "2": "Novisol AG, Rheinfelden",
-                "7": "Novisol GmbH, Weil am Rhein"
+                "02": "Novisol AG, Rheinfelden",
+                "07": "Novisol GmbH, Weil am Rhein"
             },
             'report_keys': {
                 "adr": "novisol_pipedrive_adr",
