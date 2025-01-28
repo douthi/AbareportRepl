@@ -67,7 +67,7 @@ class ReportManager:
             'total_pages': 1
         }
 
-        report_path = f"AbaReport/{self.report_keys[report_key]}"
+        report_path = self.report_keys[report_key]
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_path}"
 
         # Build request body
