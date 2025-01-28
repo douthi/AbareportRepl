@@ -95,9 +95,26 @@ let pipedriveFields = {
 const sourceFields = [
     'ProjNr', 'ProjName', 'NAME', 'VORNAME', 'EMAIL', 'TEL',
     'LAND', 'PLZ', 'ORT', 'STREET', 'HOUSE_NUMBER',
-    'KDatum', 'KSumme', 'ADatum', 'ASumme', 'Status',
-    'ASumme', 'ADatum'
+    'KDatum', 'KSumme', 'ADatum', 'ASumme', 'Status'
 ];
+
+$(document).ready(function() {
+    // Initialize dropdowns
+    $('.source-field').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+    $('.entity-type').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+    $('.target-field').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+    
+    fetchPipedriveFields();
+});
 
 function createMappingRow(mapping = null) {
     const row = document.createElement('div');
