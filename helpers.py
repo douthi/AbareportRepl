@@ -298,11 +298,11 @@ class ReportManager:
             if adr:
                 # Create combined record with all NPO fields
                 combined_record = {k: npo.get(k, '') for k in npo.keys()}
-                
+
                 # Add all ADR fields
                 adr_fields = {f'ADR_{k}': v for k, v in adr.items()}
                 combined_record.update(adr_fields)
-                
+
                 # Add status field if not present
                 combined_record['Status'] = 'new'
 
@@ -322,12 +322,9 @@ class ReportManager:
 
                 # Add AKP data if available
                 if akp_entries:
-                    akp = akp_entries[0]  # Take first AKP entry
-                    combined_record.update({
-                        'VORNAME': akp.get('AKP_VORNAME', ''),
-                        'EMAIL': akp.get('AKP_MAIL', ''),
-                        'TEL': akp.get('AKP_TEL', '') or combined_record['TEL']
-                    })
+                    akp_data = akp_entries[0]  # Take first entry
+                    for k, v in akp_data.items():
+                        combined_record[f'AKP_{k}'] = v
 
                 combined_data.append(combined_record)
                 processed_records.add(inr)
