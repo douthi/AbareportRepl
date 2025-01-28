@@ -354,6 +354,8 @@
             if (elements.loadingMessage) elements.loadingMessage.textContent = 'Starting reports...';
             if (elements.generateBtn) elements.generateBtn.disabled = true;
             if (elements.generateBtnSpinner) elements.generateBtnSpinner.classList.remove('d-none');
+            if (elements.dataTableBody) elements.dataTableBody.innerHTML = '';
+            state.currentData = [];
 
             fetch('/startAllReports', {
                 method: 'POST',
