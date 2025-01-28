@@ -15,13 +15,7 @@ class ReportManager:
         self.config = config
         self.report_status_store: Dict[str, Dict[str, Any]] = {}
         self.report_data_store: Dict[str, List[Dict[str, Any]]] = {}
-        self.company = None
-        self.report_keys = {}
-
-    def set_company(self, company_name: str) -> None:
-        """Set the current company and its report keys."""
-        self.company = company_name
-        self.report_keys = self.config['COMPANIES'][company_name]['report_keys']
+        self.report_keys = config['COMPANIES']['uniska']['report_keys']
 
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""

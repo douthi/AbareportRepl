@@ -156,10 +156,9 @@ def start_all_reports():
         year = data.get('year', 'none')
         report_key = data.get('report_key')
 
+
         # Get company from request
         company = data.get('company', 'uniska')
-        report_manager.set_company(company)
-
         company_config = app.config['COMPANIES'].get(company, {})
         company_mandants = company_config.get('mandants', {})
 
