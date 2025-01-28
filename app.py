@@ -171,11 +171,14 @@ def start_all_reports():
 
         for report_key in report_keys.keys():
             try:
-                report_id = report_manager.start_report(mandant, report_key, year)
+                logger.info(f"Starting report {report_key} for mandant {mandant} and company {company}")
+                report_id = report_manager.start_report(mandant, report_key, year, company)
                 report_ids[report_key] = report_id
+                logger.info(f"Successfully started report {report_key} with ID {report_id}")
             except Exception as e:
-                logger.error(f"Error starting report {report_key}: {e}")
-                return jsonify({'error': f"Failed to start report {report_key}: {str(e)}"}), 500
+                error_msg = f"Failed to start report {report_key} for mandant {mandant}: {str(e)}"
+                logger.error(error_msg)
+                return jsonify({'error': error_msg}), 500
 
         return jsonify({'report_ids': report_ids}), 200
 

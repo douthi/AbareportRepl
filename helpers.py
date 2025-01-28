@@ -51,10 +51,11 @@ class ReportManager:
                 logger.warning(f"Attempt {attempt + 1} failed, retrying: {e}")
                 time.sleep(2 ** attempt)  # Exponential backoff
 
-    def start_report(self, mandant: str, report_key: str, year: str) -> str:
+    def start_report(self, mandant: str, report_key: str, year: str, company: str = 'uniska') -> str:
         """Start a report and return the report ID."""
         access_token = self.get_access_token()
         report_id = str(uuid.uuid4())
+        logger.info(f"Starting report {report_key} for company {company} with mandant {mandant}")
 
         self.report_status_store[report_id] = {
             'mandant': mandant,
