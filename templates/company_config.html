@@ -53,8 +53,8 @@
                     <small class="text-muted">API key is managed through Secrets</small>
                     <label for="pipedriveKey">Pipedrive API Key</label>
                 </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-2"></i>Save API Key
+                <button type="button" class="btn btn-primary" onclick="fetchPipedriveFields()">
+                    <i class="fas fa-sync me-2"></i>Fetch Pipedrive Fields
                 </button>
             </form>
         </div>
@@ -284,29 +284,7 @@ document.getElementById('fieldMappings').addEventListener('click', (e) => {
     }
 });
 
-document.getElementById('apiConfigForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-
-    try {
-        const response = await fetch(`/{{ company }}/config`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-
-        if (response.ok) {
-            showToast('API configuration saved successfully!');
-            await fetchPipedriveFields();
-        } else {
-            showToast('Failed to save API configuration', 'danger');
-        }
-    } catch (error) {
-        showToast('Error saving API configuration', 'danger');
-    }
-});
+// Form is read-only since API key is managed through Secrets
 
 document.getElementById('saveMapping').addEventListener('click', async () => {
     const mappings = Array.from(document.querySelectorAll('.mapping-row')).map(row => ({
