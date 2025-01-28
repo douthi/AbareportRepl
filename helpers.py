@@ -68,7 +68,9 @@ class ReportManager:
         }
 
         report_path = self.report_keys[report_key]
-        endpoint = f"/api/abareport/v1/report/{mandant}/{report_path}"
+        # Format mandant ID with leading zeros if needed
+        formatted_mandant = f"{int(mandant):02d}"
+        endpoint = f"/api/abareport/v1/report/{formatted_mandant}/{report_path}"
 
         # Build request body
         body = {
