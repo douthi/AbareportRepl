@@ -29,6 +29,7 @@
 </div>
 {% endblock %}
 
+{% block additional_scripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -72,13 +73,6 @@
                 <button type="button" class="btn btn-danger remove-mapping">×</button>
             </div>
         `;
-
-        // Initialize select2 for the target field
-        $(row).find('.target-field').select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            placeholder: 'Select Pipedrive Field'
-        });
 
         // Update options based on entity type
         const entitySelect = row.querySelector('.entity-type');
@@ -127,10 +121,9 @@
         const container = document.getElementById('mappingContainer');
         const saveButton = document.getElementById('saveMapping');
 
+
         // Initial fetch of Pipedrive fields
         fetchPipedriveFields();
-        const addButton = document.getElementById('addMapping'); //This ID is not in the new template, so it is commented out.
-        //const form = document.getElementById('mappingForm'); //This ID is not in the new template, so it is commented out.
 
         // Load existing mappings
         fetch('/pipedrive-config')
@@ -145,9 +138,6 @@
                 }
             });
 
-        //addButton.addEventListener('click', () => { //This event listener is commented out because the add button is not in the new template
-        //    container.appendChild(createMappingRow());
-        //});
 
         container.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-mapping')) {
@@ -155,7 +145,7 @@
             }
         });
 
-        saveButton.addEventListener('click', async (e) => { //This event listener replaces the previous form submission listener
+        saveButton.addEventListener('click', async (e) => {
             e.preventDefault();
             const mappings = Array.from(container.getElementsByClassName('mapping-row')).map(row => ({
                 source: row.querySelector('.source-field').value,
@@ -178,6 +168,13 @@
             }
         });
     });
+    $(document).ready(function() {
+        $('.source-field, .target-field, .entity-type').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    });
 </script>
+{% endblock %}
 </body>
 </html>
