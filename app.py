@@ -63,12 +63,7 @@ def field_mappings(company_name):
         
     return jsonify(pipedrive_helper.get_field_mappings())
 
-@app.route('/<company_name>/mapping')
-def company_mapping(company_name):
-    """Render company field mapping page."""
-    if company_name not in ['uniska', 'novisol']:
-        return redirect(url_for('company_dashboard', company_name='uniska'))
-    return render_template('field_mapping.html', company=company_name)
+
 
 @app.route('/pipedrive-fields', methods=['GET'])
 def get_pipedrive_fields():
