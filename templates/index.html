@@ -158,13 +158,20 @@
                         <thead>
                             <tr>
                                 <th data-sort="ProjNr">ProjNr <i class="fas fa-sort"></i></th>
-                                <th>Project Name</th>
+                                <th data-sort="ProjName">ProjName <i class="fas fa-sort"></i></th>
                                 <th data-sort="NAME">Name <i class="fas fa-sort"></i></th>
                                 <th data-sort="VORNAME">First Name <i class="fas fa-sort"></i></th>
-                                <th>Email</th>
-                                <th>Phone</th>
+                                <th data-sort="EMAIL">Email <i class="fas fa-sort"></i></th>
+                                <th data-sort="TEL">Phone <i class="fas fa-sort"></i></th>
+                                <th data-sort="LAND">Land <i class="fas fa-sort"></i></th>
+                                <th data-sort="PLZ">PLZ <i class="fas fa-sort"></i></th>
+                                <th data-sort="ORT">Ort <i class="fas fa-sort"></i></th>
+                                <th data-sort="STREET">Street <i class="fas fa-sort"></i></th>
+                                <th data-sort="HOUSE_NUMBER">House Nr <i class="fas fa-sort"></i></th>
                                 <th data-sort="KDatum">KDatum <i class="fas fa-sort"></i></th>
                                 <th data-sort="KSumme">KSumme <i class="fas fa-sort"></i></th>
+                                <th data-sort="ADatum">ADatum <i class="fas fa-sort"></i></th>
+                                <th data-sort="ASumme">ASumme <i class="fas fa-sort"></i></th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -258,8 +265,15 @@
                         <td>${item.VORNAME || ''}</td>
                         <td>${item.EMAIL || ''}</td>
                         <td>${item.TEL || ''}</td>
+                        <td>${item.LAND || ''}</td>
+                        <td>${item.PLZ || ''}</td>
+                        <td>${item.ORT || ''}</td>
+                        <td>${item.STREET || ''}</td>
+                        <td>${item.HOUSE_NUMBER || ''}</td>
                         <td>${item.KDatum || ''}</td>
                         <td>${item.KSumme || ''}</td>
+                        <td>${item.ADatum || ''}</td>
+                        <td>${item.ASumme || ''}</td>
                         <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
                         <td>
                             ${item.Status.toLowerCase() === 'new' ? 
