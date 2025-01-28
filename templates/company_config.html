@@ -48,7 +48,9 @@
                            name="pipedrive_key" 
                            placeholder="Pipedrive API Key"
                            value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}"
+                           readonly
                            required>
+                    <small class="text-muted">API key is managed through Secrets</small>
                     <label for="pipedriveKey">Pipedrive API Key</label>
                 </div>
                 <button type="submit" class="btn btn-primary">
