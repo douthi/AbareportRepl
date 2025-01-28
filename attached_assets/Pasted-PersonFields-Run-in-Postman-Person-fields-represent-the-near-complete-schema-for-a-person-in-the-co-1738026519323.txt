@@ -1,0 +1,240 @@
+PersonFields
+
+Run in Postman
+Person fields represent the near-complete schema for a person in the context of the company of the authorized user. Each company can have a different schema for their persons, with various custom fields. In the context of using person fields as a schema for defining the data fields of a person, it must be kept in mind that some types of custom fields can have additional data fields which are not separate person fields per se. Such is the case with monetary, daterange and timerange fields – each of these fields will have one additional data field in addition to the one presented in the context of person fields. For example, if there is a monetary field with the key ffk9s9 stored on the account, ffk9s9 would hold the numeric value of the field, and ffk9s9_currency would hold the ISO currency code that goes along with the numeric value. To find out which data fields are available, fetch one person and list its keys.
+
+Get all person fields
+Copy link
+Returns data about all person fields.
+If a company uses the Campaigns product, then this endpoint will also return the data.marketing_status field.
+
+API v1
+Cost
+20
+
+Request
+GET/v1/personFields
+Query parameters
+start
+integer
+Pagination start
+
+Default0
+limit
+integer
+Items shown per page
+
+Response
+200
+OK
+
+
+Expand all
+
+Copy code
+"success":true
+Get one person field
+Copy link
+Returns data about a specific person field.
+
+API v1
+Cost
+2
+
+Request
+GET/v1/personFields/{id}
+Path parameters
+id
+integer
+required
+The ID of the field
+
+Response
+200
+OK
+
+
+Expand all
+
+Copy code
+"success":true
+Add a new person field
+Copy link
+Adds a new person field. For more information, see the tutorial for adding a new custom field.
+
+API v1
+Cost
+10
+
+Request
+POST/v1/personFields
+Body parameters
+application/json
+
+name
+string
+required
+The name of the field
+
+options
+array
+When field_type is either set or enum, possible options must be supplied as a JSON-encoded sequential array of objects. Example: [{"label":"New Item"}]
+
+add_visible_flag
+boolean
+Whether the field is available in the 'add new' modal or not (both in the web and mobile app)
+
+Defaulttrue
+field_type
+string
+required
+The type of the field
+
+Value	Description
+address	Address field
+date	Date (format YYYY-MM-DD)
+daterange	Date-range field (has a start date and end date value, both YYYY-MM-DD)
+double	Numeric value
+enum	Options field with a single possible chosen option
+monetary	Monetary field (has a numeric value and a currency value)
+org	Organization field (contains an organization ID which is stored on the same account)
+people	Person field (contains a person ID which is stored on the same account)
+phone	Phone field (up to 255 numbers and/or characters)
+set	Options field with a possibility of having multiple chosen options
+text	Long text (up to 65k characters)
+time	Time field (format HH:MM:SS)
+timerange	Time-range field (has a start time and end time value, both HH:MM:SS)
+user	User field (contains a user ID of another Pipedrive user)
+varchar	Text (up to 255 characters)
+varchar_auto	Autocomplete text (up to 255 characters)
+visible_to	System field that keeps item's visibility setting
+Values
+
+address
+
+date
+
+daterange
+
+double
+
+enum
+
+monetary
+
+org
+
+people
+
+phone
+
+set
+
+text
+
+time
+
+timerange
+
+user
+
+varchar
+
+varchar_auto
+
+visible_to
+
+Response
+200
+OK
+
+
+Expand all
+
+Copy code
+"success":true
+Update a person field
+Copy link
+Updates a person field. For more information, see the tutorial for updating custom fields' values.
+
+API v1
+Cost
+10
+
+Request
+PUT/v1/personFields/{id}
+Path parameters
+id
+integer
+required
+The ID of the field
+
+Body parameters
+application/json
+
+name
+string
+The name of the field
+
+options
+array
+When field_type is either set or enum, possible options must be supplied as a JSON-encoded sequential array of objects. All active items must be supplied and already existing items must have their ID supplied. New items only require a label. Example: [{"id":123,"label":"Existing Item"},{"label":"New Item"}]
+
+add_visible_flag
+boolean
+Whether the field is available in 'add new' modal or not (both in web and mobile app)
+
+Defaulttrue
+Response
+200
+OK
+
+
+Expand all
+
+Copy code
+"success":true
+Delete multiple person fields in bulk
+Copy link
+Marks multiple fields as deleted.
+
+API v1
+Cost
+10
+
+Request
+DELETE/v1/personFields
+Query parameters
+ids
+string
+required
+The comma-separated field IDs to delete
+
+Response
+200
+OK
+
+
+Expand all
+
+Copy code
+"success":true
+Delete a person field
+Copy link
+Marks a field as deleted. For more information, see the tutorial for deleting a custom field.
+
+API v1
+Cost
+6
+
+Request
+DELETE/v1/personFields/{id}
+Path parameters
+id
+integer
+required
+The ID of the field
+
+Response
+200
+OK
