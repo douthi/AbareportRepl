@@ -63,13 +63,26 @@ class PipedriveHelper:
     def get_fields(self, entity_type: str) -> List[Dict[str, Any]]:
         """Get fields for a specific entity type."""
         endpoint = f"{self.base_url}/{entity_type}Fields"
-        params = {'api_token': self.api_key}
+        params = {
+            'api_token': self.api_key,
+            'start': 0,
+            'limit': 100
+        }
         
         response = requests.get(endpoint, params=params)
         if response.ok:
             data = response.json()
-            return [{'key': field['key'], 'name': field['name']} 
-                   for field in data.get('data', [])]
+            fields = []
+            for field in data.get('data', []):
+                field_data = {
+                    'key': field.get('key'),
+                    'name': field.get('name'),
+                    'field_type': field.get('field_type'),
+                    'mandatory_flag': field.get('mandatory_flag', False),
+                    'options': field.get('options', [])
+                }
+                fields.append(field_data)
+            return fields
         return []
 
     def get_organization_fields(self) -> List[Dict[str, Any]]:
@@ -88,9 +101,17 @@ class PipedriveHelper:
         deal_data = {
             'title': data['ProjName'],
             'org_id': org_id,
-            'value': data['KSumme'],
-            'currency': 'CHF'
+            'value': data.get('KSumme', 0),
+            'currency': 'CHF',
+            'status': 'open',
+            'probability': data.get('probability', None),
+            'expected_close_date': data.get('expected_close_date', None),
         }
+        
+        # Add mapped custom fields from field mappings
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'deal' and mapping['source'] in data:
+                deal_data[mapping['target']] = data[mapping['source']]
         
         response = requests.post(endpoint, params=params, json=deal_data)
         return response.json()
