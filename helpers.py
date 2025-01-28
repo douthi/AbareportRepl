@@ -296,10 +296,18 @@ class ReportManager:
             akp_entries = akp_dict.get(inr, [])
 
             if adr:
-                # Create combined record
-                combined_record = {
-                    'ProjNr': npo.get('ProjNr', ''),
-                    'ProjName': npo.get('ProjName', ''),
+                # Create combined record with all NPO fields
+                combined_record = {k: npo.get(k, '') for k in npo.keys()}
+                
+                # Add all ADR fields
+                adr_fields = {f'ADR_{k}': v for k, v in adr.items()}
+                combined_record.update(adr_fields)
+                
+                # Add status field if not present
+                combined_record['Status'] = 'new'
+
+                # Add commonly used fields at their usual locations
+                common_fields = {
                     'NAME': adr.get('NAME', ''),
                     'VORNAME': '',  # Will be populated from AKP if available
                     'EMAIL': '',    # Will be populated from AKP if available
@@ -308,13 +316,9 @@ class ReportManager:
                     'PLZ': adr.get('PLZ', ''),
                     'ORT': adr.get('ORT', ''),
                     'STREET': adr.get('STREET', ''),
-                    'HOUSE_NUMBER': adr.get('HOUSE_NUMBER', ''),
-                    'KDatum': npo.get('KDatum', ''),
-                    'KSumme': npo.get('KSumme', ''),
-                    'ADatum': npo.get('ADatum', ''),
-                    'ASumme': npo.get('ASumme', ''),
-                    'Status': 'new'
+                    'HOUSE_NUMBER': adr.get('HOUSE_NUMBER', '')
                 }
+                combined_record.update(common_fields)
 
                 # Add AKP data if available
                 if akp_entries:
