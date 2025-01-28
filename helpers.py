@@ -20,7 +20,7 @@ class ReportManager:
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
         max_retries = 3
-        timeout = 30
+        timeout = 60  # Increased timeout to 60 seconds
 
         for attempt in range(max_retries):
             try:

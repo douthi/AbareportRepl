@@ -43,7 +43,7 @@ class PipedriveHelper:
             'address_country': data['LAND']
         }
         
-        response = requests.post(endpoint, params=params, json=org_data)
+        response = requests.post(endpoint, params=params, json=org_data, timeout=60)
         return response.json()
 
     def create_person(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
