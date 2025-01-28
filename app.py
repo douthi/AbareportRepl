@@ -171,8 +171,8 @@ def start_all_reports():
 
         for report_key in report_keys.keys():
             try:
-                logger.info(f"Starting report {report_key} for mandant {mandant} and company {company}")
-                report_id = report_manager.start_report(mandant, report_key, year, company)
+                logger.info(f"Starting report {report_key} for mandant {mandant}")
+                report_id = report_manager.start_report(mandant, report_key, year)
                 report_ids[report_key] = report_id
                 logger.info(f"Successfully started report {report_key} with ID {report_id}")
             except Exception as e:
