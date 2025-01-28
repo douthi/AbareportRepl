@@ -55,7 +55,7 @@ class ReportManager:
         """Start a report and return the report ID."""
         access_token = self.get_access_token()
         report_id = str(uuid.uuid4())
-        logger.info(f"Starting report {report_key} for company {company} with mandant {mandant}")
+        logger.info(f"Starting report {report_key} for mandant {mandant}")
 
         self.report_status_store[report_id] = {
             'mandant': mandant,
