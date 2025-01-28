@@ -258,17 +258,27 @@ class ReportManager:
                 # Add NPO fields with prefix
                 combined_record = {f'NPO_{k}': v for k, v in npo.items()}
                 
+                # Handle ADR phone fallback
+                adr_phone = adr.get('TEL') or adr.get('TEL2') or ''
+                adr_with_phone = {**adr, 'TEL': adr_phone}
+                
                 # Add ADR fields with prefix
-                adr_fields = {f'ADR_{k}': v for k, v in adr.items()}
+                adr_fields = {f'ADR_{k}': v for k, v in adr_with_phone.items()}
                 combined_record.update(adr_fields)
                 
                 # Add status field
                 combined_record['Status'] = 'new'
                 
-                # Add AKP data with prefix (empty strings if no AKP data)
+                # Add AKP data with prefix and phone fallback
                 akp_entries = akp_dict.get(inr, [{}])
                 akp_record = akp_entries[0]  # Take first entry
-                akp_fields = {f'AKP_{k}': v for k, v in akp_record.items()}
+                
+                # Handle AKP phone fallback
+                akp_phone = akp_record.get('TEL') or akp_record.get('TEL2') or akp_record.get('TEL3') or ''
+                akp_with_phone = {**akp_record, 'TEL': akp_phone}
+                
+                # Add AKP fields with prefix
+                akp_fields = {f'AKP_{k}': v for k, v in akp_with_phone.items()}
                 combined_record.update(akp_fields)
                 
                 combined_data.append(combined_record)
