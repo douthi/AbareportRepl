@@ -1,165 +1,161 @@
 
-const sourceFields = [
-    'ProjNr',
-    'ProjName',
-    'NAME',
-    'VORNAME',
-    'EMAIL',
-    'TEL',
-    'LAND',
-    'PLZ',
-    'ORT',
-    'STREET',
-    'HOUSE_NUMBER',
-    'KDatum',
-    'KSumme',
-    'ADatum',
-    'ASumme',
-    'Status',
-    'KdINR',
-    'RootProj',
-    'Name2',
-    'Name3', 
-    'ISOCode',
-    'Status1',
-    'Status2',
-    'Status3',
-    'Status4',
-    'NDatum',
-    'NSumme',
-    'Person1',
-    'INR',
-    'KURZNA',
-    'ZEILE1',
-    'ZEILE2',
-    'STAAT',
-    'ANR_NR',
-    'TEL2',
-    'TELEX',
-    'TELEFAX',
-    'SPRACHE',
-    'ASI_INR',
-    'AKP_NR',
-    'WWW',
-    'AddressAddition',
-    'StreetAddition',
-    'PostOfficeBoxText',
-    'PostOfficeBoxNumber',
-    'ANR_GROUP'
-];
+// Global variable to store Pipedrive fields
+let pipedriveFields = {
+    organization: [],
+    person: [],
+    deal: []
+};
 
-function createMappingRow(existingMapping = null) {
+async function fetchPipedriveFields() {
+    try {
+        const response = await fetch('/pipedrive-fields?company=' + company);
+        if (response.ok) {
+            pipedriveFields = await response.json();
+            // Load existing mappings after fields are fetched
+            loadExistingMappings();
+        } else {
+            console.error('Failed to fetch Pipedrive fields');
+            alert('Failed to fetch Pipedrive fields');
+        }
+    } catch (error) {
+        console.error('Error fetching Pipedrive fields:', error);
+        alert('Error fetching Pipedrive fields');
+    }
+}
+
+function createMappingRow(mapping = null) {
     const row = document.createElement('div');
-    row.className = 'mapping-row row g-3 align-items-center mb-2';
-
+    row.className = 'mapping-row row g-3 align-items-center mb-3';
+    
     row.innerHTML = `
-        <div class="col-md-4">
-            <select class="form-select source-field" required>
+        <div class="col-md-3">
+            <select class="form-select source-field">
                 <option value="">Select Source Field</option>
-                ${sourceFields.map(field =>
-                    `<option value="${field}" ${existingMapping && existingMapping.source === field ? 'selected' : ''}>${field}</option>`
-                ).join('')}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <select class="form-select target-field" required>
-                <option value="">Select Pipedrive Field</option>
+                <option value="NAME">NAME</option>
+                <option value="VORNAME">VORNAME</option>
+                <option value="EMAIL">EMAIL</option>
+                <option value="TEL">TEL</option>
+                <option value="LAND">LAND</option>
+                <option value="PLZ">PLZ</option>
+                <option value="ORT">ORT</option>
+                <option value="STREET">STREET</option>
+                <option value="HOUSE_NUMBER">HOUSE_NUMBER</option>
+                <option value="ProjName">ProjName</option>
+                <option value="KSumme">KSumme</option>
+                <option value="Status">Status</option>
             </select>
         </div>
         <div class="col-md-3">
-            <select class="form-select entity-type" required>
-                <option value="organization" ${existingMapping && existingMapping.entity === 'organization' ? 'selected' : ''}>Organization</option>
-                <option value="person" ${existingMapping && existingMapping.entity === 'person' ? 'selected' : ''}>Person</option>
-                <option value="deal" ${existingMapping && existingMapping.entity === 'deal' ? 'selected' : ''}>Deal</option>
+            <select class="form-select entity-type">
+                <option value="">Select Entity Type</option>
+                <option value="organization">Organization</option>
+                <option value="person">Person</option>
+                <option value="deal">Deal</option>
             </select>
         </div>
-        <div class="col-md-1">
-            <button type="button" class="btn btn-danger remove-mapping">×</button>
+        <div class="col-md-4">
+            <select class="form-select target-field" disabled>
+                <option value="">Select Pipedrive Field</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-danger remove-mapping">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
     `;
+
+    // Add event listeners
+    const entitySelect = row.querySelector('.entity-type');
+    const targetSelect = row.querySelector('.target-field');
     
+    entitySelect.addEventListener('change', () => {
+        updateTargetFields(targetSelect, entitySelect.value);
+    });
+
+    row.querySelector('.remove-mapping').addEventListener('click', () => {
+        row.remove();
+    });
+
+    // If mapping data is provided, set the values
+    if (mapping) {
+        row.querySelector('.source-field').value = mapping.source;
+        row.querySelector('.entity-type').value = mapping.entity;
+        updateTargetFields(targetSelect, mapping.entity);
+        setTimeout(() => {
+            targetSelect.value = mapping.target;
+        }, 100);
+    }
+
     return row;
 }
 
-async function fetchPipedriveFields(company = 'uniska') {
-    const response = await fetch(`/pipedrive-fields?company=${company}`);
-    const fields = await response.json();
-    pipedriveFields = fields;
-    return fields;
-}
-
-function updateTargetFields(entityType, targetSelect) {
+function updateTargetFields(targetSelect, entityType) {
+    targetSelect.disabled = !entityType;
     targetSelect.innerHTML = '<option value="">Select Pipedrive Field</option>';
-    const fields = pipedriveFields[entityType] || [];
-    fields.forEach(field => {
-        const option = document.createElement('option');
-        option.value = field.key;
-        option.textContent = field.name;
-        targetSelect.appendChild(option);
-    });
+    
+    if (entityType && pipedriveFields[entityType]) {
+        pipedriveFields[entityType].forEach(field => {
+            const option = document.createElement('option');
+            option.value = field.key;
+            option.textContent = field.name;
+            targetSelect.appendChild(option);
+        });
+    }
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-    const container = document.getElementById('mappingContainer');
-    const addButton = document.createElement('button');
-    addButton.className = 'btn btn-primary mb-3';
-    addButton.textContent = 'Add Mapping';
-    container.parentElement.insertBefore(addButton, container);
+async function loadExistingMappings() {
+    try {
+        const response = await fetch(`/${company}/field-mappings`);
+        const mappings = await response.json();
+        const container = document.getElementById('fieldMappings');
+        container.innerHTML = '';
 
-    await fetchPipedriveFields();
-
-    const mappingsResponse = await fetch('/uniska/field-mappings');
-    const existingMappings = await mappingsResponse.json();
-    
-    if (existingMappings && existingMappings.length > 0) {
-        existingMappings.forEach(mapping => {
-            container.appendChild(createMappingRow(mapping));
-            const row = container.lastElementChild;
-            updateTargetFields(mapping.entity, row.querySelector('.target-field'));
-            row.querySelector('.target-field').value = mapping.target;
-        });
-    } else {
-        container.appendChild(createMappingRow());
+        if (mappings && mappings.length) {
+            mappings.forEach(mapping => {
+                container.appendChild(createMappingRow(mapping));
+            });
+        } else {
+            container.appendChild(createMappingRow());
+        }
+    } catch (error) {
+        console.error('Error loading existing mappings:', error);
     }
+}
 
-    container.addEventListener('change', (e) => {
-        if (e.target.classList.contains('entity-type')) {
-            const row = e.target.closest('.mapping-row');
-            const targetSelect = row.querySelector('.target-field');
-            updateTargetFields(e.target.value, targetSelect);
-        }
-    });
+async function saveMappings() {
+    const mappings = Array.from(document.querySelectorAll('.mapping-row')).map(row => ({
+        source: row.querySelector('.source-field').value,
+        target: row.querySelector('.target-field').value,
+        entity: row.querySelector('.entity-type').value
+    })).filter(mapping => mapping.source && mapping.target && mapping.entity);
 
-    addButton.addEventListener('click', () => {
-        container.appendChild(createMappingRow());
-    });
-
-    container.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-mapping')) {
-            e.target.closest('.mapping-row').remove();
-        }
-    });
-
-    const saveButton = document.getElementById('saveMapping');
-    saveButton.addEventListener('click', async () => {
-        const mappings = Array.from(container.getElementsByClassName('mapping-row')).map(row => ({
-            source: row.querySelector('.source-field').value,
-            target: row.querySelector('.target-field').value,
-            entity: row.querySelector('.entity-type').value
-        }));
-
-        const response = await fetch('/uniska/field-mappings', {
+    try {
+        const response = await fetch(`/${company}/field-mappings`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(mappings)
         });
 
         if (response.ok) {
-            alert('Mappings saved successfully!');
+            alert('Mappings saved successfully');
         } else {
-            alert('Error saving mappings');
+            alert('Failed to save mappings');
         }
+    } catch (error) {
+        console.error('Error saving mappings:', error);
+        alert('Error saving mappings');
+    }
+}
+
+// Initialize when document is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPipedriveFields();
+    
+    // Add event listeners
+    document.getElementById('addMapping').addEventListener('click', () => {
+        document.getElementById('fieldMappings').appendChild(createMappingRow());
     });
+
+    document.getElementById('saveMapping').addEventListener('click', saveMappings);
 });
