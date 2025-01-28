@@ -215,31 +215,6 @@ class ReportManager:
         """Get combined and matched data from NPO, ADR, and AKP reports."""
         combined_data = []
 
-        # Define the exact columns we want from each table
-        NPO_COLUMNS = [
-            'ProjNr', 'ProjName', 'KdINR', 'RootProj', 'Name2', 'Name3', 'ISOCode',
-            'Status', 'Status1', 'Status2', 'Status3', 'Status4', 'KDatum', 'KSumme',
-            'ADatum', 'ASumme', 'NDatum', 'NSumme', 'Person1'
-        ]
-
-        ADR_COLUMNS = [
-            'INR', 'KURZNA', 'LAND', 'PLZ', 'NAME', 'VORNAME', 'ORT', 'SUBJEKTTYP',
-            'IS_AKP_ONLY', 'EMAIL', 'ZEILE1', 'ZEILE2', 'STAAT', 'STREET', 'ANR_NR',
-            'ANREDENAME', 'TEL', 'TEL2', 'TELEX', 'TELEFAX', 'SPRACHE', 'ASI_INR',
-            'AKP_NR', 'WWW', 'HOUSE_NUMBER', 'AddressAddition', 'StreetAddition',
-            'PostOfficeBoxText', 'PostOfficeBoxNumber', 'ANR_GROUP'
-        ]
-
-        AKP_COLUMNS = [
-            'ADR_INR', 'NR', 'NAME', 'VORNAME', 'FUNKTION', 'SUBJEKT_NR', 'ANR_NR',
-            'ANREDENAME', 'TEL', 'MAIL', 'WWW', 'TEL2', 'TEL3', 'TEL4', 'ABTEILUNG',
-            'ANR_GROUP'
-        ]
-
-        ANR_COLUMNS = [
-            'NR', 'Group', 'ANREDE', 'ANREDETEXT'
-        ]
-
         # Get the latest report data for each type
         npo_data = None
         adr_data = None
@@ -266,68 +241,37 @@ class ReportManager:
 
         adr_dict = {str(adr.get('INR', '')): adr for adr in adr_data if adr.get('INR')}
 
-        # Create AKP lookup dictionary
+        # Create lookup dictionaries
         akp_dict = {}
-        anr_dict = {}
-
-        # Get ANR data from report store if available
-        for report_id, status in self.report_status_store.items():
-            if status['report_key'] == 'anr' and status['status'] == 'FinishedSuccess':
-                anr_data = self.report_data_store.get(report_id, [])
-                anr_dict = {str(anr.get('NR')): anr.get('ANR_NR') for anr in anr_data if anr.get('NR')}
-                break
-
         if akp_data:
             for akp in akp_data:
                 adr_inr = str(akp.get('ADR_INR', ''))
-                akp['ANR_NR'] = anr_dict.get(str(akp.get('NR', '')), '')
                 if adr_inr:
                     if adr_inr not in akp_dict:
                         akp_dict[adr_inr] = []
                     akp_dict[adr_inr].append(akp)
 
-        # Combine data based on matching keys
-        combined_data = []
-        processed_records = set()
-
-        # First pass: Process NPO records
+        # Process NPO records
         for inr, npo in npo_dict.items():
             adr = adr_dict.get(inr)
-            akp_entries = akp_dict.get(inr, [])
-
             if adr:
-                # Create combined record with all NPO fields
-                combined_record = {k: npo.get(k, '') for k in npo.keys()}
-
-                # Add all ADR fields
+                # Add NPO fields with prefix
+                combined_record = {f'NPO_{k}': v for k, v in npo.items()}
+                
+                # Add ADR fields with prefix
                 adr_fields = {f'ADR_{k}': v for k, v in adr.items()}
                 combined_record.update(adr_fields)
-
-                # Add status field if not present
+                
+                # Add status field
                 combined_record['Status'] = 'new'
-
-                # Add commonly used fields at their usual locations
-                common_fields = {
-                    'NAME': adr.get('NAME', ''),
-                    'VORNAME': '',  # Will be populated from AKP if available
-                    'EMAIL': '',    # Will be populated from AKP if available
-                    'TEL': adr.get('TEL', ''),
-                    'LAND': adr.get('LAND', ''),
-                    'PLZ': adr.get('PLZ', ''),
-                    'ORT': adr.get('ORT', ''),
-                    'STREET': adr.get('STREET', ''),
-                    'HOUSE_NUMBER': adr.get('HOUSE_NUMBER', '')
-                }
-                combined_record.update(common_fields)
-
-                # Add AKP data if available
-                if akp_entries:
-                    akp_data = akp_entries[0]  # Take first entry
-                    for k, v in akp_data.items():
-                        combined_record[f'AKP_{k}'] = v
-
+                
+                # Add AKP data with prefix (empty strings if no AKP data)
+                akp_entries = akp_dict.get(inr, [{}])
+                akp_record = akp_entries[0]  # Take first entry
+                akp_fields = {f'AKP_{k}': v for k, v in akp_record.items()}
+                combined_record.update(akp_fields)
+                
                 combined_data.append(combined_record)
-                processed_records.add(inr)
 
         return combined_data
 
