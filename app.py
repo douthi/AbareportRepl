@@ -31,7 +31,7 @@ def company_dashboard(company_name):
         return redirect(url_for('company_dashboard', company_name='uniska'))
     return render_template('index.html', company=company_name, config=app.config, current_year=datetime.now().year, data=[])
 
-@app.route('/<company_name>/config')
+@app.route('/<company_name>/config', methods=['GET', 'POST'])
 def company_config(company_name):
     """Render company configuration page."""
     if company_name not in ['uniska', 'novisol']:
@@ -42,6 +42,7 @@ def company_config(company_name):
         if 'pipedrive_key' in data:
             # Update Pipedrive API key in environment
             os.environ[f'{company_name.upper()}_PIPEDRIVE_API_KEY'] = data['pipedrive_key']
+            app.config['COMPANIES'][company_name]['pipedrive_api_key'] = data['pipedrive_key']
             return jsonify({'status': 'success'})
         return jsonify({'error': 'Invalid data'}), 400
         
