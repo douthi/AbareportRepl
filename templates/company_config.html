@@ -242,13 +242,30 @@ async function loadMappings() {
 
 async function fetchPipedriveFields() {
     try {
-        const response = await fetch(`/pipedrive-fields?company={{ company }}`);
+        const response = await fetch(`/{{ company }}/pipedrive-fields`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch Pipedrive fields');
+        }
         const fields = await response.json();
         pipedriveFields = fields;
+        
+        // Clear any existing error messages
+        const container = document.getElementById('fieldMappings');
+        if (container.querySelector('.alert')) {
+            container.querySelector('.alert').remove();
+        }
+        
         await loadMappings();
     } catch (error) {
         console.error('Error fetching Pipedrive fields:', error);
-        showToast('Error loading Pipedrive fields', 'danger');
+        showToast('Please ensure your API key is configured correctly', 'warning');
+        
+        const container = document.getElementById('fieldMappings');
+        container.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Please configure your Pipedrive API key first to load available fields.
+            </div>`;
     }
 }
 
@@ -292,11 +309,16 @@ document.getElementById('apiConfigForm').addEventListener('submit', async (e) =>
 });
 
 document.getElementById('saveMapping').addEventListener('click', async () => {
-    const mappings = Array.from(document.getElementById('fieldMappings').children).map(row => ({
-        source: row.querySelector('.source-field').value,
-        target: row.querySelector('.target-field').value,
-        entity: row.querySelector('.entity-type').value
+    const mappings = Array.from(document.querySelectorAll('.mapping-row')).map(row => ({
+        source: $(row).find('.source-field').val(),
+        target: $(row).find('.target-field').val(),
+        entity: $(row).find('.entity-type').val()
     })).filter(mapping => mapping.source && mapping.target && mapping.entity);
+
+    if (mappings.length === 0) {
+        showToast('Please add at least one valid mapping', 'warning');
+        return;
+    }
 
     try {
         const response = await fetch(`/{{ company }}/field-mappings`, {
@@ -307,10 +329,13 @@ document.getElementById('saveMapping').addEventListener('click', async () => {
 
         if (response.ok) {
             showToast('Field mappings saved successfully!');
+            await loadMappings(); // Reload mappings to confirm changes
         } else {
-            showToast('Failed to save field mappings', 'danger');
+            const error = await response.text();
+            showToast(`Failed to save field mappings: ${error}`, 'danger');
         }
     } catch (error) {
+        console.error('Error saving mappings:', error);
         showToast('Error saving field mappings', 'danger');
     }
 });
