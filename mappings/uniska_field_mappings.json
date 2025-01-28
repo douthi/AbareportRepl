@@ -1,0 +1,7 @@
+[
+  {
+    "source": "EMAIL",
+    "target": "email",
+    "entity": "person"
+  }
+]
