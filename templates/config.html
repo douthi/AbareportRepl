@@ -1,10 +1,9 @@
+
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
     <title>Pipedrive Field Mapping Configuration</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         .mapping-row {
             margin-bottom: 15px;
@@ -30,8 +29,6 @@
 {% endblock %}
 
 {% block additional_scripts %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     let pipedriveFields = {
         organization: [],
@@ -74,7 +71,6 @@
             </div>
         `;
 
-        // Update options based on entity type
         const entitySelect = row.querySelector('.entity-type');
         const targetSelect = row.querySelector('.target-field');
 
@@ -83,9 +79,7 @@
             updateTargetFields(targetSelect, entityType);
         });
 
-        // Initial population of fields
         updateTargetFields(targetSelect, entitySelect.value);
-
         return row;
     }
 
@@ -96,7 +90,6 @@
             const option = new Option(field.name, field.key);
             select.add(option);
         });
-        $(select).trigger('change');
     }
 
     async function fetchPipedriveFields() {
@@ -105,7 +98,6 @@
             const data = await response.json();
             pipedriveFields = data;
 
-            // Update all existing rows
             document.querySelectorAll('.mapping-row').forEach(row => {
                 const entitySelect = row.querySelector('.entity-type');
                 const targetSelect = row.querySelector('.target-field');
@@ -121,11 +113,8 @@
         const container = document.getElementById('mappingContainer');
         const saveButton = document.getElementById('saveMapping');
 
-
-        // Initial fetch of Pipedrive fields
         fetchPipedriveFields();
 
-        // Load existing mappings
         fetch('/pipedrive-config')
             .then(response => response.json())
             .then(mappings => {
@@ -137,7 +126,6 @@
                     container.appendChild(createMappingRow());
                 }
             });
-
 
         container.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-mapping')) {
@@ -166,12 +154,6 @@
             } else {
                 alert('Error saving configuration');
             }
-        });
-    });
-    $(document).ready(function() {
-        $('.source-field, .target-field, .entity-type').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
         });
     });
 </script>
