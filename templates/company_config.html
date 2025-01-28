@@ -31,36 +31,7 @@
 
 {% block content %}
 <div class="container py-4">
-    <!-- API Configuration Section -->
     <div class="config-section">
-        <div class="config-section-header">
-            <h4 class="mb-0">
-                <i class="fas fa-key me-2"></i>
-                API Configuration
-            </h4>
-        </div>
-        <div class="config-section-body">
-            <form id="apiConfigForm">
-                <div class="form-floating mb-3">
-                    <input type="password" 
-                           class="form-control bg-dark text-light" 
-                           id="pipedriveKey" 
-                           name="pipedrive_key" 
-                           placeholder="Pipedrive API Key"
-                           value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}"
-                           readonly
-                           required>
-                    <small class="text-muted">API key is managed through Secrets</small>
-                    <label for="pipedriveKey">Pipedrive API Key</label>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="fetchPipedriveFields()">
-                    <i class="fas fa-sync me-2"></i>Fetch Pipedrive Fields
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div class="config-section mt-4">
         <div class="config-section-header">
             <h4 class="mb-0">
                 <i class="fas fa-exchange-alt me-2"></i>
@@ -204,18 +175,18 @@ async function fetchPipedriveFields() {
         }
         const fields = await response.json();
         pipedriveFields = fields;
-        
+
         // Clear any existing error messages
         const container = document.getElementById('fieldMappings');
         if (container.querySelector('.alert')) {
             container.querySelector('.alert').remove();
         }
-        
+
         await loadMappings();
     } catch (error) {
         console.error('Error fetching Pipedrive fields:', error);
         showToast('Please ensure your API key is configured correctly', 'warning');
-        
+
         const container = document.getElementById('fieldMappings');
         container.innerHTML = `
             <div class="alert alert-warning">
