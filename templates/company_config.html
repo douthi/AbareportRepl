@@ -31,24 +31,44 @@
 
 {% block content %}
 <div class="container py-4">
-    
+    <!-- API Configuration Section -->
+    <div class="config-section">
+        <div class="config-section-header">
+            <h4 class="mb-0">
+                <i class="fas fa-key me-2"></i>
+                API Configuration
+            </h4>
+        </div>
+        <div class="config-section-body">
+            <form id="apiConfigForm">
+                <div class="form-floating mb-3">
+                    <input type="password" 
+                           class="form-control bg-dark text-light" 
+                           id="pipedriveKey" 
+                           name="pipedrive_key" 
+                           placeholder="Pipedrive API Key"
+                           value="{{ config.COMPANIES[company]['pipedrive_api_key'] }}"
+                           readonly
+                           required>
+                    <small class="text-muted">API key is managed through Secrets</small>
+                    <label for="pipedriveKey">Pipedrive API Key</label>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="fetchPipedriveFields()">
+                    <i class="fas fa-sync me-2"></i>Fetch Pipedrive Fields
+                </button>
+            </form>
+        </div>
+    </div>
 
     <div class="config-section mt-4">
         <div class="config-section-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    <i class="fas fa-exchange-alt me-2"></i>
-                    Field Mapping
-                </h4>
-                <div>
-                    <button type="button" class="btn btn-primary me-2" id="fetchFields">
-                        <i class="fas fa-sync me-2"></i>Fetch Pipedrive Fields
-                    </button>
-                    <button class="btn btn-success" id="addMapping">
-                        <i class="fas fa-plus me-2"></i>Add Mapping
-                    </button>
-                </div>
-            </div>
+            <h4 class="mb-0">
+                <i class="fas fa-exchange-alt me-2"></i>
+                Field Mapping
+            </h4>
+            <button class="btn btn-sm btn-success" id="addMapping">
+                <i class="fas fa-plus me-2"></i>Add Mapping
+            </button>
         </div>
         <div class="config-section-body">
             <div id="fieldMappings"></div>
@@ -75,26 +95,8 @@ let pipedriveFields = {
 const sourceFields = [
     'ProjNr', 'ProjName', 'NAME', 'VORNAME', 'EMAIL', 'TEL',
     'LAND', 'PLZ', 'ORT', 'STREET', 'HOUSE_NUMBER',
-    'KDatum', 'KSumme', 'ADatum', 'ASumme', 'Status'
+    'KDatum', 'KSumme', 'ADatum', 'ASumme'
 ];
-
-$(document).ready(function() {
-    // Initialize dropdowns
-    $('.source-field').select2({
-        theme: 'bootstrap-5',
-        width: '100%'
-    });
-    $('.entity-type').select2({
-        theme: 'bootstrap-5',
-        width: '100%'
-    });
-    $('.target-field').select2({
-        theme: 'bootstrap-5',
-        width: '100%'
-    });
-
-    // fetchPipedriveFields(); //removed auto-fetch
-});
 
 function createMappingRow(mapping = null) {
     const row = document.createElement('div');
@@ -202,18 +204,18 @@ async function fetchPipedriveFields() {
         }
         const fields = await response.json();
         pipedriveFields = fields;
-
+        
         // Clear any existing error messages
         const container = document.getElementById('fieldMappings');
         if (container.querySelector('.alert')) {
             container.querySelector('.alert').remove();
         }
-
+        
         await loadMappings();
     } catch (error) {
         console.error('Error fetching Pipedrive fields:', error);
         showToast('Please ensure your API key is configured correctly', 'warning');
-
+        
         const container = document.getElementById('fieldMappings');
         container.innerHTML = `
             <div class="alert alert-warning">
@@ -223,6 +225,8 @@ async function fetchPipedriveFields() {
     }
 }
 
+// Initialize
+document.addEventListener('DOMContentLoaded', fetchPipedriveFields);
 
 // Event Listeners
 document.getElementById('addMapping').addEventListener('click', () => {
@@ -235,8 +239,6 @@ document.getElementById('fieldMappings').addEventListener('click', (e) => {
         row.remove();
     }
 });
-
-document.getElementById('fetchFields').addEventListener('click', fetchPipedriveFields); //Added event listener for new button
 
 // Form is read-only since API key is managed through Secrets
 

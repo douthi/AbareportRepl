@@ -1,3 +1,4 @@
+
 // Global variable to store Pipedrive fields
 let pipedriveFields = {
     organization: [],
@@ -5,41 +6,27 @@ let pipedriveFields = {
     deal: []
 };
 
-// Function to toggle password visibility
-function togglePassword(inputId, iconId) {
-    const input = document.getElementById(inputId);
-    const icon = document.getElementById(iconId);
-
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-    }
-}
-
-// Function to fetch Pipedrive fields
-async function fetchPipedriveFields(company) {
+async function fetchPipedriveFields() {
     try {
-        const response = await fetch(`/pipedrive-fields?company=${company}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch Pipedrive fields');
+        const response = await fetch('/pipedrive-fields?company=' + company);
+        if (response.ok) {
+            pipedriveFields = await response.json();
+            // Load existing mappings after fields are fetched
+            loadExistingMappings();
+        } else {
+            console.error('Failed to fetch Pipedrive fields');
+            alert('Failed to fetch Pipedrive fields');
         }
-        const fields = await response.json();
-        return fields;
     } catch (error) {
         console.error('Error fetching Pipedrive fields:', error);
-        throw error;
+        alert('Error fetching Pipedrive fields');
     }
 }
 
 function createMappingRow(mapping = null) {
     const row = document.createElement('div');
     row.className = 'mapping-row row g-3 align-items-center mb-3';
-
+    
     row.innerHTML = `
         <div class="col-md-3">
             <select class="form-select source-field">
@@ -81,7 +68,7 @@ function createMappingRow(mapping = null) {
     // Add event listeners
     const entitySelect = row.querySelector('.entity-type');
     const targetSelect = row.querySelector('.target-field');
-
+    
     entitySelect.addEventListener('change', () => {
         updateTargetFields(targetSelect, entitySelect.value);
     });
@@ -106,7 +93,7 @@ function createMappingRow(mapping = null) {
 function updateTargetFields(targetSelect, entityType) {
     targetSelect.disabled = !entityType;
     targetSelect.innerHTML = '<option value="">Select Pipedrive Field</option>';
-
+    
     if (entityType && pipedriveFields[entityType]) {
         pipedriveFields[entityType].forEach(field => {
             const option = document.createElement('option');
@@ -136,64 +123,39 @@ async function loadExistingMappings() {
     }
 }
 
-// Function to save field mappings
-async function saveFieldMappings(mappings) {
+async function saveMappings() {
+    const mappings = Array.from(document.querySelectorAll('.mapping-row')).map(row => ({
+        source: row.querySelector('.source-field').value,
+        target: row.querySelector('.target-field').value,
+        entity: row.querySelector('.entity-type').value
+    })).filter(mapping => mapping.source && mapping.target && mapping.entity);
+
     try {
-        const response = await fetch('/field-mappings', {
+        const response = await fetch(`/${company}/field-mappings`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(mappings)
         });
-        if (!response.ok) {
-            throw new Error('Failed to save field mappings');
+
+        if (response.ok) {
+            alert('Mappings saved successfully');
+        } else {
+            alert('Failed to save mappings');
         }
-        return await response.json();
     } catch (error) {
-        console.error('Error saving field mappings:', error);
-        throw error;
+        console.error('Error saving mappings:', error);
+        alert('Error saving mappings');
     }
 }
 
-
 // Initialize when document is loaded
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPipedriveFields();
+    
     // Add event listeners
-    document.getElementById('fetchFields').addEventListener('click', async () => {
-        try {
-            pipedriveFields = await fetchPipedriveFields(company); // Update to use new function
-            loadExistingMappings();
-        } catch (error) {
-            console.error("Error fetching and loading fields:", error);
-            alert("Error fetching and loading fields. Check console for details.");
-        }
-    });
-
     document.getElementById('addMapping').addEventListener('click', () => {
         document.getElementById('fieldMappings').appendChild(createMappingRow());
     });
 
-    document.getElementById('saveMapping').addEventListener('click', async () => {
-        const mappings = Array.from(document.querySelectorAll('.mapping-row')).map(row => ({
-            source: row.querySelector('.source-field').value,
-            target: row.querySelector('.target-field').value,
-            entity: row.querySelector('.entity-type').value
-        })).filter(mapping => mapping.source && mapping.target && mapping.entity);
-
-        try {
-            const result = await saveFieldMappings(mappings); // Update to use new function
-            alert('Mappings saved successfully');
-        } catch (error) {
-            console.error('Error saving mappings:', error);
-            alert('Error saving mappings. Check console for details.');
-        }
-    });
-
-    // Add initial mapping row
-    document.getElementById('fieldMappings').appendChild(createMappingRow());
-
-    // Add togglePassword functionality (assuming relevant elements exist)
-    document.getElementById('showPassword').addEventListener('click', () => togglePassword('passwordInput', 'passwordIcon'));
-
+    document.getElementById('saveMapping').addEventListener('click', saveMappings);
 });
