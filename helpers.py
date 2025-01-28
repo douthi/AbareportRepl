@@ -15,6 +15,7 @@ class ReportManager:
         self.config = config
         self.report_status_store: Dict[str, Dict[str, Any]] = {}
         self.report_data_store: Dict[str, List[Dict[str, Any]]] = {}
+        self.report_keys = config['COMPANIES']['uniska']['report_keys']
 
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
@@ -66,7 +67,7 @@ class ReportManager:
             'total_pages': 1
         }
 
-        report_path = f"AbaReport/{report_key}"
+        report_path = f"AbaReport/{report_keys[report_key]}"
         endpoint = f"/api/abareport/v1/report/{mandant}/{report_path}"
 
         # Build request body
