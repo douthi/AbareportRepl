@@ -1,4 +1,3 @@
-
 import os
 import json
 import requests
@@ -52,11 +51,11 @@ class PipedriveHelper:
     def get_field_mappings(self):
         """Get current field mappings."""
         return self.field_mappings
-        
+
     def create_organization(self, data: Dict[str, Any]) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/organizations"
         params = {'api_token': self.api_key}
-        
+
         org_data = {
             'name': data['NAME'],
             'address': f"{data['STREET']} {data['HOUSE_NUMBER']}",
@@ -64,21 +63,22 @@ class PipedriveHelper:
             'address_city': data['ORT'],
             'address_country': data['LAND']
         }
-        
+
         response = requests.post(endpoint, params=params, json=org_data)
         return response.json()
 
     def create_person(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/persons"
         params = {'api_token': self.api_key}
-        
+
         person_data = {
             'name': f"{data['VORNAME']} {data['NAME']}".strip(),
             'org_id': org_id,
             'email': [{'value': data['EMAIL'], 'primary': True}] if data['EMAIL'] else [],
-            'phone': [{'value': data['TEL'], 'primary': True}] if data['TEL'] else []
+            'phone': [{'value': data['TEL'], 'primary': True}] if data['TEL'] else [],
+            'ANR_ANREDETEXT': data.get('ANR_ANREDETEXT', '')
         }
-        
+
         response = requests.post(endpoint, params=params, json=person_data)
         return response.json()
 
@@ -90,7 +90,7 @@ class PipedriveHelper:
             'start': 0,
             'limit': 100
         }
-        
+
         response = requests.get(endpoint, params=params)
         if response.ok:
             data = response.json()
@@ -152,11 +152,11 @@ class PipedriveHelper:
         from datetime import datetime, timedelta
         endpoint = f"{self.base_url}/deals"
         params = {'api_token': self.api_key}
-        
+
         # Check if deal is older than 24 months
         deal_date = datetime.strptime(data.get('NPO_KDatum', ''), '%Y-%m-%d %H:%M:%S')
         two_years_ago = datetime.now() - timedelta(days=730)
-        
+
         deal_data = {
             'title': data.get('NPO_ProjName', ''),
             'org_id': org_id,
@@ -175,11 +175,11 @@ class PipedriveHelper:
             })
         else:
             deal_data['status'] = 'open'
-        
+
         # Add mapped custom fields from field mappings
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 deal_data[mapping['target']] = data[mapping['source']]
-        
+
         response = requests.post(endpoint, params=params, json=deal_data)
         return response.json()
