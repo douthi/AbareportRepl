@@ -280,6 +280,21 @@ class ReportManager:
                 # Add AKP fields with prefix
                 akp_fields = {f'AKP_{k}': v for k, v in akp_with_phone.items()}
                 combined_record.update(akp_fields)
+
+                # Add ANR fields based on AKP_ANR_NR
+                anr_nr = akp_record.get('ANR_NR')
+                if anr_nr:
+                    try:
+                        import csv
+                        with open('attached_assets/ANR.csv', 'r') as f:
+                            anr_reader = csv.DictReader(f)
+                            for row in anr_reader:
+                                if row['NR'] == str(anr_nr):
+                                    combined_record['ANR_ANREDE'] = row['ANREDE']
+                                    combined_record['ANR_ANREDETEXT'] = row['ANREDETEXT']
+                                    break
+                    except Exception as e:
+                        logger.error(f"Error reading ANR data: {e}")
                 
                 combined_data.append(combined_record)
 
