@@ -131,6 +131,7 @@ class PipedriveHelper:
             else:
                 org_data['address'] = ' '.join(address_components)
 
+        logger.debug(f"Creating organization with data: {org_data}")
         try:
             response = requests.post(endpoint, params=params, json=org_data)
             result = response.json()
@@ -163,11 +164,7 @@ class PipedriveHelper:
         if data.get('AKP_TEL') and 'phone' not in person_data:
             person_data['phone'] = [{'value': data['AKP_TEL'], 'primary': True}]
 
-        # Add mapped custom fields from field mappings
-        for mapping in self.field_mappings:
-            if mapping['entity'] == 'person' and mapping['source'] in data:
-                person_data[mapping['target']] = data[mapping['source']]
-
+        logger.debug(f"Creating person with data: {person_data}")
         response = requests.post(endpoint, params=params, json=person_data)
         return response.json()
 
@@ -279,11 +276,6 @@ class PipedriveHelper:
             })
         else:
             deal_data['status'] = 'open'
-
-        # Add mapped custom fields from field mappings
-        for mapping in self.field_mappings:
-            if mapping['entity'] == 'deal' and mapping['source'] in data:
-                deal_data[mapping['target']] = data[mapping['source']]
 
         logger.debug(f"Creating deal with data: {deal_data}")
         response = requests.post(endpoint, params=params, json=deal_data)
