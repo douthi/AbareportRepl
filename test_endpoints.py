@@ -58,6 +58,21 @@ def test_pipedrive():
                 raise Exception(f"Failed to create person: {person_result}")
             logger.info(f"Created person with ID: {person_result['data']['id']}")
 
+        # Test deal operations
+        logger.info("Testing deal operations...")
+        deal_data = {
+            'NPO_ProjName': 'Test Project',
+            'NPO_KSumme': 10000,
+            'NPO_KDatum': '2024-01-29 00:00:00',  # Recent date for open deal
+            'NPO_ADatum': '2024-02-29 00:00:00'
+        }
+        
+        deal_result = pipedrive.create_deal(deal_data, org_id)
+        if not deal_result.get('success'):
+            logger.error(f"Deal creation failed: {deal_result}")
+            raise Exception(f"Failed to create deal: {deal_result}")
+        logger.info(f"Created deal with ID: {deal_result['data']['id']}")
+
         return True
 
     except Exception as e:
@@ -65,4 +80,4 @@ def test_pipedrive():
         return False
 
 if __name__ == "__main__":
-    test_pipedrive()
+    test_pipedrive())
