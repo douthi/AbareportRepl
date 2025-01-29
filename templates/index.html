@@ -356,10 +356,9 @@
         document.getElementById('reportForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const timeSinceLastReport = Date.now() - state.lastReportTime;
-            if (timeSinceLastReport < state.REPORT_COOLDOWN) {
-                const remainingSeconds = Math.ceil((state.REPORT_COOLDOWN - timeSinceLastReport) / 1000);
-                alert(`Please wait ${remainingSeconds} seconds before generating new reports.`);
+            // Check if reports are currently being processed
+            if (state.currentData.length === 0 && elements.loadingIndicator && !elements.loadingIndicator.classList.contains('d-none')) {
+                alert('Please wait for the current report to complete.');
                 return;
             }
 
