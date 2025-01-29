@@ -365,7 +365,7 @@ class PipedriveHelper:
                     'status': 'won',
                     'won_time': adatum
                 }
-            elif status == '4':
+            elif str(status) == '4':  # Convert status to string for comparison
                 status_data = {
                     'status': 'lost',
                     'lost_time': status4_date or kdatum
