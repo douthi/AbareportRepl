@@ -356,37 +356,24 @@ class PipedriveHelper:
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
             status4_date = self._format_timestamp(data.get('NPO_Status4_Date'))
             
-            # Default to open if no status/date info
-            if not status and not adatum:
-                status_data = {'status': 'open'}
-            # Status 4 means lost
-            elif status == '4':
+            # Prepare status and time data
+            status_data = {'status': 'open'}
+            time_data = {}
+            
+            if status == '4':
                 status_data = {'status': 'lost'}
-            # Has ADatum means won
+                if status4_date:
+                    time_data = {'lost_time': status4_date}
             elif adatum:
                 status_data = {'status': 'won'}
-            else:
-                status_data = {'status': 'open'}
+                time_data = {'won_time': adatum}
             
-            # Update status
-            logger.debug(f"Setting deal {deal_id} status to {status_data['status']}")
-            status_response = requests.put(update_endpoint, params=params, json=status_data)
-            
-            # Update time fields based on status
-            if status_response.ok:
-                time_data = {}
-                if status_data['status'] == 'won' and adatum:
-                    time_data = {'won_time': adatum}
-                    logger.debug(f"Setting deal {deal_id} won_time to {adatum}")
-                elif status_data['status'] == 'lost':
-                    if status == '4' and status4_date:
-                        time_data = {'lost_time': status4_date}
-                        logger.debug(f"Setting deal {deal_id} lost_time to {status4_date}")
-                
-                if time_data:
-                    response = requests.put(update_endpoint, params=params, json=time_data)
-                    result = response.json()
-                    logger.debug(f"Deal time update response: {result}")
+            # Update status and time in one request
+            update_data = {**status_data, **time_data}
+            logger.debug(f"Setting deal {deal_id} with data: {update_data}")
+            response = requests.put(update_endpoint, params=params, json=update_data)
+            result = response.json()
+            logger.debug(f"Deal update response: {result}")
 
         return result
 
