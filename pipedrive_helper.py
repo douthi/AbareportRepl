@@ -356,20 +356,20 @@ class PipedriveHelper:
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
             status4_date = self._format_timestamp(data.get('NPO_Status4_Date'))
             
-            # Prepare status and time data
+            # First set the status
             status_data = {'status': 'open'}
-            time_data = {}
-            
             if status == '4':
                 status_data = {'status': 'lost'}
-                if status4_date:
-                    time_data = {'lost_time': status4_date}
             elif adatum:
                 status_data = {'status': 'won'}
-                time_data = {'won_time': adatum}
             
-            # Update status and time in one request
-            update_data = {**status_data, **time_data}
+            # Update with status first, then add time data if needed
+            update_data = status_data.copy()
+            if status_data['status'] == 'won' and adatum:
+                update_data['won_time'] = adatum
+            elif status_data['status'] == 'lost' and status4_date:
+                update_data['lost_time'] = status4_date
+            
             logger.debug(f"Setting deal {deal_id} with data: {update_data}")
             response = requests.put(update_endpoint, params=params, json=update_data)
             result = response.json()
