@@ -314,8 +314,8 @@ class PipedriveHelper:
                 else:
                     deal_data[mapping['target']] = field_value
         
-        # Add Mandant field
-        deal_data['938a53c974924e61f0ca8427642c43a80a797652'] = 'Mandant'
+        # Add Mandant field with name from form
+        deal_data['938a53c974924e61f0ca8427642c43a80a797652'] = data.get('mandant_name', '')
 
         # Create/find and link person
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
