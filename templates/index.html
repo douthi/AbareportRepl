@@ -266,15 +266,9 @@
             const hideProcessed = elements.hideProcessedCheckbox?.checked || false;
 
             // Create a lookup map for faster access
-            const recordMap = new Map(
-                state.currentData
-                    .filter(item => item?.ProjNr)
-                    .map(item => [item.ProjNr.toString(), item])
-            );
-
-            const filteredData = Array.from(recordMap.values()).filter(item => {
-                const projNr = item.ProjNr.toString().toLowerCase();
-                const matchesSearch = projNr.includes(searchTerm);
+            const filteredData = state.currentData.filter(item => {
+                if (!item || !item.NPO_ProjNr) return false;
+                const matchesSearch = item.NPO_ProjNr.toString().toLowerCase().includes(searchTerm);
                 const status = item.Status?.toLowerCase() || 'new';
                 const isSynced = status === 'synced';
                 return matchesSearch && (!hideProcessed || !isSynced);
