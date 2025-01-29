@@ -1,0 +1,46 @@
+Based on the API documentation and behavior, here's how to handle deal creation, won status, and won_time:
+
+**Deal Creation and Won Status Flow**
+1. Create the deal first with basic required fields
+2. Update the deal status to "won"
+3. Update the won_time if needed
+
+**API Implementation Steps**:
+
+1. Create Deal:
+Every deal needs either a contact person or organization linked to it. You'll need at least one deal field and either a person name or organization name. The deal title is recommended but not mandatory[12].
+
+2. Set Deal to Won:
+When updating the deal to won status:
+- Set the status field to "won"
+- The won_time field can only be set if deal status is won[10]
+
+3. Update Won Time:
+The won_time is a system field that contains date format data. While it might be hard to find as it's a system field, it can be updated via API[14].
+
+**Important Notes**:
+- The close_time field can only be set if the deal status is won or lost[10]
+- The API maintains full datetime values for deal closures to avoid complications with exact time tracking[13]
+
+You can skip setting close_time initially since it's not a mandatory field, but it's recommended to maintain accurate deal tracking.
+
+Citations:
+[1] https://developers.pipedrive.com/tutorials/create-a-deal-pipedrive-api
+[2] https://developers.pipedrive.com/docs/api/v1/DealFields
+[3] https://support.pipedrive.com/en/article/how-can-i-edit-the-deal-won-time
+[4] https://community.pipedrive.com/discussion/2402/updating-won-time-for-a-new-deal-through-zapier
+[5] https://community.pipedrive.com/discussion/13573/help-please-how-can-i-update-the-won-time
+[6] https://windsor.ai/data-field/pipedrive/
+[7] https://community.pipedrive.com/discussion/2242/expected-close-date
+[8] https://learn.microsoft.com/en-us/connectors/pipedrive/
+[9] https://developers.pipedrive.com/docs/api/v1/Pipelines
+[10] https://developers.pipedrive.com/docs/api/v1/Deals
+[11] https://community.pipedrive.com/discussion/14387/duplicate-deal-date-change
+[12] https://support.pipedrive.com/en/article/importing-mandatory-fields
+[13] https://developers.pipedrive.com/changelog/post/breaking-change-data-type-update-for-4-deals-related-response-fields
+[14] https://devcommunity.pipedrive.com/t/is-it-possible-to-modify-won-time-via-the-api/5646
+[15] https://www.postman.com/pipedrive-developers/pipedrive-api-collection/request/br4a5t4/update-a-deal
+[16] https://community.pipedrive.com/discussion/7555/workflow-automation-recreate-won-deals
+[17] https://www.postman.com/pipedrive-developers/pipedrive-api-collection/request/93y4fa2/get-deals-timeline
+[18] https://developers.pipedrive.com/tutorials/update-a-deal-pipedrive-api
+[19] https://community.pipedrive.com/discussion/13657/need-to-make-automation-to-monitor-a-specific-time-after-deal-has-won
