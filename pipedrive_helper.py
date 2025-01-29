@@ -333,11 +333,15 @@ class PipedriveHelper:
         # Handle deal status and dates based on ADatum
         if data.get('NPO_ADatum'):
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
+            # First set status to won
             deal_data.update({
                 'status': 'won',
-                'won_time': adatum,
-                'close_time': adatum,
                 'value': data.get('NPO_ASumme', 0)
+            })
+            # Then update the won time and close time
+            deal_data.update({
+                'won_time': adatum,
+                'close_time': adatum
             })
         else:
             deal_data.update({
