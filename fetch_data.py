@@ -42,8 +42,8 @@ def fetch_and_display_data():
         logger.info(json.dumps(deal_data, indent=2))
 
         # Get linked person and organization IDs
-        person_id = deal_data.get('person_id')
-        org_id = deal_data.get('org_id')
+        person_id = deal_data.get('person_id', {}).get('value')
+        org_id = deal_data.get('org_id', {}).get('value')
 
         if person_id:
             person_endpoint = f"{pipedrive.base_url}/persons/{person_id}"
