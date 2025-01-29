@@ -228,7 +228,9 @@ def sync_to_pipedrive():
             return jsonify({'error': 'No data received'}), 400
             
         logger.debug(f"Received data for sync: {data}")
-        logger.debug(f"API Key available: {bool(os.getenv(f'{data.get('company_key', 'uniska').upper()}_PIPEDRIVE_API_KEY'))}")
+        company_key = data.get('company_key', 'uniska')
+        env_key = f"{company_key.upper()}_PIPEDRIVE_API_KEY"
+        logger.debug(f"API Key available: {bool(os.getenv(env_key))}")
         company_key = data.pop('company_key', 'uniska')
         logger.info(f"Using company key: {company_key}")
         
