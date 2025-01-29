@@ -166,10 +166,10 @@ class PipedriveHelper:
                 field_key = mapping['target']
                 field_info = field_types.get(field_key)
                 if field_info and field_info['type'] == 'enum':
-                        person_data[field_key] = str(field_value)
-                    else:
-                        person_data[field_key] = field_value
-                    logger.debug(f"Mapped person field {mapping['source']} to {field_key}")
+                    person_data[field_key] = str(field_value)
+                else:
+                    person_data[field_key] = field_value
+                logger.debug(f"Mapped person field {mapping['source']} to {field_key}")
 
         # Set standard fields if not already mapped
         if 'name' not in person_data:
