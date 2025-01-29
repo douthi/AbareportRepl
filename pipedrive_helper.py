@@ -1,7 +1,8 @@
+
 import os
 import json
 import requests
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 class PipedriveHelper:
     def __init__(self, company_key='uniska'):
@@ -29,11 +30,11 @@ class PipedriveHelper:
     def get_field_mappings(self):
         """Get current field mappings."""
         return self.field_mappings
-
+        
     def create_organization(self, data: Dict[str, Any]) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/organizations"
         params = {'api_token': self.api_key}
-
+        
         org_data = {
             'name': data['NAME'],
             'address': f"{data['STREET']} {data['HOUSE_NUMBER']}",
@@ -41,21 +42,21 @@ class PipedriveHelper:
             'address_city': data['ORT'],
             'address_country': data['LAND']
         }
-
+        
         response = requests.post(endpoint, params=params, json=org_data)
         return response.json()
 
     def create_person(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/persons"
         params = {'api_token': self.api_key}
-
+        
         person_data = {
             'name': f"{data['VORNAME']} {data['NAME']}".strip(),
             'org_id': org_id,
             'email': [{'value': data['EMAIL'], 'primary': True}] if data['EMAIL'] else [],
             'phone': [{'value': data['TEL'], 'primary': True}] if data['TEL'] else []
         }
-
+        
         response = requests.post(endpoint, params=params, json=person_data)
         return response.json()
 
@@ -67,7 +68,7 @@ class PipedriveHelper:
             'start': 0,
             'limit': 100
         }
-
+        
         response = requests.get(endpoint, params=params)
         if response.ok:
             data = response.json()
@@ -128,7 +129,7 @@ class PipedriveHelper:
     def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/deals"
         params = {'api_token': self.api_key}
-
+        
         deal_data = {
             'title': data['ProjName'],
             'org_id': org_id,
@@ -140,32 +141,11 @@ class PipedriveHelper:
             'pipeline_id': data.get('pipeline_id', None),
             'stage_id': data.get('stage_id', None)
         }
-
+        
         # Add mapped custom fields from field mappings
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 deal_data[mapping['target']] = data[mapping['source']]
-
+        
         response = requests.post(endpoint, params=params, json=deal_data)
         return response.json()
-
-    def find_person(self, akp_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Search for person using AKP data."""
-        endpoint = f"{self.base_url}/persons/search"
-        name = f"{akp_data.get('VORNAME', '')} {akp_data.get('NAME', '')}".strip()
-
-        # Try email first
-        if akp_data.get('MAIL'):
-            params = {'api_token': self.api_key, 'term': akp_data['MAIL']}
-            response = requests.get(endpoint, params=params)
-            data = response.json()
-
-            if data.get('data'):
-                return data['data'][0]
-
-        # Try name search
-        params = {'api_token': self.api_key, 'term': name}
-        response = requests.get(endpoint, params=params)
-        data = response.json()
-
-        return data['data'][0] if data.get('data') else None

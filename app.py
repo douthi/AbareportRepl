@@ -18,7 +18,6 @@ app.config.from_object(Config)
 
 # Initialize managers
 report_manager = ReportManager(app.config)
-pipedrive_helper = PipedriveHelper()
 
 @app.route('/')
 def index():
@@ -221,9 +220,6 @@ def get_reports():
 @app.route('/sync', methods=['POST'])
 def sync_to_pipedrive():
     """Sync a record to Pipedrive."""
-    if not request.json:
-        return jsonify({'error': 'No data provided'}), 400
-        
     try:
         data = request.json
         company_key = data.pop('company_key', 'uniska')
