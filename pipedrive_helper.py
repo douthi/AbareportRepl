@@ -330,11 +330,13 @@ class PipedriveHelper:
                 else:
                     logger.warning(f"Failed to create person: {person_result}")
 
-        # Handle deal status based on ADatum
+        # Handle deal status and dates based on ADatum
         if data.get('NPO_ADatum'):
+            adatum = self._format_timestamp(data.get('NPO_ADatum'))
             deal_data.update({
                 'status': 'won',
-                'close_time': self._format_timestamp(data.get('NPO_ADatum')),
+                'won_time': adatum,
+                'close_time': adatum,
                 'value': data.get('NPO_ASumme', 0)
             })
         else:
