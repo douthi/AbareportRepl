@@ -19,8 +19,7 @@ app.config.from_object(Config)
 # Initialize managers
 report_manager = ReportManager(app.config)
 
-# Simulate a key-value store (replace with a real database in production)
-db = {}
+from replit import db
 
 @app.route('/')
 def index():
@@ -325,7 +324,12 @@ def not_found_error(error):
 def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
-        data = report_manager.get_combined_data()
+        if request.method == 'GET' and 'last_combined_data' in db:
+            data = db['last_combined_data']
+        else:
+            data = report_manager.get_combined_data()
+            if data:
+                db['last_combined_data'] = data
 
         # Check if HTML format is requested
         if request.args.get('format') == 'html':
