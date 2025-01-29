@@ -305,7 +305,7 @@ class PipedriveHelper:
                 else:
                     deal_data[mapping['target']] = field_value
 
-        
+
 
 
         # Create/find and link person
@@ -373,7 +373,7 @@ class PipedriveHelper:
                     except ValueError as e:
                         logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
                         status_data = {'status': 'lost'}
-            
+
             if status_data:
                 try:
                     logger.debug(f"Setting deal {deal_id} status: {status_data}")
