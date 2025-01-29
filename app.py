@@ -326,8 +326,11 @@ def get_combined_data():
     try:
         if request.method == 'GET':
             data = db.get('last_combined_data')
-            if data:
-                return jsonify(list(data)), 200
+            if not data:
+                data = report_manager.get_combined_data()
+                if data:
+                    db['last_combined_data'] = data
+            return jsonify(list(data) if data else []), 200
         
         data = report_manager.get_combined_data()
         if data:
@@ -337,7 +340,7 @@ def get_combined_data():
         
     except Exception as e:
         logger.error(f"Error in get_combined_data: {e}")
-        return jsonify([]), 200
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(500)
 def internal_error(error):
