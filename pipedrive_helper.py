@@ -390,13 +390,22 @@ class PipedriveHelper:
             
             if status_response.ok:
                 if asumme and adatum:
+                    # Format won_time with date and time
                     time_data = {'won_time': adatum}
                     logger.debug(f"Setting won time for deal {deal_id}: {time_data}")
                     requests.put(update_endpoint, params=params, json=time_data)
                 elif str(status) == '4':
-                    time_data = {'lost_time': status4_date or kdatum}
-                    logger.debug(f"Setting lost time for deal {deal_id}: {time_data}")
-                    requests.put(update_endpoint, params=params, json=time_data)
+                    # Format lost_time as date only (YYYY-MM-DD)
+                    lost_date = status4_date or kdatum
+                    if lost_date:
+                        try:
+                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
+                            formatted_date = date_obj.strftime('%Y-%m-%d')
+                            time_data = {'lost_time': formatted_date}
+                            logger.debug(f"Setting lost time for deal {deal_id}: {time_data}")
+                            requests.put(update_endpoint, params=params, json=time_data)
+                        except ValueError as e:
+                            logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
 
         return result
 
