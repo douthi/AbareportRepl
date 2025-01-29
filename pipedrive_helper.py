@@ -303,9 +303,17 @@ class PipedriveHelper:
         if 'close_time' not in deal_data:
             deal_data['close_time'] = self._format_timestamp(data.get('NPO_ADatum'))
             
-        # Set project number using field key
-        deal_data['5d300cf82930e07f6107c7255fcd0dd550af7774'] = data.get('NPO_ProjNr', '')
-        
+        # Set project number and other custom fields
+        deal_fields = self.get_deal_fields()
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'deal' and mapping['source'] in data:
+                field_value = data[mapping['source']]
+                # For custom fields, we need to use the correct format
+                if mapping['target'].startswith('5d300'):  # Custom field
+                    deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
+                else:
+                    deal_data[mapping['target']] = field_value
+                    
         # Find and link person
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
         if person_name:
