@@ -360,9 +360,15 @@ class PipedriveHelper:
                     'won_time': adatum,
                     'close_time': adatum
                 }
+                logger.debug(f"Updating deal {deal_id} with data: {update_data}")
                 response = requests.put(update_endpoint, params=params, json=update_data)
                 result = response.json()
                 logger.debug(f"Deal update response: {result}")
+                
+                # Verify the update worked by fetching the deal
+                get_response = requests.get(update_endpoint, params=params)
+                current_state = get_response.json()
+                logger.debug(f"Current deal state after update: {current_state}")
 
                 # If status is 4, mark as lost
                 if data.get('Status') == '4':
