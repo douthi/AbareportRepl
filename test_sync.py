@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 # Test data with different values
 test_data = {
-    'NPO_ProjNr': 'PRJ-2024-001',
+    'NPO_ProjNr': '8464684648',
     'NPO_ProjName': 'Solar Installation Project',
     'NPO_KDatum': '2024-01-15',
     'NPO_KSumme': 75000.00,
