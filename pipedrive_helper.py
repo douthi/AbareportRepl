@@ -268,20 +268,20 @@ class PipedriveHelper:
 
         # Add mapped custom fields from field mappings
         deal_fields = self.get_deal_fields()
-        field_ids = {str(field['id']): field['key'] for field in deal_fields}
+        field_types = {field['key']: {'type': field['field_type']} for field in deal_fields}
 
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 field_value = data[mapping['source']]
                 if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
                     field_value = self._format_timestamp(field_value)
-
-                # Validate field ID exists
-                if mapping['target'] in field_ids:
-                    logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
-                    deal_data[field_ids[mapping['target']]] = field_value
-                else:
-                    logger.warning(f"Invalid field ID in mapping: {mapping['target']}")
+                
+                # Core fields are handled separately
+                if mapping['target'] in ['title', 'value', 'won_time', 'lost_time']:
+                    continue
+                    
+                deal_data[mapping['target']] = field_value
+                logger.debug(f"Mapped deal field {mapping['source']} to {mapping['target']}")
 
         # Set standard fields if not already mapped
         if 'title' not in deal_data:
