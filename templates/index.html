@@ -326,8 +326,8 @@
         }
 
         function getStatusClass(status, projNr) {
-            if (state.freshSyncs.has(projNr)) return 'text-success';
-            return status.toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
+            if (state.freshSyncs && state.freshSyncs.has(projNr)) return 'text-success';
+            return (status || '').toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
         }
 
         function updateProjNrSuggestions() {
