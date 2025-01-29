@@ -217,7 +217,7 @@ def get_reports():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/sync', methods=['POST'])
+@app.route('/sync-to-pipedrive', methods=['POST'])
 def sync_to_pipedrive():
     """Sync a record to Pipedrive."""
     try:
