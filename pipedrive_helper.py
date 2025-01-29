@@ -89,10 +89,8 @@ class PipedriveHelper:
         return None
 
     def create_organization(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        start_time = time.time()
         endpoint = f"{self.base_url}/organizations"
         params = {'api_token': self.api_key}
-        logger.debug("Starting organization creation")
 
         if not data.get('ADR_NAME'):
             raise ValueError("Organization name (ADR_NAME) is required")
@@ -344,11 +342,10 @@ class PipedriveHelper:
             })
 
         # Step 1: Create initial deal
-        start_time = time.time()
         logger.debug(f"Creating deal with data: {deal_data}")
         response = requests.post(endpoint, params=params, json=deal_data)
         result = response.json()
-        logger.debug(f"Initial deal creation response: {result} (took {time.time() - start_time:.2f}s)")
+        logger.debug(f"Initial deal creation response: {result}")
 
         # Step 2: If deal has ADatum, mark as won and set dates
         if data.get('NPO_ADatum') and result.get('success'):

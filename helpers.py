@@ -299,9 +299,6 @@ class ReportManager:
 
                 combined_data.append(combined_record)
 
-        from replit import db
-        if combined_data:
-            db['last_combined_data'] = combined_data
         return combined_data
 
     def get_all_reports(self) -> List[Dict[str, Any]]:

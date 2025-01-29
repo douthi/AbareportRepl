@@ -250,8 +250,8 @@
         fetch('/combinedData')
             .then(response => response.json())
             .then(data => {
-                if (Array.isArray(data)) {
-                    state.currentData = data.map(item => ({
+                if (data?.combined_data) {
+                    state.currentData = data.combined_data.map(item => ({
                         ...item,
                         Status: item.Status || 'new'
                     }));
@@ -604,8 +604,8 @@
                                 fetch('/combinedData')
                                     .then(response => response.json())
                                     .then(data => {
-                                        if (Array.isArray(data)) {
-                                            state.currentData = data.map(item => ({
+                                        if (data?.combined_data?.length > 0) {
+                                            state.currentData = data.combined_data.map(item => ({
                                                 ...item,
                                                 Status: item.Status || 'new'
                                             }));
