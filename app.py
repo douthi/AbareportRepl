@@ -223,9 +223,17 @@ def sync_to_pipedrive():
     try:
         logger.info("Starting sync to Pipedrive")
         data = request.json
-        logger.debug(f"Received data: {data}")
+        if not data:
+            logger.error("No data received in request")
+            return jsonify({'error': 'No data received'}), 400
+            
+        logger.debug(f"Received data for sync: {data}")
         company_key = data.pop('company_key', 'uniska')
         logger.info(f"Using company key: {company_key}")
+        
+        if not os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY'):
+            logger.error(f"No API key found for company {company_key}")
+            return jsonify({'error': 'Pipedrive API key not configured'}), 400
         pipedrive_helper = PipedriveHelper(company_key)
         if not data:
             logger.error("No data provided in request")
