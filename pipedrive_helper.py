@@ -314,12 +314,21 @@ class PipedriveHelper:
                 else:
                     deal_data[mapping['target']] = field_value
                     
-        # Find and link person
+        # Create/find and link person
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
         if person_name:
             existing_person = self.find_person_by_name(person_name, org_id)
             if existing_person:
+                logger.info(f"Found existing person: {existing_person['name']}")
                 deal_data['person_id'] = existing_person['id']
+            else:
+                logger.info(f"Creating new person: {person_name}")
+                person_result = self.create_person(data, org_id)
+                if person_result.get('success'):
+                    deal_data['person_id'] = person_result['data']['id']
+                    logger.info(f"Created and linked person with ID: {person_result['data']['id']}")
+                else:
+                    logger.warning(f"Failed to create person: {person_result}")
 
         if deal_date < two_years_ago:
             deal_data.update({
