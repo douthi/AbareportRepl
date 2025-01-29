@@ -107,7 +107,8 @@ class PipedriveHelper:
             'name': f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip(),
             'org_id': org_id,
             'email': [{'value': data.get('AKP_MAIL', ''), 'primary': True}] if data.get('AKP_MAIL') else [],
-            'phone': [{'value': data.get('AKP_TEL', ''), 'primary': True}] if data.get('AKP_TEL') else []
+            'phone': [{'value': data.get('AKP_TEL', ''), 'primary': True}] if data.get('AKP_TEL') else [],
+            'anredetext': data.get('ANR_ANREDETEXT', '')
         }
 
         # Add mapped custom fields from field mappings
