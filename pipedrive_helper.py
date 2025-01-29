@@ -126,48 +126,6 @@ class PipedriveHelper:
         response = requests.put(endpoint, params=params, json=data)
         return response.json()
 
-    def search_organization(self, name: str) -> Optional[Dict[str, Any]]:
-        """Search for organization by name."""
-        endpoint = f"{self.base_url}/organizations/search"
-        params = {
-            'api_token': self.api_key,
-            'term': name,
-            'exact_match': True
-        }
-        response = requests.get(endpoint, params=params)
-        data = response.json()
-        if data.get('success') and data.get('data') and data['data'].get('items'):
-            return data['data']['items'][0]['item']
-        return None
-
-    def search_person(self, name: str, org_id: int) -> Optional[Dict[str, Any]]:
-        """Search for person by name and organization."""
-        endpoint = f"{self.base_url}/persons/search"
-        params = {
-            'api_token': self.api_key,
-            'term': name,
-            'organization_id': org_id
-        }
-        response = requests.get(endpoint, params=params)
-        data = response.json()
-        if data.get('success') and data.get('data') and data['data'].get('items'):
-            return data['data']['items'][0]['item']
-        return None
-
-    def search_deal(self, title: str, org_id: int) -> Optional[Dict[str, Any]]:
-        """Search for deal by title and organization."""
-        endpoint = f"{self.base_url}/deals/search"
-        params = {
-            'api_token': self.api_key,
-            'term': title,
-            'organization_id': org_id
-        }
-        response = requests.get(endpoint, params=params)
-        data = response.json()
-        if data.get('success') and data.get('data') and data['data'].get('items'):
-            return data['data']['items'][0]['item']
-        return None
-
     def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/deals"
         params = {'api_token': self.api_key}
