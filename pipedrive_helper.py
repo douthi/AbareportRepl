@@ -11,7 +11,7 @@ class PipedriveHelper:
     def __init__(self, company_key='uniska'):
         self.company_key = company_key
         self.api_key = os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY')
-        self.base_url = f'https://{company_key}ag.pipedrive.com/v1'
+        self.base_url = f'https://{company_key}ag.pipedrive.com/api/v1'
         self.mapping_file = f'mappings/{company_key}_field_mappings.json'
         os.makedirs('mappings', exist_ok=True)
         self._load_field_mappings()
