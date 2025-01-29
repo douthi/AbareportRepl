@@ -108,10 +108,10 @@ class PipedriveHelper:
 
         # Build address components
         address_parts = []
-        if data.get('STREET'):
-            address_parts.append(str(data['STREET']).strip())
-        if data.get('HOUSE_NUMBER'):
-            address_parts.append(str(data['HOUSE_NUMBER']).strip())
+        if data.get('ADR_STREET'):
+            address_parts.append(str(data['ADR_STREET']).strip())
+        if data.get('ADR_HOUSE_NUMBER'):
+            address_parts.append(str(data['ADR_HOUSE_NUMBER']).strip())
         
         if address_parts:
             org_data['address'] = ' '.join(address_parts)
@@ -164,10 +164,13 @@ class PipedriveHelper:
                 if field_info and field_info['type'] == 'enum':
                     # Handle single select fields
                     valid_options = [opt['id'] for opt in field_info['options']]
-                    # Map "Herr" to 1 and "Frau" to 2 if value is a string
+                    # Map salutations
                     if isinstance(field_value, str):
-                        value_map = {'Herr': 1, 'Frau': 2}
-                        field_value = value_map.get(field_value, None)
+                        value_map = {'Herr': 1, 'Frau': 2, 'Mr': 1, 'Mrs': 2}
+                        field_value = value_map.get(field_value.strip(), None)
+                    # Add Anredetext as custom field
+                    if mapping['source'] == 'ANR_ANREDETEXT':
+                        person_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = field_value
                     # Validate the value is in allowed options
                     if field_value in valid_options:
                         person_data[mapping['target']] = field_value
