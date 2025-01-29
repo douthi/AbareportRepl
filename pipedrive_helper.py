@@ -44,7 +44,9 @@ class PipedriveHelper:
         try:
             with open(self.mapping_file, 'r') as f:
                 self.field_mappings = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+            logger.debug(f"Loaded field mappings: {self.field_mappings}")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.error(f"Error loading field mappings: {str(e)}")
             self.field_mappings = []
 
     def save_field_mappings(self, mappings):
@@ -163,12 +165,8 @@ class PipedriveHelper:
                 field_info = field_types.get(mapping['target'])
 
                 if field_info and field_info['type'] == 'enum':
-                    if mapping['source'] in ['ANR_ANREDE']:
-                        # Map salutations directly as custom field
-                        person_data[mapping['target']] = field_value
-                    elif mapping['source'] == 'ANR_ANREDETEXT':
-                        # Add Anredetext as custom field
-                        person_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = field_value
+                    # Directly map using the field mapping configuration
+                    person_data[mapping['target']] = field_value
                 else:
                     person_data[mapping['target']] = field_value
 
@@ -307,14 +305,7 @@ class PipedriveHelper:
                 else:
                     deal_data[mapping['target']] = field_value
 
-        # Handle ANR fields
-        anr_nr = data.get('AKP_ANR_NR')
-        anredetext = data.get('ANR_ANREDETEXT')
         
-        if anr_nr:
-            deal_data['031ae26196cff3bf754a3fa9ff701f13c73113bf'] = str(anr_nr)
-        if anredetext:
-            deal_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = anredetext
 
 
         # Create/find and link person
@@ -362,66 +353,35 @@ class PipedriveHelper:
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            try:
-                # Clear existing times
-                clear_response = requests.put(update_endpoint, params=params, json={'won_time': None, 'lost_time': None})
-                if not clear_response.ok:
-                    logger.error(f"Failed to clear times: {clear_response.text}")
-                    return result
-                
-                time.sleep(1)
-
-                # Set status
-                if asumme:
-                    status_data = {'status': 'won'}
-                elif str(status) == '4':
-                    status_data = {'status': 'lost'}
-                else:
-                    status_data = {'status': 'open'}
-
-                logger.debug(f"Setting deal {deal_id} status: {status_data}")
-                status_response = requests.put(update_endpoint, params=params, json=status_data)
-                
-                if not status_response.ok:
-                    logger.error(f"Failed to update deal status: {status_response.text}")
-                    return result
-
-                status_result = status_response.json()
-                if not status_result.get('success'):
-                    logger.error(f"Status update failed: {status_result}")
-                    return result
-
-                time.sleep(1)
-
-                # Update times based on verified status
-                current_status = status_result['data']['status']
-                
-                if current_status == 'won' and adatum:
-                    # Keep full datetime for won_time
-                    time_data = {'won_time': adatum}
-                    logger.debug(f"Setting won time for deal {deal_id}: {time_data}")
-                    time_response = requests.put(update_endpoint, params=params, json=time_data)
-                    if not time_response.ok:
-                        logger.error(f"Failed to set won_time: {time_response.text}")
-                
-                elif current_status == 'lost':
-                    # Format lost_time as date only (YYYY-MM-DD)
-                    lost_date = status4_date or kdatum
-                    if lost_date:
-                        try:
-                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
-                            formatted_date = date_obj.strftime('%Y-%m-%d')
-                            time_data = {'lost_time': formatted_date}
-                            logger.debug(f"Setting lost time for deal {deal_id}: {time_data}")
-                            time_response = requests.put(update_endpoint, params=params, json=time_data)
-                            if not time_response.ok:
-                                logger.error(f"Failed to set lost_time: {time_response.text}")
-                        except ValueError as e:
-                            logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
-
-            except requests.exceptions.RequestException as e:
-                logger.error(f"API request failed for deal {deal_id}: {str(e)}")
-                return result
+            # Set final status in single update
+            status_data = {}
+            if data.get('NPO_ASumme'):
+                status_data = {
+                    'status': 'won',
+                    'won_time': adatum
+                }
+            elif str(data.get('Status')) == '4':
+                lost_date = status4_date or kdatum
+                if lost_date:
+                    try:
+                        date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
+                        formatted_date = date_obj.strftime('%Y-%m-%d')
+                        status_data = {
+                            'status': 'lost',
+                            'lost_time': formatted_date
+                        }
+                    except ValueError as e:
+                        logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
+                        status_data = {'status': 'lost'}
+            
+            if status_data:
+                try:
+                    logger.debug(f"Setting deal {deal_id} status: {status_data}")
+                    status_response = requests.put(update_endpoint, params=params, json=status_data)
+                    if not status_response.ok:
+                        logger.error(f"Failed to update deal status: {status_response.text}")
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"API request failed for deal {deal_id}: {str(e)}")
 
         return result
 
