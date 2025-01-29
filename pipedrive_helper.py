@@ -97,11 +97,10 @@ class PipedriveHelper:
 
         # Basic organization data
         org_data = {
-            'name': data['ADR_NAME'].strip(),
-            'visible_to': 3  # Visible to entire company (default)
+            'name': data['ADR_NAME'].strip()
         }
 
-        # Build address string
+        # Build address components
         address_parts = []
         if data.get('STREET'):
             address_parts.append(str(data['STREET']).strip())
@@ -110,6 +109,8 @@ class PipedriveHelper:
         
         if address_parts:
             org_data['address'] = ' '.join(address_parts)
+            
+        # Add optional fields only if they exist
         if data.get('PLZ'):
             org_data['postal_code'] = str(data['PLZ']).strip()
         if data.get('ORT'):
