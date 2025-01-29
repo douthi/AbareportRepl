@@ -154,17 +154,17 @@ class PipedriveHelper:
         params = {'api_token': self.api_key}
         
         # Check if deal is older than 24 months
-        deal_date = datetime.strptime(data.get('KDatum', ''), '%Y-%m-%d %H:%M:%S')
+        deal_date = datetime.strptime(data.get('NPO_KDatum', ''), '%Y-%m-%d %H:%M:%S')
         two_years_ago = datetime.now() - timedelta(days=730)
         
         deal_data = {
-            'title': data['ProjName'],
+            'title': data.get('NPO_ProjName', ''),
             'org_id': org_id,
-            'value': data.get('KSumme', 0),
+            'value': data.get('NPO_KSumme', 0),
             'currency': 'CHF',
             'pipeline_id': self.default_pipeline_id,
-            'add_time': self._format_timestamp(data.get('KDatum')),
-            'close_time': self._format_timestamp(data.get('ADatum'))
+            'add_time': self._format_timestamp(data.get('NPO_KDatum')),
+            'close_time': self._format_timestamp(data.get('NPO_ADatum'))
         }
 
         if deal_date < two_years_ago:
