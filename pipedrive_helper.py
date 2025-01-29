@@ -55,7 +55,7 @@ class PipedriveHelper:
     def get_field_mappings(self):
         """Get current field mappings."""
         return self.field_mappings
-        
+
     def find_organization_by_name(self, name: str) -> Optional[Dict[str, Any]]:
         """Find organization by name."""
         if not name:
@@ -92,13 +92,24 @@ class PipedriveHelper:
         endpoint = f"{self.base_url}/organizations"
         params = {'api_token': self.api_key}
 
-        org_data = {
-            'name': data.get('NAME', ''),
-            'address': f"{data.get('STREET', '')} {data.get('HOUSE_NUMBER', '')}".strip(),
-            'address_postal_code': data.get('PLZ', ''),
-            'address_city': data.get('ORT', ''),
-            'address_country': data.get('LAND', '')
-        }
+        org_data = {}
+        if data.get('ADR_NAME'):
+            org_data['name'] = data['ADR_NAME']
+
+        address_parts = []
+        if data.get('STREET'):
+            address_parts.append(data['STREET'])
+        if data.get('HOUSE_NUMBER'):
+            address_parts.append(data['HOUSE_NUMBER'])
+        if address_parts:
+            org_data['address'] = ' '.join(address_parts)
+
+        if data.get('PLZ'):
+            org_data['address_postal_code'] = data['PLZ']
+        if data.get('ORT'):
+            org_data['address_city'] = data['ORT']
+        if data.get('LAND'):
+            org_data['address_country'] = data['LAND']
 
         try:
             response = requests.post(endpoint, params=params, json=org_data)
