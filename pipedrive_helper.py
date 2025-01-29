@@ -96,12 +96,12 @@ class PipedriveHelper:
             raise ValueError("Organization name (ADR_NAME) is required")
 
         org_data = {}
-
+        
         # Add mapped custom fields from field mappings
         for mapping in self.field_mappings:
             if mapping['entity'] == 'organization' and mapping['source'] in data:
                 org_data[mapping['target']] = data[mapping['source']]
-
+                
         # Ensure required name field is set
         if 'name' not in org_data:
             org_data['name'] = data['ADR_NAME'].strip()
@@ -112,10 +112,10 @@ class PipedriveHelper:
             address_parts.append(str(data['ADR_STREET']).strip())
         if data.get('ADR_HOUSE_NUMBER'):
             address_parts.append(str(data['ADR_HOUSE_NUMBER']).strip())
-
+        
         if address_parts:
             org_data['address'] = ' '.join(address_parts)
-
+            
         # Combine address fields into a single address field
         address_components = []
         if data.get('PLZ'):
@@ -124,7 +124,7 @@ class PipedriveHelper:
             address_components.append(str(data['ORT']).strip())
         if data.get('LAND'):
             address_components.append(str(data['LAND']).strip())
-
+            
         if address_components:
             if org_data.get('address'):
                 org_data['address'] += ', ' + ' '.join(address_components)
@@ -150,7 +150,7 @@ class PipedriveHelper:
         params = {'api_token': self.api_key}
 
         person_data = {'org_id': org_id}
-
+        
         # Add mapped custom fields from field mappings
         person_fields = self.get_person_fields()
         field_types = {str(field['id']): {'type': field['field_type'], 'options': field.get('options', [])} 
@@ -160,7 +160,7 @@ class PipedriveHelper:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
                 field_info = field_types.get(mapping['target'])
-
+                
                 if field_info and field_info['type'] == 'enum':
                     # Handle single select fields
                     valid_options = [opt['id'] for opt in field_info['options']]
@@ -178,7 +178,7 @@ class PipedriveHelper:
                         logger.warning(f"Invalid value {field_value} for enum field {mapping['target']}")
                 else:
                     person_data[mapping['target']] = field_value
-
+                
         # Set standard fields if not already mapped
         if 'name' not in person_data:
             person_data['name'] = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
@@ -273,28 +273,24 @@ class PipedriveHelper:
         two_years_ago = datetime.now() - timedelta(days=730)
 
         deal_data = {'org_id': org_id, 'pipeline_id': self.default_pipeline_id}
-
-        # Set deal as lost if NPO_Status is 4
-        if data.get('NPO_Status') == '4':
-            deal_data['status'] = 'lost'
-
+        
         # Add mapped custom fields from field mappings
         deal_fields = self.get_deal_fields()
         field_ids = {str(field['id']): field['key'] for field in deal_fields}
-
+        
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 field_value = data[mapping['source']]
                 if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
                     field_value = self._format_timestamp(field_value)
-
+                
                 # Validate field ID exists
                 if mapping['target'] in field_ids:
                     logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
                     deal_data[mapping['target']] = field_value
                 else:
                     logger.warning(f"Invalid field ID in mapping: {mapping['target']}")
-
+                
         # Set standard fields if not already mapped
         if 'title' not in deal_data:
             deal_data['title'] = data.get('NPO_ProjName', '')
@@ -306,7 +302,7 @@ class PipedriveHelper:
             deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
         if 'close_time' not in deal_data:
             deal_data['close_time'] = self._format_timestamp(data.get('NPO_ADatum'))
-
+            
         # Set project number and other custom fields
         deal_fields = self.get_deal_fields()
         for mapping in self.field_mappings:
@@ -317,7 +313,7 @@ class PipedriveHelper:
                     deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
                 else:
                     deal_data[mapping['target']] = field_value
-
+                    
         # Create/find and link person
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
         if person_name:
@@ -354,12 +350,12 @@ class PipedriveHelper:
         if data.get('NPO_ADatum') and result.get('success'):
             deal_id = result['data']['id']
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
-
+            
             # First mark as won
             update_endpoint = f"{self.base_url}/deals/{deal_id}"
             update_data = {'status': 'won'}
             response = requests.put(update_endpoint, params=params, json=update_data)
-
+            
             # Then set the dates
             if response.ok:
                 update_data = {
@@ -369,41 +365,50 @@ class PipedriveHelper:
                 response = requests.put(update_endpoint, params=params, json=update_data)
                 result = response.json()
                 logger.debug(f"Deal update response: {result}")
-
+        
         return result
+            
+        # Always set the creation date
+        if data.get('NPO_KDatum'):
+            deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
 
-    def update_won_dates(self):
-        """Update won dates for all deals with ADatum."""
-        endpoint = f"{self.base_url}/deals"
-        params = {'api_token': self.api_key, 'status': 'won'}
-
-        response = requests.get(endpoint, params=params)
-        if response.ok:
-            deals = response.json().get('data', [])
-            for deal in deals:
-                deal_id = deal['id']
-                # Get deal details to check custom fields
-                detail_response = requests.get(f"{endpoint}/{deal_id}", params={'api_token': self.api_key})
-                if detail_response.ok:
-                    deal_data = detail_response.json().get('data', {})
-                    adatum = None
-
-                    # Look for ADatum in custom fields
-                    for field in self.field_mappings:
-                        if field['entity'] == 'deal' and field['source'] == 'NPO_ADatum':
-                            adatum = deal_data.get(field['target'])
-                            break
-
-                    if adatum:
-                        formatted_date = self._format_timestamp(adatum)
-                        if formatted_date:
-                            update_data = {
-                                'won_time': formatted_date,
-                                'close_time': formatted_date
-                            }
-                            update_response = requests.put(
-                                f"{endpoint}/{deal_id}",
-                                params={'api_token': self.api_key},
-                                json=update_data
-                            )
-                            logger.debug(f"Updated won dates for deal {deal_id}: {update_response.json()}")
+        logger.debug(f"Creating deal with data: {deal_data}")
+        response = requests.post(endpoint, params=params, json=deal_data)
+        result = response.json()
+        logger.debug(f"Deal creation response: {result}")
+        return result
+def update_won_dates(self):
+    """Update won dates for all deals with ADatum."""
+    endpoint = f"{self.base_url}/deals"
+    params = {'api_token': self.api_key, 'status': 'won'}
+    
+    response = requests.get(endpoint, params=params)
+    if response.ok:
+        deals = response.json().get('data', [])
+        for deal in deals:
+            deal_id = deal['id']
+            # Get deal details to check custom fields
+            detail_response = requests.get(f"{endpoint}/{deal_id}", params={'api_token': self.api_key})
+            if detail_response.ok:
+                deal_data = detail_response.json().get('data', {})
+                adatum = None
+                
+                # Look for ADatum in custom fields
+                for field in self.field_mappings:
+                    if field['entity'] == 'deal' and field['source'] == 'NPO_ADatum':
+                        adatum = deal_data.get(field['target'])
+                        break
+                
+                if adatum:
+                    formatted_date = self._format_timestamp(adatum)
+                    if formatted_date:
+                        update_data = {
+                            'won_time': formatted_date,
+                            'close_time': formatted_date
+                        }
+                        update_response = requests.put(
+                            f"{endpoint}/{deal_id}",
+                            params={'api_token': self.api_key},
+                            json=update_data
+                        )
+                        logger.debug(f"Updated won dates for deal {deal_id}: {update_response.json()}")
