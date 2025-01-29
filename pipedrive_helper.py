@@ -4,6 +4,9 @@ import requests
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PipedriveHelper:
     def __init__(self, company_key='uniska'):
         self.company_key = company_key
