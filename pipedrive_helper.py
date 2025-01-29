@@ -120,9 +120,9 @@ class PipedriveHelper:
 
         try:
             response = requests.post(endpoint, params=params, json=org_data)
-            response.raise_for_status()
             result = response.json()
-            if not result.get('success'):
+            logger.debug(f"Response from Pipedrive: {result}")
+            if not response.ok or not result.get('success'):
                 error_msg = result.get('error', 'Unknown error')
                 logger.error(f"Pipedrive API error: {error_msg}")
                 raise Exception(f"Pipedrive API error: {error_msg}")
