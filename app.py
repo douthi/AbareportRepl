@@ -244,12 +244,6 @@ def sync_to_pipedrive():
         if not os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY'):
             return jsonify({'error': 'Pipedrive API key not configured'}), 400
 
-        # Get mandant name from config
-        mandant = data.get('mandant')
-        if mandant and mandant in app.config['COMPANIES'][company_key]['mandants']:
-            mandant_name = app.config['COMPANIES'][company_key]['mandants'][mandant]
-            data['mandant_name'] = mandant_name
-
         pipedrive = PipedriveHelper(company_key)
 
         # Create or update organization
