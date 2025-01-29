@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -353,14 +354,24 @@ class PipedriveHelper:
             deal_id = result['data']['id']
             update_endpoint = f"{self.base_url}/deals/{deal_id}"
 
-            # Step 2: Handle status based on conditions
+            # Step 2: Handle status and times with proper sequencing
             status = data.get('Status')
             asumme = data.get('NPO_ASumme')
             adatum = data.get('NPO_ADatum')
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            # Update status first
+            # Clear any existing times first
+            clear_times = {
+                'won_time': None,
+                'lost_time': None
+            }
+            logger.debug(f"Clearing times for deal {deal_id}")
+            requests.put(update_endpoint, params=params, json=clear_times)
+
+            # Update status with proper delays
+            time.sleep(1)  # Add small delay between API calls
+            
             if asumme:
                 status_data = {'status': 'won'}
             elif str(status) == '4':
@@ -374,28 +385,18 @@ class PipedriveHelper:
                 logger.error(f"Failed to update deal status: {status_response.text}")
                 return result
 
-            # Step 3: Update times only after status is set
+            # Update times only after status is confirmed
+            time.sleep(1)  # Add small delay between API calls
+            
             if status_response.ok:
                 if asumme and adatum:
-                    time_data = {
-                        'won_time': adatum,  # Keep full datetime format
-                        'lost_time': None
-                    }
+                    time_data = {'won_time': adatum}
+                    logger.debug(f"Setting won time for deal {deal_id}: {time_data}")
+                    requests.put(update_endpoint, params=params, json=time_data)
                 elif str(status) == '4':
-                    time_data = {
-                        'lost_time': status4_date or kdatum,  # Keep full datetime format
-                        'won_time': None
-                    }
-                else:
-                    time_data = {
-                        'won_time': None,
-                        'lost_time': None
-                    }
-
-                logger.debug(f"Setting deal {deal_id} time data: {time_data}")
-                time_response = requests.put(update_endpoint, params=params, json=time_data)
-                if not time_response.ok:
-                    logger.error(f"Failed to update deal time: {time_response.text}")
+                    time_data = {'lost_time': status4_date or kdatum}
+                    logger.debug(f"Setting lost time for deal {deal_id}: {time_data}")
+                    requests.put(update_endpoint, params=params, json=time_data)
 
         return result
 
