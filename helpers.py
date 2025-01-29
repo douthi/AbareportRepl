@@ -17,6 +17,9 @@ class ReportManager:
         self.report_status_store: Dict[str, Dict[str, Any]] = {}
         self.report_data_store: Dict[str, List[Dict[str, Any]]] = {}
         self.report_keys = config['COMPANIES']['uniska']['report_keys']
+        self.session = requests.Session()
+        self.cache = {}
+        self.cache_timeout = 300  # 5 minutes
 
     def get_access_token(self) -> str:
         """Get access token from Abacus ERP."""
@@ -31,7 +34,7 @@ class ReportManager:
                 credentials = f"{self.config['CLIENT_ID']}:{self.config['CLIENT_SECRET']}"
                 auth_header = f"Basic {base64.b64encode(credentials.encode()).decode()}"
 
-                response = requests.post(
+                response = self.session.post(
                     self.config['TOKEN_URL'],
                     data='grant_type=client_credentials',
                     headers={
@@ -87,7 +90,7 @@ class ReportManager:
             }
 
         try:
-            response = requests.post(
+            response = self.session.post(
                 f"{self.config['BASE_URL']}{endpoint}",
                 json=body,
                 headers={
@@ -122,7 +125,7 @@ class ReportManager:
                     access_token = self.get_access_token()
                     status_endpoint = f"/api/abareport/v1/jobs/{api_report_id}"
 
-                    response = requests.get(
+                    response = self.session.get(
                         f"{self.config['BASE_URL']}{status_endpoint}",
                         headers={
                             'Authorization': f'Bearer {access_token}',
@@ -169,6 +172,11 @@ class ReportManager:
 
     def _fetch_report_data(self, api_report_id: str, report_key: str, total_pages: int) -> List[Dict[str, Any]]:
         """Fetch report data from all pages."""
+        cache_key = f"{api_report_id}-{report_key}"
+        if cache_key in self.cache and time.time() - self.cache[cache_key]['timestamp'] < self.cache_timeout:
+            logger.debug(f"Using cached data for report '{report_key.upper()}'")
+            return self.cache[cache_key]['data']
+
         access_token = self.get_access_token()
         output_endpoint = f"/api/abareport/v1/jobs/{api_report_id}/output"
         all_data = []
@@ -176,7 +184,7 @@ class ReportManager:
         try:
             for page in range(1, total_pages + 1):
                 logger.debug(f"Fetching page {page} for report '{report_key.upper()}'")
-                response = requests.get(
+                response = self.session.get(
                     f"{self.config['BASE_URL']}{output_endpoint}/{page}",
                     headers={
                         'Authorization': f'Bearer {access_token}',
@@ -199,6 +207,7 @@ class ReportManager:
                     break
 
             logger.info(f"Fetched total {len(all_data)} records for report '{report_key.upper()}'")
+            self.cache[cache_key] = {'data': all_data, 'timestamp': time.time()}
             return all_data
         except Exception as e:
             logger.error(f"Error fetching report data: {e}")

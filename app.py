@@ -16,6 +16,22 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Global error handler
+@app.errorhandler(Exception)
+def handle_error(error):
+    logger.error(f"Unhandled error: {error}")
+    return jsonify({'error': str(error)}), 500
+
+# Rate limiting
+limiter = RateLimiter()
+@app.before_request
+def check_rate_limit():
+    if not limiter.can_make_request(
+        request.headers.get('X-Replit-User-Id', 'anonymous'),
+        request.endpoint
+    ):
+        return jsonify({'error': 'Rate limit exceeded'}), 429
+
 # Initialize managers
 report_manager = ReportManager(app.config)
 
