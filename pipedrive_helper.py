@@ -51,6 +51,38 @@ class PipedriveHelper:
     def get_field_mappings(self):
         """Get current field mappings."""
         return self.field_mappings
+        
+    def find_organization_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Find organization by name."""
+        if not name:
+            return None
+        endpoint = f"{self.base_url}/organizations/search"
+        params = {
+            'api_token': self.api_key,
+            'term': name,
+            'exact_match': True
+        }
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            items = response.json().get('data', {}).get('items', [])
+            return items[0]['item'] if items else None
+        return None
+
+    def find_person_by_name(self, name: str, org_id: int) -> Optional[Dict[str, Any]]:
+        """Find person by name and organization ID."""
+        if not name:
+            return None
+        endpoint = f"{self.base_url}/persons/search"
+        params = {
+            'api_token': self.api_key,
+            'term': name,
+            'organization_id': org_id
+        }
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            items = response.json().get('data', {}).get('items', [])
+            return items[0]['item'] if items else None
+        return None
 
     def create_organization(self, data: Dict[str, Any]) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/organizations"

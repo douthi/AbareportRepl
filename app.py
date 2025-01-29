@@ -227,18 +227,30 @@ def sync_to_pipedrive():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
-        # Create organization
-        org_result = pipedrive_helper.create_organization(data)
-        if not org_result.get('success'):
-            return jsonify({'error': 'Failed to create organization'}), 500
+        # Check/create/update organization
+        org_name = data.get('ADR_NAME', '')
+        existing_org = pipedrive_helper.find_organization_by_name(org_name)
+        
+        if existing_org:
+            org_result = pipedrive_helper.update_organization(existing_org['id'], data)
+            org_id = existing_org['id']
+        else:
+            org_result = pipedrive_helper.create_organization(data)
+            if not org_result.get('success'):
+                return jsonify({'error': 'Failed to create organization'}), 500
+            org_id = org_result['data']['id']
 
-        org_id = org_result['data']['id']
-
-        # Create person if name exists
-        if data.get('VORNAME') or data.get('NAME'):
-            person_result = pipedrive_helper.create_person(data, org_id)
-            if not person_result.get('success'):
-                return jsonify({'error': 'Failed to create person'}), 500
+        # Check/create/update person if name exists
+        if data.get('AKP_VORNAME') or data.get('AKP_NAME'):
+            person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
+            existing_person = pipedrive_helper.find_person_by_name(person_name, org_id)
+            
+            if existing_person:
+                person_result = pipedrive_helper.update_person(existing_person['id'], data)
+            else:
+                person_result = pipedrive_helper.create_person(data, org_id)
+                if not person_result.get('success'):
+                    return jsonify({'error': 'Failed to create person'}), 500
 
         # Create deal
         deal_result = pipedrive_helper.create_deal(data, org_id)
