@@ -324,12 +324,18 @@ def not_found_error(error):
 def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
-        if request.method == 'GET' and 'last_combined_data' in db:
-            data = list(db['last_combined_data'])
+        if request.method == 'GET':
+            # Always try to get from DB first
+            if 'last_combined_data' in db:
+                return jsonify(list(db['last_combined_data'])), 200
+            return jsonify([]), 200
         else:
+            # POST method means we're generating new data
             data = report_manager.get_combined_data()
             if data:
                 db['last_combined_data'] = data
+                return jsonify(data), 200
+            return jsonify([]), 200
 
         # Check if HTML format is requested
         if request.args.get('format') == 'html':
