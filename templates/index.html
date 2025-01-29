@@ -266,9 +266,11 @@
             const hideProcessed = elements.hideProcessedCheckbox?.checked || false;
 
             const filteredData = state.currentData.filter(item => {
-                const projNr = (item.ProjNr || '').toString().toLowerCase();
+                if (!item) return false;
+                const projNr = item.ProjNr != null ? item.ProjNr.toString().toLowerCase() : '';
                 const matchesSearch = projNr.includes(searchTerm);
-                const isSynced = (item.Status || '').toLowerCase() === 'synced';
+                const status = (item.Status || 'new').toLowerCase();
+                const isSynced = status === 'synced';
                 return matchesSearch && (!hideProcessed || !isSynced);
             });
 
@@ -348,8 +350,8 @@
             spinner.classList.remove('d-none');
             btnText.textContent = 'Syncing...';
 
-            const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
-            if (item) {
+            const item = state.currentData.find(i => i?.ProjNr?.toString() === projNr);
+            if (item && item.ProjNr != null) {
                 fetch('/sync-to-pipedrive', {
                     method: 'POST',
                     headers: {
@@ -406,8 +408,9 @@
 
             for (const cb of checkboxes) {
                 const projNr = cb.dataset.projnr;
-                const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
-
+                const item = state.currentData.find(i => i?.ProjNr?.toString() === projNr);
+                
+                if (!item) continue;
                 try {
                     const response = await fetch('/sync-to-pipedrive', {
                         method: 'POST',
