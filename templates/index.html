@@ -333,14 +333,43 @@
             spinner.classList.remove('d-none');
             btnText.textContent = 'Syncing...';
 
-            setTimeout(() => {
-                const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
-                if (item) {
-                    item.Status = 'synced';
-                    state.freshSyncs.add(projNr);
-                    updateTable();
-                }
-            }, 1000);
+            const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
+            if (item) {
+                fetch('/sync-to-pipedrive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ...item,
+                        company_key: window.location.pathname.split('/')[1]
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        item.Status = 'synced';
+                        state.freshSyncs.add(projNr);
+                        updateTable();
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                        successMsg.style.zIndex = '1050';
+                        successMsg.textContent = 'Successfully synced to Pipedrive';
+                        document.body.appendChild(successMsg);
+                        setTimeout(() => successMsg.remove(), 3000);
+                    } else {
+                        throw new Error(data.error || 'Sync failed');
+                    }
+                })
+                .catch(error => {
+                    alert(`Sync failed: ${error.message}`);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    spinner.classList.add('d-none');
+                    btnText.textContent = 'Sync';
+                });
+            }
         }
 
         // Event listeners
