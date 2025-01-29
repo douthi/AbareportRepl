@@ -366,7 +366,7 @@
             };
 
             btn.disabled = true;
-            
+
             fetch('/sync-to-pipedrive', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -464,11 +464,6 @@
                 }
             });
             document.getElementById('selectAll').checked = false;
-            const successMsg = document.createElement('div');
-            successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-4';
-            successMsg.textContent = 'Successfully synced selected items to Pipedrive';
-            document.body.appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 3000);
         });
 
         document.getElementById('dataTableBody')?.addEventListener('change', (e) => {
