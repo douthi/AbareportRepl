@@ -330,10 +330,9 @@ class PipedriveHelper:
                 else:
                     logger.warning(f"Failed to create person: {person_result}")
 
-        # Set initial deal status and value
+        # Set initial deal value
         if data.get('NPO_ADatum'):
             deal_data.update({
-                'status': 'won',
                 'value': data.get('NPO_ASumme', 0)
             })
         else:
@@ -342,10 +341,30 @@ class PipedriveHelper:
                 'value': data.get('NPO_KSumme', 0)
             })
 
-        # Create initial deal
+        # Step 1: Create initial deal
         response = requests.post(endpoint, params=params, json=deal_data)
         result = response.json()
         logger.debug(f"Initial deal creation response: {result}")
+
+        # Step 2: If deal has ADatum, mark as won and set dates
+        if data.get('NPO_ADatum') and result.get('success'):
+            deal_id = result['data']['id']
+            adatum = self._format_timestamp(data.get('NPO_ADatum'))
+            
+            # First mark as won
+            update_endpoint = f"{self.base_url}/deals/{deal_id}"
+            update_data = {'status': 'won'}
+            response = requests.put(update_endpoint, params=params, json=update_data)
+            
+            # Then set the dates
+            if response.ok:
+                update_data = {
+                    'won_time': adatum,
+                    'close_time': adatum
+                }
+                response = requests.put(update_endpoint, params=params, json=update_data)
+                result = response.json()
+                logger.debug(f"Deal update response: {result}")
         
         return result
             
