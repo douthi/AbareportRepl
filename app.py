@@ -329,24 +329,15 @@ def get_combined_data():
                 data = list(db.get('last_combined_data', []))
                 if not data:
                     return '<p>No data available</p>'
-                # Return HTML table format
                 return render_template('data_table.html', data=data)
-            else:
-                # Return JSON format
-                return jsonify(list(db.get('last_combined_data', []))), 200
+            return jsonify(list(db.get('last_combined_data', []))), 200
         else:
-            # POST method - generate new data
             data = report_manager.get_combined_data()
             if data:
                 db['last_combined_data'] = data
             return jsonify(data or []), 200
     except Exception as e:
         logger.error(f"Error in get_combined_data: {e}")
-        return jsonify({'error': str(e)}), 500
-
-        return jsonify({'combined_data': data}), 200
-    except Exception as e:
-        logger.error(f"Error getting combined data: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(500)
