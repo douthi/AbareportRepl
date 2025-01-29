@@ -1,7 +1,27 @@
 [
   {
-    "source": "EMAIL",
-    "target": "email",
-    "entity": "person"
+    "source": "NPO_ProjNr",
+    "target": "5d300cf82930e07f6107c7255fcd0dd550af7774",
+    "entity": "deal"
+  },
+  {
+    "source": "NPO_ProjName",
+    "target": "title",
+    "entity": "deal"
+  },
+  {
+    "source": "NPO_KSumme",
+    "target": "value",
+    "entity": "deal"
+  },
+  {
+    "source": "NPO_KDatum",
+    "target": "add_time",
+    "entity": "deal"
+  },
+  {
+    "source": "NPO_ADatum",
+    "target": "close_time",
+    "entity": "deal"
   }
 ]
