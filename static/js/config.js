@@ -1,4 +1,3 @@
-
 // Global variable to store Pipedrive fields
 let pipedriveFields = {
     organization: [],
@@ -26,24 +25,15 @@ async function fetchPipedriveFields() {
 function createMappingRow(mapping = null) {
     const row = document.createElement('div');
     row.className = 'mapping-row row g-3 align-items-center mb-3';
-    
+
+    const sourceFieldSelect = `<select class="form-select source-field">
+                <option value="">Select Source Field</option>
+            </select>`;
+
+
     row.innerHTML = `
         <div class="col-md-3">
-            <select class="form-select source-field">
-                <option value="">Select Source Field</option>
-                <option value="NAME">NAME</option>
-                <option value="VORNAME">VORNAME</option>
-                <option value="EMAIL">EMAIL</option>
-                <option value="TEL">TEL</option>
-                <option value="LAND">LAND</option>
-                <option value="PLZ">PLZ</option>
-                <option value="ORT">ORT</option>
-                <option value="STREET">STREET</option>
-                <option value="HOUSE_NUMBER">HOUSE_NUMBER</option>
-                <option value="ProjName">ProjName</option>
-                <option value="KSumme">KSumme</option>
-                <option value="Status">Status</option>
-            </select>
+            ${sourceFieldSelect}
         </div>
         <div class="col-md-3">
             <select class="form-select entity-type">
@@ -68,7 +58,8 @@ function createMappingRow(mapping = null) {
     // Add event listeners
     const entitySelect = row.querySelector('.entity-type');
     const targetSelect = row.querySelector('.target-field');
-    
+    const sourceSelect = row.querySelector('.source-field');
+
     entitySelect.addEventListener('change', () => {
         updateTargetFields(targetSelect, entitySelect.value);
     });
@@ -79,7 +70,7 @@ function createMappingRow(mapping = null) {
 
     // If mapping data is provided, set the values
     if (mapping) {
-        row.querySelector('.source-field').value = mapping.source;
+        sourceSelect.value = mapping.source;
         row.querySelector('.entity-type').value = mapping.entity;
         updateTargetFields(targetSelect, mapping.entity);
         setTimeout(() => {
@@ -87,13 +78,28 @@ function createMappingRow(mapping = null) {
         }, 100);
     }
 
+    //Populate source field options dynamically
+    populateSourceFields(sourceSelect);
+
     return row;
 }
+
+function populateSourceFields(selectElement){
+    for (const entityType in pipedriveFields) {
+        pipedriveFields[entityType].forEach(field => {
+            const option = document.createElement('option');
+            option.value = field.key;
+            option.textContent = field.name;
+            selectElement.appendChild(option);
+        });
+    }
+}
+
 
 function updateTargetFields(targetSelect, entityType) {
     targetSelect.disabled = !entityType;
     targetSelect.innerHTML = '<option value="">Select Pipedrive Field</option>';
-    
+
     if (entityType && pipedriveFields[entityType]) {
         pipedriveFields[entityType].forEach(field => {
             const option = document.createElement('option');
@@ -151,7 +157,7 @@ async function saveMappings() {
 // Initialize when document is loaded
 document.addEventListener('DOMContentLoaded', () => {
     fetchPipedriveFields();
-    
+
     // Add event listeners
     document.getElementById('addMapping').addEventListener('click', () => {
         document.getElementById('fieldMappings').appendChild(createMappingRow());
