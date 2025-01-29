@@ -1,0 +1,92 @@
+~/workspace$ python test_sync.py
+2025-01-29 04:02:40,987 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:41,279 - DEBUG - https://uniskaag.pipedrive.com:443 "GET /api/v1/pipelines?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1 HTTP/1.1" 200 None
+2025-01-29 04:02:41,283 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:41,481 - DEBUG - https://uniskaag.pipedrive.com:443 "GET /api/v1/organizations/search?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1&term=SunTech+Solutions+AG&exact_match=True HTTP/1.1" 200 None
+2025-01-29 04:02:41,484 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:41,699 - DEBUG - https://uniskaag.pipedrive.com:443 "PUT /api/v1/organizations/966?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1 HTTP/1.1" 400 None
+2025-01-29 04:02:41,702 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:41,928 - DEBUG - https://uniskaag.pipedrive.com:443 "GET /api/v1/persons/search?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1&term=Anna+Schmidt&organization_id=966 HTTP/1.1" 200 None
+2025-01-29 04:02:41,931 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:42,150 - DEBUG - https://uniskaag.pipedrive.com:443 "PUT /api/v1/persons/686?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1 HTTP/1.1" 400 None
+2025-01-29 04:02:42,155 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:42,418 - DEBUG - https://uniskaag.pipedrive.com:443 "GET /api/v1/dealFields?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1&start=0&limit=100 HTTP/1.1" 200 None
+2025-01-29 04:02:42,420 - DEBUG - Found deal field: {'key': 'id', 'name': 'ID', 'field_type': 'int', 'id': 25, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,420 - DEBUG - Found deal field: {'key': 'title', 'name': 'Title', 'field_type': 'varchar', 'id': 1, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'creator_user_id', 'name': 'Creator', 'field_type': 'user', 'id': 2, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'user_id', 'name': 'Owner', 'field_type': 'user', 'id': 3, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'weighted_value', 'name': 'Weighted value', 'field_type': 'monetary', 'id': 5, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'weighted_value_currency', 'name': 'Currency of Weighted value', 'field_type': 'varchar', 'id': None, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'pipeline', 'name': 'Pipeline', 'field_type': 'double', 'id': 8, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'stage_id', 'name': 'Stage', 'field_type': 'stage', 'id': 10, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'status', 'name': 'Status', 'field_type': 'status', 'id': 12, 'mandatory_flag': True, 'options': [{'id': 'open', 'label': 'Open'}, {'id': 'lost', 'label': 'Lost'}, {'id': 'won', 'label': 'Won'}, {'id': 'deleted', 'label': 'Deleted'}]}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'add_time', 'name': 'Deal created', 'field_type': 'date', 'id': 13, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'update_time', 'name': 'Update time', 'field_type': 'date', 'id': 14, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'stage_change_time', 'name': 'Last stage change', 'field_type': 'date', 'id': 15, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'next_activity_date', 'name': 'Next activity date', 'field_type': 'date', 'id': 16, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'last_activity_date', 'name': 'Last activity date', 'field_type': 'date', 'id': 17, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'won_time', 'name': 'Won time', 'field_type': 'date', 'id': 18, 'mandatory_flag': {'status': '=won'}, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'last_incoming_mail_time', 'name': 'Last email received', 'field_type': 'date', 'id': 19, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'last_outgoing_mail_time', 'name': 'Last email sent', 'field_type': 'date', 'id': 20, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'lost_time', 'name': 'Lost time', 'field_type': 'date', 'id': 21, 'mandatory_flag': {'status': '=lost'}, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'close_time', 'name': 'Deal closed on', 'field_type': 'date', 'id': 22, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'lost_reason', 'name': 'Lost reason', 'field_type': 'varchar_options', 'id': 23, 'mandatory_flag': {'status': '=lost'}, 'options': [{'id': 20, 'label': 'Mitbewerber\n'}, {'id': 19, 'label': 'Preis'}, {'id': 21, 'label': 'Lieferzeit'}, {'id': 22, 'label': 'Optik'}]}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'visible_to', 'name': 'Visible to', 'field_type': 'visible_to', 'id': 24, 'mandatory_flag': True, 'options': [{'id': 1, 'label': 'Item owner'}, {'id': 3, 'label': 'Item owner’s visibility group'}, {'id': 5, 'label': 'Item owner’s visibility group and sub-groups'}, {'id': 7, 'label': 'All users'}]}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'activities_count', 'name': 'Total activities', 'field_type': 'int', 'id': 26, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'done_activities_count', 'name': 'Done activities', 'field_type': 'int', 'id': 27, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'undone_activities_count', 'name': 'Activities to do', 'field_type': 'int', 'id': 28, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'email_messages_count', 'name': 'Email messages count', 'field_type': 'int', 'id': 29, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,421 - DEBUG - Found deal field: {'key': 'product_quantity', 'name': 'Product quantity', 'field_type': 'double', 'id': 31, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'product_amount', 'name': 'Product amount', 'field_type': 'double', 'id': 32, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'product_name', 'name': 'Product name', 'field_type': 'varchar', 'id': 33, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'mrr', 'name': 'MRR', 'field_type': 'monetary', 'id': 39, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'mrr_currency', 'name': 'Currency of MRR', 'field_type': 'varchar', 'id': None, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'arr', 'name': 'ARR', 'field_type': 'monetary', 'id': 40, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'arr_currency', 'name': 'Currency of ARR', 'field_type': 'varchar', 'id': None, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'acv', 'name': 'ACV', 'field_type': 'monetary', 'id': 41, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'acv_currency', 'name': 'Currency of ACV', 'field_type': 'varchar', 'id': None, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'origin', 'name': 'Source origin', 'field_type': 'enum', 'id': 42, 'mandatory_flag': True, 'options': [{'id': 'ManuallyCreated', 'label': 'Manually created'}, {'id': 'Import', 'label': 'Import'}, {'id': 'API', 'label': 'API'}, {'id': 'Automation', 'label': 'Automation'}, {'id': 'Marketplace', 'label': 'Marketplace'}, {'id': 'Prospector', 'label': 'Prospector'}, {'id': 'LeadSuggestion', 'label': 'Lead suggestions'}, {'id': 'WebForms', 'label': 'Web Forms'}, {'id': 'Chatbot', 'label': 'Chatbot'}, {'id': 'LiveChat', 'label': 'Live Chat'}, {'id': 'WebVisitors', 'label': 'Web Visitors'}, {'id': 'Campaigns', 'label': 'Campaigns'}, {'id': 'MessagingInbox', 'label': 'Messaging inbox'}]}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'origin_id', 'name': 'Source origin ID', 'field_type': 'varchar', 'id': 43, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'channel', 'name': 'Source channel', 'field_type': 'enum', 'id': 44, 'mandatory_flag': True, 'options': [{'id': 40, 'label': 'Prospector', 'alt_id': 'prospector'}, {'id': 41, 'label': 'Lead Suggestions', 'alt_id': 'lead_suggestions'}, {'id': 42, 'label': 'Web forms', 'alt_id': 'web_forms'}, {'id': 43, 'label': 'Chatbot', 'alt_id': 'chatbot'}, {'id': 44, 'label': 'Live chat', 'alt_id': 'live_chat'}, {'id': 45, 'label': 'Web visitors', 'alt_id': 'web_visitors'}, {'id': 46, 'label': 'Campaigns', 'alt_id': 'campaigns'}, {'id': 47, 'label': 'Marketplace', 'alt_id': 'marketplace'}, {'id': 48, 'label': 'Messaging Inbox', 'alt_id': 'messaging_inbox'}]}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'channel_id', 'name': 'Source channel ID', 'field_type': 'varchar', 'id': 45, 'mandatory_flag': True, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'org_id', 'name': 'Organization', 'field_type': 'org', 'id': 7, 'mandatory_flag': {'person_id': '<=0'}, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'person_id', 'name': 'Contact person', 'field_type': 'people', 'id': 9, 'mandatory_flag': {'org_id': '<=0'}, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'label', 'name': 'Label', 'field_type': 'set', 'id': 11, 'mandatory_flag': False, 'options': [{'id': 16, 'label': 'Hot', 'color': 'brown'}, {'id': 33, 'label': 'Referenzschicken', 'color': 'green'}, {'id': 38, 'label': 'novisol', 'color': 'blue'}, {'id': 39, 'label': 'Austausch Haworth', 'color': 'gray'}]}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '3c7fb4df58559a50a35c64a3716e9e9e6b55a6f2', 'name': 'Downlad file name', 'field_type': 'varchar', 'id': 50, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'expected_close_date', 'name': 'Expected close date', 'field_type': 'date', 'id': 30, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'value', 'name': 'Value', 'field_type': 'monetary', 'id': 4, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': 'currency', 'name': 'Currency', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2', 'name': 'Projekt Location', 'field_type': 'address', 'id': 37, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_lat', 'name': 'Latitude of Projekt Location', 'field_type': 'double', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_long', 'name': 'Longitude of Projekt Location', 'field_type': 'double', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_subpremise', 'name': 'Apartment/suite no of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_street_number', 'name': 'House number of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,422 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_route', 'name': 'Street/road name of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_sublocality', 'name': 'District/sublocality of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_locality', 'name': 'City/town/village/locality of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_admin_area_level_1', 'name': 'State/county of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_admin_area_level_2', 'name': 'Region of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_country', 'name': 'Country of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_postal_code', 'name': 'ZIP/Postal code of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '85d04d4556c66625f84c9d90348dfa53b9fba6a2_formatted_address', 'name': 'Full/combined address of Projekt Location', 'field_type': 'varchar', 'id': None, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': 'c8bd34b7950da62b05c4221ec99f779541204fef', 'name': 'Bindexis Projekt Status', 'field_type': 'varchar', 'id': 38, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '3eaf098e1669c82cd59ff64c688ca3f86bd9d4dd', 'name': 'Novisol Involvement', 'field_type': 'enum', 'id': 47, 'mandatory_flag': False, 'options': [{'id': 51, 'label': 'Informieren'}, {'id': 52, 'label': 'Ist involviert'}]}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '5d300cf82930e07f6107c7255fcd0dd550af7774', 'name': 'Projektnummer', 'field_type': 'double', 'id': 48, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': '620f1f6a5c3d31e5d7f3258e90e043ad15c1ed2e', 'name': 'Builder Company', 'field_type': 'org', 'id': 49, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,423 - DEBUG - Found deal field: {'key': 'probability', 'name': 'Probability', 'field_type': 'int', 'id': 6, 'mandatory_flag': False, 'options': []}
+2025-01-29 04:02:42,425 - WARNING - Invalid field ID in mapping: 5d300cf82930e07f6107c7255fcd0dd550af7774
+2025-01-29 04:02:42,425 - WARNING - Invalid field ID in mapping: title
+2025-01-29 04:02:42,425 - WARNING - Invalid field ID in mapping: value
+2025-01-29 04:02:42,425 - WARNING - Invalid field ID in mapping: add_time
+2025-01-29 04:02:42,425 - WARNING - Invalid field ID in mapping: close_time
+2025-01-29 04:02:42,427 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:42,685 - DEBUG - https://uniskaag.pipedrive.com:443 "GET /api/v1/persons/search?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1&term=Anna+Schmidt&organization_id=966 HTTP/1.1" 200 None
+2025-01-29 04:02:42,688 - DEBUG - Creating deal with data: {'org_id': 966, 'pipeline_id': 1, 'title': 'Solar Installation Project 2024', 'value': 85000.0, 'currency': 'CHF', 'add_time': '2024-01-15', 'close_time': '2024-06-30', '2fea5d7de9997e5a2e32befbe45bf8a145373754': '2024001', 'person_id': 686, 'status': 'open'}
+2025-01-29 04:02:42,690 - DEBUG - Starting new HTTPS connection (1): uniskaag.pipedrive.com:443
+2025-01-29 04:02:42,941 - DEBUG - https://uniskaag.pipedrive.com:443 "POST /api/v1/deals?api_token=f32b98faf7e983deafd64dcdafd94cbea051a3d1 HTTP/1.1" 400 None
+2025-01-29 04:02:42,941 - DEBUG - Deal creation response: {'success': False, 'error': 'Invalid field(s) in the payload: 2fea5d7de9997e5a2e32befbe45bf8a145373754', 'error_info': 'Please check developers.pipedrive.com for more information about Pipedrive API.', 'data': None, 'additional_data': None}
+Traceback (most recent call last):
+  File "/home/runner/workspace/test_sync.py", line 63, in <module>
+    raise Exception('Failed to create deal')
+Exception: Failed to create deal
+ Environment updated. Reloading shel
