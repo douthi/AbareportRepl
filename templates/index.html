@@ -188,7 +188,12 @@
                                 <th data-sort="NPO_KSumme">NPO_KSumme</th>
                                 <th data-sort="NPO_ADatum">NPO_ADatum</th>
                                 <th data-sort="NPO_ASumme">NPO_ASumme</th>
-                                <th>Status</th>
+                                <th data-sort="Status1">Status 1</th>
+                                <th data-sort="Status2">Status 2</th>
+                                <th data-sort="Status3">Status 3</th>
+                                <th data-sort="Status4">Status 4</th>
+                                <th data-sort="Status">NPO Status</th>
+                                <th>Sync Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -304,6 +309,11 @@
                         <td>${item.NPO_KSumme || ''}</td>
                         <td>${item.NPO_ADatum || ''}</td>
                         <td>${item.NPO_ASumme || ''}</td>
+                        <td>${item.Status1 || ''}</td>
+                        <td>${item.Status2 || ''}</td>
+                        <td>${item.Status3 || ''}</td>
+                        <td>${item.Status4 || ''}</td>
+                        <td>${item.Status || ''}</td>
                         <td class="${getStatusClass(status || '', item.NPO_ProjNr)}">${status || ''}</td>
                         <td>
                             ${(status || '').toLowerCase() === 'new' ? 
