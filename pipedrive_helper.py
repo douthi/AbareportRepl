@@ -164,8 +164,10 @@ class PipedriveHelper:
                 field_value = data[mapping['source']]
                 field_info = field_types.get(mapping['target'])
 
-                if field_info and field_info['type'] == 'enum':
-                    # Directly map using the field mapping configuration
+                # Handle ANR fields explicitly
+                if mapping['source'] in ['ANR_ANREDE', 'ANR_ANREDETEXT']:
+                    person_data[mapping['target']] = str(field_value) if field_value else ''
+                elif field_info and field_info['type'] == 'enum':
                     person_data[mapping['target']] = field_value
                 else:
                     person_data[mapping['target']] = field_value
