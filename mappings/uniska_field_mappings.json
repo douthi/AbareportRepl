@@ -1,7 +1,8 @@
+
 [
   {
     "source": "NPO_ProjNr",
-    "target": "5d300cf82930e07f6107c7255fcd0dd550af7774",
+    "target": "5d300cf82930e07f6107c7255fcd0dd550af7774", 
     "entity": "deal"
   },
   {
@@ -85,13 +86,8 @@
     "entity": "person"
   },
   {
-    "source": "ANR_ANREDE",
+    "source": "AKP_ANR_NR",
     "target": "031ae26196cff3bf754a3fa9ff701f13c73113bf",
-    "entity": "person"
-  },
-  {
-    "source": "ANR_ANREDETEXT",
-    "target": "2fea5d7de9997e5a2e32befbe45bf8a145373754",
     "entity": "person"
   }
 ]
