@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 class PipedriveHelper:
     def __init__(self, company_key='uniska'):
