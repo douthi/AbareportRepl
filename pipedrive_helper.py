@@ -330,9 +330,10 @@ class PipedriveHelper:
                 else:
                     logger.warning(f"Failed to create person: {person_result}")
 
-        # First create the deal without won status
+        # Set initial deal status and value
         if data.get('NPO_ADatum'):
             deal_data.update({
+                'status': 'won',
                 'value': data.get('NPO_ASumme', 0)
             })
         else:
@@ -344,23 +345,8 @@ class PipedriveHelper:
         # Create initial deal
         response = requests.post(endpoint, params=params, json=deal_data)
         result = response.json()
+        logger.debug(f"Initial deal creation response: {result}")
         
-        # If deal has ADatum, update it to won status with correct date
-        if data.get('NPO_ADatum') and result.get('success'):
-            deal_id = result['data']['id']
-            adatum = self._format_timestamp(data.get('NPO_ADatum'))
-            
-            # Update to won status
-            update_endpoint = f"{self.base_url}/deals/{deal_id}"
-            update_data = {
-                'status': 'won',
-                'won_time': adatum,
-                'close_time': adatum
-            }
-            
-            response = requests.put(update_endpoint, params=params, json=update_data)
-            result = response.json()
-
         return result
             
         # Always set the creation date
@@ -372,3 +358,38 @@ class PipedriveHelper:
         result = response.json()
         logger.debug(f"Deal creation response: {result}")
         return result
+def update_won_dates(self):
+    """Update won dates for all deals with ADatum."""
+    endpoint = f"{self.base_url}/deals"
+    params = {'api_token': self.api_key, 'status': 'won'}
+    
+    response = requests.get(endpoint, params=params)
+    if response.ok:
+        deals = response.json().get('data', [])
+        for deal in deals:
+            deal_id = deal['id']
+            # Get deal details to check custom fields
+            detail_response = requests.get(f"{endpoint}/{deal_id}", params={'api_token': self.api_key})
+            if detail_response.ok:
+                deal_data = detail_response.json().get('data', {})
+                adatum = None
+                
+                # Look for ADatum in custom fields
+                for field in self.field_mappings:
+                    if field['entity'] == 'deal' and field['source'] == 'NPO_ADatum':
+                        adatum = deal_data.get(field['target'])
+                        break
+                
+                if adatum:
+                    formatted_date = self._format_timestamp(adatum)
+                    if formatted_date:
+                        update_data = {
+                            'won_time': formatted_date,
+                            'close_time': formatted_date
+                        }
+                        update_response = requests.put(
+                            f"{endpoint}/{deal_id}",
+                            params={'api_token': self.api_key},
+                            json=update_data
+                        )
+                        logger.debug(f"Updated won dates for deal {deal_id}: {update_response.json()}")
