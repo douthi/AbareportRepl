@@ -396,7 +396,7 @@
             const spinner = btn.querySelector('.spinner-border');
             const btnText = btn.querySelector('.btn-text');
             const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-            
+
             btn.disabled = true;
             spinner.classList.remove('d-none');
             btnText.textContent = 'Syncing...';
@@ -404,7 +404,7 @@
             for (const cb of checkboxes) {
                 const projNr = cb.dataset.projnr;
                 const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
-                
+
                 try {
                     const response = await fetch('/sync-to-pipedrive', {
                         method: 'POST',
@@ -414,7 +414,7 @@
                             company_key: window.location.pathname.split('/')[1]
                         })
                     });
-                    
+
                     const data = await response.json();
                     if (data.success) {
                         item.Status = 'synced';
@@ -424,12 +424,12 @@
                     console.error(`Failed to sync item ${projNr}:`, error);
                 }
             }
-            
+
             updateTable();
             btn.disabled = false;
             spinner.classList.add('d-none');
             btnText.textContent = 'Sync Selected';
-            
+
             // Show success message
             const successMsg = document.createElement('div');
             successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
