@@ -90,15 +90,23 @@ class PipedriveHelper:
         params = {'api_token': self.api_key}
 
         org_data = {
-            'name': data['NAME'],
-            'address': f"{data['STREET']} {data['HOUSE_NUMBER']}",
-            'address_postal_code': data['PLZ'],
-            'address_city': data['ORT'],
-            'address_country': data['LAND']
+            'name': data.get('NAME', ''),
+            'address': f"{data.get('STREET', '')} {data.get('HOUSE_NUMBER', '')}".strip(),
+            'address_postal_code': data.get('PLZ', ''),
+            'address_city': data.get('ORT', ''),
+            'address_country': data.get('LAND', '')
         }
 
-        response = requests.post(endpoint, params=params, json=org_data)
-        return response.json()
+        try:
+            response = requests.post(endpoint, params=params, json=org_data)
+            response.raise_for_status()
+            result = response.json()
+            if result.get('success'):
+                return result
+            raise Exception(f"Pipedrive API error: {result.get('error', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error creating organization: {str(e)}")
+            raise Exception(f"Failed to create organization: {str(e)}")
 
     def create_person(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
         endpoint = f"{self.base_url}/persons"
