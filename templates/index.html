@@ -273,10 +273,12 @@
             });
 
             if (elements.dataTableBody) {
-                elements.dataTableBody.innerHTML = filteredData.map(item => `
+                elements.dataTableBody.innerHTML = filteredData.map(item => {
+                    const status = item.Status || 'new';
+                    return `
                     <tr>
                         <td>
-                            <input type="checkbox" class="form-check-input row-checkbox" data-projnr="${item.ProjNr || ''}" ${(item.Status || 'new').toLowerCase() !== 'new' ? 'disabled' : ''}>
+                            <input type="checkbox" class="form-check-input row-checkbox" data-projnr="${item.ProjNr || ''}" ${status.toLowerCase() !== 'new' ? 'disabled' : ''}>
                         </td>
                         <td>${item.NPO_ProjNr || ''}</td>
                         <td>${item.NPO_ProjName || ''}</td>
@@ -300,9 +302,9 @@
                         <td>${item.NPO_KSumme || ''}</td>
                         <td>${item.NPO_ADatum || ''}</td>
                         <td>${item.NPO_ASumme || ''}</td>
-                        <td class="${getStatusClass(item.Status || 'new', item.NPO_ProjNr)}">${item.Status || 'new'}</td>
+                        <td class="${getStatusClass(status, item.NPO_ProjNr)}">${status}</td>
                         <td>
-                            ${(item.Status || 'new').toLowerCase() === 'new' ? 
+                            ${status.toLowerCase() === 'new' ? 
                                 `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
                                     <span class="spinner-border spinner-border-sm d-none"></span>
                                     <span class="btn-text">Sync</span>
@@ -311,7 +313,8 @@
                             }
                         </td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
 
                 // Add sync button handlers
                 document.querySelectorAll('.sync-btn').forEach(btn => {
