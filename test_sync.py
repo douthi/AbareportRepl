@@ -27,7 +27,7 @@ test_data = {
 }
 
 # Send request to local endpoint
-response = requests.post('http://0.0.0.0:3000/sync-to-pipedrive', 
+response = requests.post('http://0.0.0.0:5000/sync-to-pipedrive', 
                         json=test_data,
                         headers={'Content-Type': 'application/json'})
 
