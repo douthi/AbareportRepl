@@ -95,10 +95,16 @@ class PipedriveHelper:
         if not data.get('ADR_NAME'):
             raise ValueError("Organization name (ADR_NAME) is required")
 
-        # Basic organization data
-        org_data = {
-            'name': data['ADR_NAME'].strip()
-        }
+        org_data = {}
+        
+        # Add mapped custom fields from field mappings
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'organization' and mapping['source'] in data:
+                org_data[mapping['target']] = data[mapping['source']]
+                
+        # Ensure required name field is set
+        if 'name' not in org_data:
+            org_data['name'] = data['ADR_NAME'].strip()
 
         # Build address components
         address_parts = []
@@ -142,12 +148,20 @@ class PipedriveHelper:
         endpoint = f"{self.base_url}/persons"
         params = {'api_token': self.api_key}
 
-        person_data = {
-            'name': f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip(),
-            'org_id': org_id,
-            'email': [{'value': data.get('AKP_MAIL', ''), 'primary': True}] if data.get('AKP_MAIL') else [],
-            'phone': [{'value': data.get('AKP_TEL', ''), 'primary': True}] if data.get('AKP_TEL') else []
-        }
+        person_data = {'org_id': org_id}
+        
+        # Add mapped custom fields from field mappings
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'person' and mapping['source'] in data:
+                person_data[mapping['target']] = data[mapping['source']]
+                
+        # Set standard fields if not already mapped
+        if 'name' not in person_data:
+            person_data['name'] = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
+        if data.get('AKP_MAIL') and 'email' not in person_data:
+            person_data['email'] = [{'value': data['AKP_MAIL'], 'primary': True}]
+        if data.get('AKP_TEL') and 'phone' not in person_data:
+            person_data['phone'] = [{'value': data['AKP_TEL'], 'primary': True}]
 
         # Add mapped custom fields from field mappings
         for mapping in self.field_mappings:
@@ -235,15 +249,27 @@ class PipedriveHelper:
             deal_date = datetime.now()  # Default to current date if invalid
         two_years_ago = datetime.now() - timedelta(days=730)
 
-        deal_data = {
-            'title': data.get('NPO_ProjName', ''),
-            'org_id': org_id,
-            'value': data.get('NPO_KSumme', 0),
-            'currency': 'CHF',
-            'pipeline_id': self.default_pipeline_id,
-            'add_time': self._format_timestamp(data.get('NPO_KDatum')),
-            'close_time': self._format_timestamp(data.get('NPO_ADatum'))
-        }
+        deal_data = {'org_id': org_id, 'pipeline_id': self.default_pipeline_id}
+        
+        # Add mapped custom fields from field mappings
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'deal' and mapping['source'] in data:
+                field_value = data[mapping['source']]
+                if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
+                    field_value = self._format_timestamp(field_value)
+                deal_data[mapping['target']] = field_value
+                
+        # Set standard fields if not already mapped
+        if 'title' not in deal_data:
+            deal_data['title'] = data.get('NPO_ProjName', '')
+        if 'value' not in deal_data:
+            deal_data['value'] = data.get('NPO_KSumme', 0)
+        if 'currency' not in deal_data:
+            deal_data['currency'] = 'CHF'
+        if 'add_time' not in deal_data:
+            deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
+        if 'close_time' not in deal_data:
+            deal_data['close_time'] = self._format_timestamp(data.get('NPO_ADatum'))
 
         if deal_date < two_years_ago:
             deal_data.update({
