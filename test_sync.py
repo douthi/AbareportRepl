@@ -1,5 +1,10 @@
 
 from pipedrive_helper import PipedriveHelper
+import logging
+
+logging.basicConfig(level=logging.DEBUG, 
+                   format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Test data with different values
 test_data = {
@@ -21,10 +26,40 @@ test_data = {
     'AKP_FUNKTION': 'Project Manager',
     'AKP_TEL': '+41 79 987 6543',
     'AKP_MAIL': 'thomas.weber@ecotech.ch',
-    'AKP_ANR_NR': 1,  # Corresponds to "Herr" in ANR.csv
+    'AKP_ANR_NR': 1,
     'Status': 'new'
 }
 
 if __name__ == '__main__':
     pipedrive = PipedriveHelper('uniska')
-    pipedrive.sync_to_pipedrive(test_data)
+    
+    # Create or update organization
+    org_name = test_data.get('ADR_NAME')
+    existing_org = pipedrive.find_organization_by_name(org_name)
+    
+    if existing_org:
+        org_result = pipedrive.update_organization(existing_org['id'], test_data)
+        org_id = existing_org['id']
+    else:
+        org_result = pipedrive.create_organization(test_data)
+        if not org_result.get('success'):
+            raise Exception('Failed to create organization')
+        org_id = org_result['data']['id']
+
+    # Create or update person
+    person_name = f"{test_data.get('AKP_VORNAME', '')} {test_data.get('AKP_NAME', '')}".strip()
+    existing_person = pipedrive.find_person_by_name(person_name, org_id)
+    
+    if existing_person:
+        person_result = pipedrive.update_person(existing_person['id'], test_data)
+    else:
+        person_result = pipedrive.create_person(test_data, org_id)
+        if not person_result.get('success'):
+            raise Exception('Failed to create person')
+
+    # Create deal
+    deal_result = pipedrive.create_deal(test_data, org_id)
+    if not deal_result.get('success'):
+        raise Exception('Failed to create deal')
+    
+    print("Test sync completed successfully!")
