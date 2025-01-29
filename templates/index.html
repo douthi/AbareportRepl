@@ -409,10 +409,52 @@
             const spinner = btn.querySelector('.spinner-border');
             const btnText = btn.querySelector('.btn-text');
             const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-
+            
             btn.disabled = true;
             spinner.classList.remove('d-none');
             btnText.textContent = 'Syncing...';
+
+            try {
+                for (const checkbox of checkboxes) {
+                    const row = checkbox.closest('tr');
+                    const item = {
+                        company_key: '{{ company }}',
+                        ProjNr: row.cells[1].textContent.trim(),
+                        NPO_ProjName: row.cells[2].textContent.trim(),
+                        ADR_NAME: row.cells[3].textContent.trim()
+                    };
+                    
+                    await fetch('/sync-to-pipedrive', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item)
+                    });
+                }
+
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                successMsg.style.zIndex = '1050';
+                successMsg.textContent = 'Successfully synced all selected items';
+                document.body.appendChild(successMsg);
+                setTimeout(() => successMsg.remove(), 3000);
+
+                // Reset UI state
+                document.getElementById('selectAll').checked = false;
+                checkboxes.forEach(cb => {
+                    cb.checked = false;
+                    const row = cb.closest('tr');
+                    const statusCell = row.querySelector('td:nth-last-child(2)');
+                    statusCell.textContent = 'synced';
+                    statusCell.className = 'text-success';
+                });
+            } catch (error) {
+                alert('Error during bulk sync: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+                btnText.textContent = 'Sync Selected';
+            }
+        });ing...';
 
             for (const cb of checkboxes) {
                 const projNr = cb.dataset.projnr;
