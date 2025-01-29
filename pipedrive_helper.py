@@ -361,40 +361,49 @@ class PipedriveHelper:
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            # Clear any existing times first
-            clear_times = {
-                'won_time': None,
-                'lost_time': None
-            }
-            logger.debug(f"Clearing times for deal {deal_id}")
-            requests.put(update_endpoint, params=params, json=clear_times)
+            try:
+                # Clear existing times
+                clear_response = requests.put(update_endpoint, params=params, json={'won_time': None, 'lost_time': None})
+                if not clear_response.ok:
+                    logger.error(f"Failed to clear times: {clear_response.text}")
+                    return result
+                
+                time.sleep(1)
 
-            # Update status with proper delays
-            time.sleep(1)  # Add small delay between API calls
-            
-            if asumme:
-                status_data = {'status': 'won'}
-            elif str(status) == '4':
-                status_data = {'status': 'lost'}
-            else:
-                status_data = {'status': 'open'}
+                # Set status
+                if asumme:
+                    status_data = {'status': 'won'}
+                elif str(status) == '4':
+                    status_data = {'status': 'lost'}
+                else:
+                    status_data = {'status': 'open'}
 
-            logger.debug(f"Setting deal {deal_id} status: {status_data}")
-            status_response = requests.put(update_endpoint, params=params, json=status_data)
-            if not status_response.ok:
-                logger.error(f"Failed to update deal status: {status_response.text}")
-                return result
+                logger.debug(f"Setting deal {deal_id} status: {status_data}")
+                status_response = requests.put(update_endpoint, params=params, json=status_data)
+                
+                if not status_response.ok:
+                    logger.error(f"Failed to update deal status: {status_response.text}")
+                    return result
 
-            # Update times only after status is confirmed
-            time.sleep(1)  # Add small delay between API calls
-            
-            if status_response.ok:
-                if asumme and adatum:
-                    # Format won_time with date and time
+                status_result = status_response.json()
+                if not status_result.get('success'):
+                    logger.error(f"Status update failed: {status_result}")
+                    return result
+
+                time.sleep(1)
+
+                # Update times based on verified status
+                current_status = status_result['data']['status']
+                
+                if current_status == 'won' and adatum:
+                    # Keep full datetime for won_time
                     time_data = {'won_time': adatum}
                     logger.debug(f"Setting won time for deal {deal_id}: {time_data}")
-                    requests.put(update_endpoint, params=params, json=time_data)
-                elif str(status) == '4':
+                    time_response = requests.put(update_endpoint, params=params, json=time_data)
+                    if not time_response.ok:
+                        logger.error(f"Failed to set won_time: {time_response.text}")
+                
+                elif current_status == 'lost':
                     # Format lost_time as date only (YYYY-MM-DD)
                     lost_date = status4_date or kdatum
                     if lost_date:
@@ -403,9 +412,15 @@ class PipedriveHelper:
                             formatted_date = date_obj.strftime('%Y-%m-%d')
                             time_data = {'lost_time': formatted_date}
                             logger.debug(f"Setting lost time for deal {deal_id}: {time_data}")
-                            requests.put(update_endpoint, params=params, json=time_data)
+                            time_response = requests.put(update_endpoint, params=params, json=time_data)
+                            if not time_response.ok:
+                                logger.error(f"Failed to set lost_time: {time_response.text}")
                         except ValueError as e:
                             logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"API request failed for deal {deal_id}: {str(e)}")
+                return result
 
         return result
 
