@@ -110,13 +110,20 @@ class PipedriveHelper:
         if address_parts:
             org_data['address'] = ' '.join(address_parts)
             
-        # Add optional fields only if they exist
+        # Combine address fields into a single address field
+        address_components = []
         if data.get('PLZ'):
-            org_data['postal_code'] = str(data['PLZ']).strip()
+            address_components.append(str(data['PLZ']).strip())
         if data.get('ORT'):
-            org_data['city'] = str(data['ORT']).strip()
+            address_components.append(str(data['ORT']).strip())
         if data.get('LAND'):
-            org_data['country'] = str(data['LAND']).strip()
+            address_components.append(str(data['LAND']).strip())
+            
+        if address_components:
+            if org_data.get('address'):
+                org_data['address'] += ', ' + ' '.join(address_components)
+            else:
+                org_data['address'] = ' '.join(address_components)
 
         try:
             response = requests.post(endpoint, params=params, json=org_data)
