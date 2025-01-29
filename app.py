@@ -3,6 +3,7 @@ import os
 from config import Config
 from helpers import ReportManager
 from pipedrive_helper import PipedriveHelper
+from utils import RateLimiter
 import logging
 from datetime import datetime
 import csv
