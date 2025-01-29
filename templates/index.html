@@ -304,9 +304,9 @@
                         <td>${item.NPO_KSumme || ''}</td>
                         <td>${item.NPO_ADatum || ''}</td>
                         <td>${item.NPO_ASumme || ''}</td>
-                        <td class="${getStatusClass(status, item.ProjNr)}">${status}</td>
+                        <td class="${getStatusClass(status || '', item.NPO_ProjNr)}">${status || ''}</td>
                         <td>
-                            ${status.toLowerCase() === 'new' ? 
+                            ${(status || '').toLowerCase() === 'new' ? 
                                 `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
                                     <span class="spinner-border spinner-border-sm d-none"></span>
                                     <span class="btn-text">Sync</span>
