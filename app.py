@@ -325,7 +325,7 @@ def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
         if request.method == 'GET' and 'last_combined_data' in db:
-            data = db['last_combined_data']
+            data = list(db['last_combined_data'])
         else:
             data = report_manager.get_combined_data()
             if data:
