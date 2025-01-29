@@ -367,9 +367,11 @@ class PipedriveHelper:
                     'lost_time': None  # Clear lost time for won deals
                 }
             elif str(status) == '4':  # Convert status to string for comparison
+                # Use status4_date as primary, fall back to kdatum if not available
+                lost_date = status4_date if status4_date else kdatum
                 status_data = {
                     'status': 'lost',
-                    'lost_time': self._format_timestamp(status4_date or kdatum),
+                    'lost_time': self._format_timestamp(lost_date),
                     'won_time': None  # Clear won time for lost deals
                 }
             else:
