@@ -25,6 +25,11 @@
     "entity": "deal"
   },
   {
+    "source": "NPO_Status4Date",
+    "target": "lost_time",
+    "entity": "deal"
+  },
+  {
     "source": "ADR_NAME",
     "target": "name",
     "entity": "organization"
