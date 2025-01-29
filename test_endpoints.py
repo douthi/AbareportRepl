@@ -80,4 +80,4 @@ def test_pipedrive():
         return False
 
 if __name__ == "__main__":
-    test_pipedrive())
+    test_pipedrive()

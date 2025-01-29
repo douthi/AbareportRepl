@@ -259,5 +259,8 @@ class PipedriveHelper:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 deal_data[mapping['target']] = data[mapping['source']]
 
+        logger.debug(f"Creating deal with data: {deal_data}")
         response = requests.post(endpoint, params=params, json=deal_data)
-        return response.json()
+        result = response.json()
+        logger.debug(f"Deal creation response: {result}")
+        return result
