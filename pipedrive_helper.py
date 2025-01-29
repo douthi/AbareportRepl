@@ -366,12 +366,15 @@ class PipedriveHelper:
                 lost_date = status4_date or kdatum
                 if lost_date:
                     try:
-                        date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
-                        formatted_date = date_obj.strftime('%Y-%m-%d')
-                        status_data = {
-                            'status': 'lost',
-                            'lost_time': formatted_date
-                        }
+                        # First set status to lost
+                        status_response = requests.put(update_endpoint, params=params, json={'status': 'lost'})
+                        if status_response.ok:
+                            # Then set lost_time as date only
+                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
+                            formatted_date = date_obj.strftime('%Y-%m-%d')
+                            status_data = {
+                                'lost_time': formatted_date
+                            }
                     except ValueError as e:
                         logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
                         status_data = {'status': 'lost'}
