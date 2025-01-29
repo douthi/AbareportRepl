@@ -325,24 +325,19 @@ def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
         if request.method == 'GET':
-            data = db.get('last_combined_data', [])
+            data = db.get('last_combined_data')
             if data:
                 return jsonify(list(data)), 200
-            # If no data in db, try to generate it
-            data = report_manager.get_combined_data()
-            if data:
-                db['last_combined_data'] = data
-                return jsonify(data), 200
-            return jsonify([]), 200
-        else:
-            data = report_manager.get_combined_data()
-            if data:
-                db['last_combined_data'] = data
-                return jsonify(data), 200
-            return jsonify([]), 200
+        
+        data = report_manager.get_combined_data()
+        if data:
+            db['last_combined_data'] = data
+            return jsonify(data), 200
+        return jsonify([]), 200
+        
     except Exception as e:
         logger.error(f"Error in get_combined_data: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify([]), 200
 
 @app.errorhandler(500)
 def internal_error(error):
