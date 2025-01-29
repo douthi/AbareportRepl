@@ -92,24 +92,28 @@ class PipedriveHelper:
         endpoint = f"{self.base_url}/organizations"
         params = {'api_token': self.api_key}
 
-        org_data = {}
-        if data.get('ADR_NAME'):
-            org_data['name'] = data['ADR_NAME']
+        # Basic organization data
+        org_data = {
+            'name': data.get('ADR_NAME', ''),
+            'visible_to': 3  # Visible to entire company (default)
+        }
 
-        address_parts = []
+        # Address fields need to be strings
+        address_components = []
         if data.get('STREET'):
-            address_parts.append(data['STREET'])
+            address_components.append(str(data['STREET']))
         if data.get('HOUSE_NUMBER'):
-            address_parts.append(data['HOUSE_NUMBER'])
-        if address_parts:
-            org_data['address'] = ' '.join(address_parts)
-
+            address_components.append(str(data['HOUSE_NUMBER']))
+        
+        # Construct address fields according to API spec
+        if address_components:
+            org_data['address'] = ' '.join(address_components)
         if data.get('PLZ'):
-            org_data['address_postal_code'] = data['PLZ']
+            org_data['address_postal_code'] = str(data.get('PLZ'))
         if data.get('ORT'):
-            org_data['address_city'] = data['ORT']
+            org_data['address_city'] = str(data.get('ORT'))
         if data.get('LAND'):
-            org_data['address_country'] = data['LAND']
+            org_data['address_country'] = str(data.get('LAND'))
 
         try:
             response = requests.post(endpoint, params=params, json=org_data)
