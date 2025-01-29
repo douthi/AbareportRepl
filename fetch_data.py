@@ -6,6 +6,29 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+def search_deal_by_name(name):
+    pipedrive = PipedriveHelper('uniska')
+    endpoint = f"{pipedrive.base_url}/deals/search"
+    params = {
+        'api_token': pipedrive.api_key,
+        'term': name,
+        'exact_match': True
+    }
+    response = requests.get(endpoint, params=params)
+    if response.ok:
+        deals = response.json().get('data', {}).get('items', [])
+        if deals:
+            for deal in deals:
+                logger.info(f"\n=== Found Deal ===")
+                logger.info(f"Title: {deal['item'].get('title')}")
+                logger.info(f"Value: {deal['item'].get('value')} {deal['item'].get('currency')}")
+                logger.info(f"Status: {deal['item'].get('status')}")
+                logger.info(f"ID: {deal['item'].get('id')}")
+        else:
+            logger.info("No deals found with that name")
+    else:
+        logger.error(f"Failed to search deals: {response.text}")
+
 def fetch_and_display_data():
     pipedrive = PipedriveHelper('uniska')
     
@@ -42,4 +65,4 @@ def fetch_and_display_data():
         logger.info(f"Status: {deal_data.get('status')}")
 
 if __name__ == "__main__":
-    fetch_and_display_data()
+    search_deal_by_name("Solar Installation Project 2000")
