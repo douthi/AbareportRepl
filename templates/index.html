@@ -591,6 +591,26 @@
             });
         }
 
+        // Load initial data
+        function loadInitialData() {
+            fetch('/combinedData')
+                .then(response => response.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        state.currentData = data.map(item => ({
+                            ...item,
+                            Status: item.Status || 'new'
+                        }));
+                        updateTable();
+                        updateProjNrSuggestions();
+                    }
+                })
+                .catch(error => console.error('Error loading initial data:', error));
+        }
+
+        // Call loadInitialData on page load
+        loadInitialData();
+
         function pollForUpdates() {
             const interval = setInterval(() => {
                 fetch('/reports')
