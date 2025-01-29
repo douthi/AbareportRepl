@@ -355,29 +355,37 @@ class PipedriveHelper:
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            # Set final status in single update
-            status_data = {}
+            # Handle deal status with proper sequencing
             if data.get('NPO_ASumme'):
-                status_data = {
-                    'status': 'won',
-                    'won_time': adatum
-                }
+                # For won deals, we can set status and time together
+                if adatum:
+                    try:
+                        date_obj = datetime.strptime(adatum, '%Y-%m-%d %H:%M:%S')
+                        status_data = {
+                            'status': 'won',
+                            'won_time': date_obj.strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        requests.put(update_endpoint, params=params, json=status_data)
+                    except ValueError as e:
+                        logger.error(f"Error formatting won_time for deal {deal_id}: {e}")
+                        
             elif str(data.get('Status')) == '4':
                 lost_date = status4_date or kdatum
                 if lost_date:
                     try:
                         # First set status to lost
-                        status_response = requests.put(update_endpoint, params=params, json={'status': 'lost'})
-                        if status_response.ok:
-                            # Then set lost_time as date only
+                        status_update = requests.put(update_endpoint, params=params, json={'status': 'lost'})
+                        if status_update.ok:
+                            # Wait briefly to ensure status is processed
+                            time.sleep(1)
+                            # Then set lost_time as date only (YYYY-MM-DD)
                             date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
-                            formatted_date = date_obj.strftime('%Y-%m-%d')
-                            status_data = {
-                                'lost_time': formatted_date
+                            lost_time_update = {
+                                'lost_time': date_obj.strftime('%Y-%m-%d')
                             }
-                    except ValueError as e:
-                        logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
-                        status_data = {'status': 'lost'}
+                            requests.put(update_endpoint, params=params, json=lost_time_update)
+                    except Exception as e:
+                        logger.error(f"Error updating lost status/time for deal {deal_id}: {e}")
 
             if status_data:
                 try:
