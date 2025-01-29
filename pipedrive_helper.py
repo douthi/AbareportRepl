@@ -12,6 +12,28 @@ class PipedriveHelper:
         self.mapping_file = f'mappings/{company_key}_field_mappings.json'
         os.makedirs('mappings', exist_ok=True)
         self._load_field_mappings()
+        self.default_pipeline_id = self._get_default_pipeline_id()
+
+    def _get_default_pipeline_id(self):
+        """Get the ID of the default pipeline."""
+        endpoint = f"{self.base_url}/pipelines"
+        params = {'api_token': self.api_key}
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            pipelines = response.json().get('data', [])
+            if pipelines:
+                return pipelines[0]['id']  # Return first pipeline ID
+        return None
+
+    def _format_timestamp(self, date_str):
+        """Format timestamp to Pipedrive format (YYYY-MM-DD)."""
+        if not date_str:
+            return None
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            return date_obj.strftime('%Y-%m-%d')
+        except ValueError:
+            return None
 
     def _load_field_mappings(self):
         """Load field mappings from file."""
@@ -127,20 +149,32 @@ class PipedriveHelper:
         return response.json()
 
     def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
+        from datetime import datetime, timedelta
         endpoint = f"{self.base_url}/deals"
         params = {'api_token': self.api_key}
+        
+        # Check if deal is older than 24 months
+        deal_date = datetime.strptime(data.get('KDatum', ''), '%Y-%m-%d %H:%M:%S')
+        two_years_ago = datetime.now() - timedelta(days=730)
         
         deal_data = {
             'title': data['ProjName'],
             'org_id': org_id,
             'value': data.get('KSumme', 0),
             'currency': 'CHF',
-            'status': 'open',
-            'probability': data.get('probability', None),
-            'expected_close_date': data.get('expected_close_date', None),
-            'pipeline_id': data.get('pipeline_id', None),
-            'stage_id': data.get('stage_id', None)
+            'pipeline_id': self.default_pipeline_id,
+            'add_time': self._format_timestamp(data.get('KDatum')),
+            'close_time': self._format_timestamp(data.get('ADatum'))
         }
+
+        if deal_date < two_years_ago:
+            deal_data.update({
+                'status': 'lost',
+                'lost_reason': 'Aged out',
+                'lost_time': '2025-01-01'
+            })
+        else:
+            deal_data['status'] = 'open'
         
         # Add mapped custom fields from field mappings
         for mapping in self.field_mappings:
