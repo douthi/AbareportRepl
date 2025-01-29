@@ -353,16 +353,19 @@ class PipedriveHelper:
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
 
             if adatum:
-                # First mark as won with the correct date
+                # First set status to won
                 update_endpoint = f"{self.base_url}/deals/{deal_id}"
-                update_data = {
-                    'status': 'won',
-                    'won_time': adatum
-                }
-                logger.debug(f"Updating deal {deal_id} with data: {update_data}")
-                response = requests.put(update_endpoint, params=params, json=update_data)
-                result = response.json()
-                logger.debug(f"Deal update response: {result}")
+                status_data = {'status': 'won'}
+                logger.debug(f"Setting deal {deal_id} status to won")
+                status_response = requests.put(update_endpoint, params=params, json=status_data)
+                
+                if status_response.ok:
+                    # Then set won_time after status is won
+                    won_data = {'won_time': adatum}
+                    logger.debug(f"Setting deal {deal_id} won_time to {adatum}")
+                    response = requests.put(update_endpoint, params=params, json=won_data)
+                    result = response.json()
+                    logger.debug(f"Deal won_time update response: {result}")
                 
                 # Verify the update worked by fetching the deal
                 get_response = requests.get(update_endpoint, params=params)
