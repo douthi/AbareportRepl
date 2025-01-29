@@ -267,22 +267,25 @@
             .catch(error => console.error('Error loading data:', error));
 
         function updateTable() {
-            const searchTerm = elements.searchInput?.value?.toLowerCase() || '';
-            const hideProcessed = elements.hideProcessedCheckbox?.checked || false;
+                    const searchTerm = elements.searchInput?.value?.toLowerCase() || '';
+                    const hideProcessed = elements.hideProcessedCheckbox?.checked || false;
 
-            // Create a lookup map for faster access
-            const filteredData = state.currentData.filter(item => {
-                if (!item || !item.NPO_ProjNr) return false;
-                const matchesSearch = item.NPO_ProjNr.toString().toLowerCase().includes(searchTerm);
-                const status = item.Status?.toLowerCase() || 'new';
-                const isSynced = status === 'synced';
-                return matchesSearch && (!hideProcessed || !isSynced);
-            });
+                    const filteredData = state.currentData.filter(item => {
+                        if (!item || !item.NPO_ProjNr) return false;
+                        const matchesSearch = item.NPO_ProjNr.toString().toLowerCase().includes(searchTerm);
+                        const status = (item.Status || 'new').toLowerCase();
+                        const isSynced = status === 'synced';
+                        return matchesSearch && (!hideProcessed || !isSynced);
+                    });
 
-            if (elements.dataTableBody) {
-                elements.dataTableBody.innerHTML = filteredData.map(item => {
-                    const status = item.Status || 'new';
-                    return `
+                    if (elements.dataTableBody) {
+                        elements.dataTableBody.innerHTML = filteredData.map(item => {
+                            const status = (item.Status || 'new').toLowerCase();
+                            const isSyncing = state.freshSyncs.has(item.NPO_ProjNr);
+                            const statusClass = isSyncing ? 'text-warning' : 
+                                              status === 'synced' ? 'text-success' : 
+                                              'text-info';
+                            return `
                     <tr>
                         <td>
                             <input type="checkbox" class="form-check-input row-checkbox" data-projnr="${item.ProjNr || ''}" ${status.toLowerCase() !== 'new' ? 'disabled' : ''}>
@@ -314,10 +317,10 @@
                         <td>${item.NPO_Status2 || ''}</td>
                         <td>${item.NPO_Status3 || ''}</td>
                         <td>${item.NPO_Status4 || ''}</td>
-                        <td class="${getStatusClass(status || '', item.NPO_ProjNr)}">${status || ''}</td>
+                        <td class="${statusClass}">${status || ''}</td>
                         <td>
                             ${(status || '').toLowerCase() === 'new' ? 
-                                `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
+                                `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.NPO_ProjNr}">
                                     <span class="spinner-border spinner-border-sm d-none"></span>
                                     <span class="btn-text">Sync</span>
                                 </button>` : 
@@ -326,7 +329,7 @@
                         </td>
                     </tr>
                 `;
-                }).join('');
+                        }).join('');
 
                 // Add sync button handlers
                 document.querySelectorAll('.sync-btn').forEach(btn => {
@@ -337,8 +340,8 @@
 
         function getStatusClass(status, projNr) {
             if (!status) return 'text-info';
-            if (state && state.freshSyncs && state.freshSyncs.has(projNr)) return 'text-success';
-            return status.toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
+            if (state && state.freshSyncs && state.freshSyncs.has(projNr)) return 'text-warning';
+            return status.toLowerCase() === 'synced' ? 'text-success' : 'text-info';
         }
 
         function updateProjNrSuggestions() {
@@ -376,6 +379,11 @@
             };
 
             btn.disabled = true;
+            const spinner = btn.querySelector('.spinner-border');
+            spinner.classList.remove('d-none');
+            const btnText = btn.querySelector('.btn-text');
+            btnText.textContent = 'Syncing...';
+            const statusCell = row.cells[27];
 
             fetch('/sync-to-pipedrive', {
                 method: 'POST',
@@ -388,8 +396,9 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    row.cells[24].textContent = 'synced';
-                    row.cells[24].className = 'text-secondary';
+                    statusCell.textContent = 'synced';
+                    statusCell.className = 'text-success';
+                    state.freshSyncs.add(item.NPO_ProjNr);
                     btn.remove();
                     const successMsg = document.createElement('div');
                     successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
@@ -397,12 +406,16 @@
                     successMsg.textContent = 'Successfully synced to Pipedrive';
                     document.body.appendChild(successMsg);
                     setTimeout(() => successMsg.remove(), 3000);
+                    updateTable();
+
                 } else {
                     throw new Error(data.error || 'Sync failed');
                 }
             })
             .catch(error => {
                 alert(`Sync failed: ${error.message}`);
+                spinner.classList.add('d-none');
+                btnText.textContent = 'Sync';
                 btn.disabled = false;
             });
         }
@@ -449,6 +462,8 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(item)
                     });
+                    state.freshSyncs.add(item.ProjNr);
+
                 }
 
                 const successMsg = document.createElement('div');
@@ -467,6 +482,7 @@
                     statusCell.textContent = 'synced';
                     statusCell.className = 'text-success';
                 });
+                updateTable();
             } catch (error) {
                 alert('Error during bulk sync: ' + error.message);
             } finally {
