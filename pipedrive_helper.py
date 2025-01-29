@@ -156,21 +156,29 @@ class PipedriveHelper:
 
         # Add mapped custom fields from field mappings
         person_fields = self.get_person_fields()
-        field_types = {str(field['id']): {'type': field['field_type'], 'options': field.get('options', [])} 
+        field_types = {field['key']: {'type': field['field_type'], 'options': field.get('options', [])} 
                       for field in person_fields}
 
         for mapping in self.field_mappings:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
-                field_info = field_types.get(mapping['target'])
 
-                # Handle ANR fields explicitly
+                # Handle ANR fields with proper key mapping
                 if mapping['source'] in ['ANR_ANREDE', 'ANR_ANREDETEXT']:
-                    person_data[mapping['target']] = str(field_value) if field_value else ''
-                elif field_info and field_info['type'] == 'enum':
-                    person_data[mapping['target']] = field_value
+                    key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
+                    if key:
+                        person_data[key] = str(field_value) if field_value else ''
+                    logger.debug(f"Mapping ANR field {mapping['source']} to {key} with value {field_value}")
                 else:
-                    person_data[mapping['target']] = field_value
+                    # Map other fields using field key instead of ID
+                    key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
+                    if key:
+                        field_info = field_types.get(key)
+                        if field_info and field_info['type'] == 'enum':
+                            person_data[key] = str(field_value)
+                        else:
+                            person_data[key] = field_value
+                        logger.debug(f"Mapping field {mapping['source']} to {key} with value {field_value}")
 
         # Set standard fields if not already mapped
         if 'name' not in person_data:
