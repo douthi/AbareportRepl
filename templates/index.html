@@ -265,11 +265,17 @@
             const searchTerm = elements.searchInput?.value?.toLowerCase() || '';
             const hideProcessed = elements.hideProcessedCheckbox?.checked || false;
 
-            const filteredData = state.currentData.filter(item => {
-                if (!item) return false;
-                const projNr = item.ProjNr != null ? item.ProjNr.toString().toLowerCase() : '';
+            // Create a lookup map for faster access
+            const recordMap = new Map(
+                state.currentData
+                    .filter(item => item?.ProjNr)
+                    .map(item => [item.ProjNr.toString(), item])
+            );
+
+            const filteredData = Array.from(recordMap.values()).filter(item => {
+                const projNr = item.ProjNr.toString().toLowerCase();
                 const matchesSearch = projNr.includes(searchTerm);
-                const status = (item.Status || 'new').toLowerCase();
+                const status = item.Status?.toLowerCase() || 'new';
                 const isSynced = status === 'synced';
                 return matchesSearch && (!hideProcessed || !isSynced);
             });
