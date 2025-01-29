@@ -156,29 +156,21 @@ class PipedriveHelper:
 
         # Add mapped custom fields from field mappings
         person_fields = self.get_person_fields()
-        field_types = {field['key']: {'type': field['field_type'], 'options': field.get('options', [])} 
+        field_types = {str(field['id']): {'type': field['field_type'], 'options': field.get('options', [])} 
                       for field in person_fields}
 
         for mapping in self.field_mappings:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
+                field_info = field_types.get(mapping['target'])
 
-                # Handle ANR fields with proper key mapping
+                # Handle ANR fields explicitly
                 if mapping['source'] in ['ANR_ANREDE', 'ANR_ANREDETEXT']:
-                    key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
-                    if key:
-                        person_data[key] = str(field_value) if field_value else ''
-                    logger.debug(f"Mapping ANR field {mapping['source']} to {key} with value {field_value}")
+                    person_data[mapping['target']] = str(field_value) if field_value else ''
+                elif field_info and field_info['type'] == 'enum':
+                    person_data[mapping['target']] = field_value
                 else:
-                    # Map other fields using field key instead of ID
-                    key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
-                    if key:
-                        field_info = field_types.get(key)
-                        if field_info and field_info['type'] == 'enum':
-                            person_data[key] = str(field_value)
-                        else:
-                            person_data[key] = field_value
-                        logger.debug(f"Mapping field {mapping['source']} to {key} with value {field_value}")
+                    person_data[mapping['target']] = field_value
 
         # Set standard fields if not already mapped
         if 'name' not in person_data:
@@ -306,16 +298,14 @@ class PipedriveHelper:
 
         # Set project number and other custom fields
         deal_fields = self.get_deal_fields()
-        field_keys = {field['id']: field['key'] for field in deal_fields}
-        
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 field_value = data[mapping['source']]
-                # Validate field exists before mapping
-                if mapping['target'] in field_keys:
-                    deal_data[field_keys[mapping['target']]] = field_value
+                # For custom fields, we need to use the correct format
+                if mapping['target'].startswith('5d300'):  # Custom field
+                    deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
                 else:
-                    logger.warning(f"Skipping invalid field mapping: {mapping['target']}")
+                    deal_data[mapping['target']] = field_value
 
 
 
@@ -365,37 +355,29 @@ class PipedriveHelper:
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            # Handle deal status with proper sequencing
+            # Set final status in single update
+            status_data = {}
             if data.get('NPO_ASumme'):
-                # For won deals, we can set status and time together
-                if adatum:
-                    try:
-                        date_obj = datetime.strptime(adatum, '%Y-%m-%d %H:%M:%S')
-                        status_data = {
-                            'status': 'won',
-                            'won_time': date_obj.strftime('%Y-%m-%d %H:%M:%S')
-                        }
-                        requests.put(update_endpoint, params=params, json=status_data)
-                    except ValueError as e:
-                        logger.error(f"Error formatting won_time for deal {deal_id}: {e}")
-                        
+                status_data = {
+                    'status': 'won',
+                    'won_time': adatum
+                }
             elif str(data.get('Status')) == '4':
                 lost_date = status4_date or kdatum
                 if lost_date:
                     try:
                         # First set status to lost
-                        status_update = requests.put(update_endpoint, params=params, json={'status': 'lost'})
-                        if status_update.ok:
-                            # Wait briefly to ensure status is processed
-                            time.sleep(1)
-                            # Then set lost_time as date only (YYYY-MM-DD)
+                        status_response = requests.put(update_endpoint, params=params, json={'status': 'lost'})
+                        if status_response.ok:
+                            # Then set lost_time as date only
                             date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
-                            lost_time_update = {
-                                'lost_time': date_obj.strftime('%Y-%m-%d')
+                            formatted_date = date_obj.strftime('%Y-%m-%d')
+                            status_data = {
+                                'lost_time': formatted_date
                             }
-                            requests.put(update_endpoint, params=params, json=lost_time_update)
-                    except Exception as e:
-                        logger.error(f"Error updating lost status/time for deal {deal_id}: {e}")
+                    except ValueError as e:
+                        logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
+                        status_data = {'status': 'lost'}
 
             if status_data:
                 try:
