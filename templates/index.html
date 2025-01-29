@@ -451,6 +451,21 @@
             successMsg.textContent = 'Successfully synced selected items to Pipedrive';
             document.body.appendChild(successMsg);
             setTimeout(() => successMsg.remove(), 3000);
+
+            // Update checkboxes
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                const row = cb.closest('tr');
+                if (row) {
+                    const statusCell = row.querySelector('td:last-child');
+                    if (statusCell) {
+                        statusCell.textContent = 'synced';
+                    }
+                }
+            });
+            document.getElementById('selectAll').checked = false;';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
         });
 
         document.getElementById('dataTableBody')?.addEventListener('change', (e) => {
