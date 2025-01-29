@@ -596,39 +596,44 @@
                 fetch('/reports')
                     .then(response => response.json())
                     .then(data => {
+                        if (!data.reports || data.reports.length === 0) {
+                            clearInterval(interval);
+                            return;
+                        }
+
                         const allFinished = data.reports.every(
                             report => report.status === 'FinishedSuccess' || report.status === 'FinishedError'
                         );
 
                         if (allFinished) {
-                            setTimeout(() => {
-                                fetch('/combinedData')
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (Array.isArray(data)) {
-                                            state.currentData = data.map(item => ({
-                                                ...item,
-                                                Status: item.Status || 'new'
-                                            }));
-                                            updateTable();
-                                            updateProjNrSuggestions();
-                                            clearInterval(interval);
-                                            if (elements.loadingIndicator) {
-                                                elements.loadingIndicator.classList.add('d-none');
-                                            }
-                                            if (elements.generateBtn) {
-                                                elements.generateBtn.disabled = false;
-                                            }
-                                            if (elements.generateBtnSpinner) {
-                                                elements.generateBtnSpinner.classList.add('d-none');
-                                            }
-                                            state.lastReportTime = Date.now();
-                                        }
-                                    });
-                            }, 2000);
+                            fetch('/combinedData', {
+                                method: 'POST'
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (Array.isArray(data)) {
+                                    state.currentData = data.map(item => ({
+                                        ...item,
+                                        Status: item.Status || 'new'
+                                    }));
+                                    updateTable();
+                                    updateProjNrSuggestions();
+                                }
+                                clearInterval(interval);
+                                if (elements.loadingIndicator) {
+                                    elements.loadingIndicator.classList.add('d-none');
+                                }
+                                if (elements.generateBtn) {
+                                    elements.generateBtn.disabled = false;
+                                }
+                                if (elements.generateBtnSpinner) {
+                                    elements.generateBtnSpinner.classList.add('d-none');
+                                }
+                                state.lastReportTime = Date.now();
+                            });
                         }
                     });
-            }, 5000);
+            }, 3000);
         }
     });
     </script>
