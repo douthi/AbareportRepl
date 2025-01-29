@@ -298,14 +298,16 @@ class PipedriveHelper:
 
         # Set project number and other custom fields
         deal_fields = self.get_deal_fields()
+        field_keys = {field['id']: field['key'] for field in deal_fields}
+        
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 field_value = data[mapping['source']]
-                # For custom fields, we need to use the correct format
-                if mapping['target'].startswith('5d300'):  # Custom field
-                    deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
+                # Validate field exists before mapping
+                if mapping['target'] in field_keys:
+                    deal_data[field_keys[mapping['target']]] = field_value
                 else:
-                    deal_data[mapping['target']] = field_value
+                    logger.warning(f"Skipping invalid field mapping: {mapping['target']}")
 
 
 
