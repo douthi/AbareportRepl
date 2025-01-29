@@ -221,76 +221,48 @@ def get_reports():
 def sync_to_pipedrive():
     """Sync a record to Pipedrive."""
     try:
-        logger.info("Starting sync to Pipedrive")
         data = request.json
         if not data:
-            logger.error("No data received in request")
             return jsonify({'error': 'No data received'}), 400
             
-        logger.debug(f"Received data for sync: {data}")
-        company_key = data.get('company_key', 'uniska')
-        env_key = f"{company_key.upper()}_PIPEDRIVE_API_KEY"
-        logger.debug(f"API Key available: {bool(os.getenv(env_key))}")
         company_key = data.pop('company_key', 'uniska')
-        logger.info(f"Using company key: {company_key}")
-        
         if not os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY'):
-            logger.error(f"No API key found for company {company_key}")
             return jsonify({'error': 'Pipedrive API key not configured'}), 400
-        pipedrive_helper = PipedriveHelper(company_key)
-        if not data:
-            logger.error("No data provided in request")
-            return jsonify({'error': 'No data provided'}), 400
 
-        # Check/create/update organization
+        pipedrive = PipedriveHelper(company_key)
+        
+        # Create or update organization
         org_name = data.get('ADR_NAME')
         if not org_name:
             return jsonify({'error': 'Organization name (ADR_NAME) is required'}), 400
             
-        existing_org = pipedrive_helper.find_organization_by_name(org_name)
-        
+        existing_org = pipedrive.find_organization_by_name(org_name)
         if existing_org:
-            logger.info(f"Found existing organization: {org_name}")
-            org_result = pipedrive_helper.update_organization(existing_org['id'], data)
+            org_result = pipedrive.update_organization(existing_org['id'], data)
             org_id = existing_org['id']
         else:
-            logger.info(f"Creating new organization: {org_name}")
-            org_result = pipedrive_helper.create_organization(data)
+            org_result = pipedrive.create_organization(data)
             if not org_result.get('success'):
-                error_msg = org_result.get('error', 'Unknown error creating organization')
-                logger.error(f"Organization creation failed: {error_msg}")
-                return jsonify({'error': error_msg}), 500
+                return jsonify({'error': org_result.get('error', 'Failed to create organization')}), 500
             org_id = org_result['data']['id']
-            logger.info(f"Created organization with ID: {org_id}")
 
-        # Check/create/update person if name exists
+        # Create or update person
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
         if person_name:
-            logger.info(f"Processing person: {person_name}")
-            existing_person = pipedrive_helper.find_person_by_name(person_name, org_id)
-            
+            existing_person = pipedrive.find_person_by_name(person_name, org_id)
             if existing_person:
-                logger.info(f"Found existing person: {person_name}")
-                person_result = pipedrive_helper.update_person(existing_person['id'], data)
+                person_result = pipedrive.update_person(existing_person['id'], data)
             else:
-                logger.info(f"Creating new person: {person_name}")
-                person_result = pipedrive_helper.create_person(data, org_id)
+                person_result = pipedrive.create_person(data, org_id)
                 if not person_result.get('success'):
-                    error_msg = person_result.get('error', 'Unknown error creating person')
-                    logger.error(f"Person creation failed: {error_msg}")
-                    return jsonify({'error': error_msg}), 500
-                logger.info(f"Created person with ID: {person_result['data']['id']}")
+                    return jsonify({'error': person_result.get('error', 'Failed to create person')}), 500
 
         # Create deal
-        logger.info("Creating deal...")
-        deal_result = pipedrive_helper.create_deal(data, org_id)
+        deal_result = pipedrive.create_deal(data, org_id)
         if not deal_result.get('success'):
-            error_msg = deal_result.get('error', 'Unknown error creating deal')
-            logger.error(f"Deal creation failed: {error_msg}")
-            return jsonify({'error': error_msg}), 500
-        logger.info(f"Created deal with ID: {deal_result['data']['id']}")
+            return jsonify({'error': deal_result.get('error', 'Failed to create deal')}), 500
 
-        return jsonify({'success': True, 'message': 'Data synced to Pipedrive successfully'}), 200
+        return jsonify({'success': True}), 200
 
     except Exception as e:
         logger.error(f"Error syncing to Pipedrive: {e}")
