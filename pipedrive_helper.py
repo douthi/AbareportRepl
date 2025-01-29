@@ -104,12 +104,16 @@ class PipedriveHelper:
         params = {'api_token': self.api_key}
 
         person_data = {
-            'name': f"{data['VORNAME']} {data['NAME']}".strip(),
+            'name': f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip(),
             'org_id': org_id,
-            'email': [{'value': data['EMAIL'], 'primary': True}] if data['EMAIL'] else [],
-            'phone': [{'value': data['TEL'], 'primary': True}] if data['TEL'] else [],
-            'ANR_ANREDETEXT': data.get('ANR_ANREDETEXT', '')
+            'email': [{'value': data.get('AKP_MAIL', ''), 'primary': True}] if data.get('AKP_MAIL') else [],
+            'phone': [{'value': data.get('AKP_TEL', ''), 'primary': True}] if data.get('AKP_TEL') else []
         }
+
+        # Add mapped custom fields from field mappings
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'person' and mapping['source'] in data:
+                person_data[mapping['target']] = data[mapping['source']]
 
         response = requests.post(endpoint, params=params, json=person_data)
         return response.json()
@@ -186,7 +190,10 @@ class PipedriveHelper:
         params = {'api_token': self.api_key}
 
         # Check if deal is older than 24 months
-        deal_date = datetime.strptime(data.get('NPO_KDatum', ''), '%Y-%m-%d %H:%M:%S')
+        try:
+            deal_date = datetime.strptime(data.get('NPO_KDatum', ''), '%Y-%m-%d %H:%M:%S')
+        except (ValueError, TypeError):
+            deal_date = datetime.now()  # Default to current date if invalid
         two_years_ago = datetime.now() - timedelta(days=730)
 
         deal_data = {
