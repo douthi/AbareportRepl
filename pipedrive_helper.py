@@ -156,21 +156,21 @@ class PipedriveHelper:
 
         # Add mapped custom fields from field mappings
         person_fields = self.get_person_fields()
-        field_types = {str(field['id']): {'type': field['field_type'], 'options': field.get('options', [])} 
+        field_types = {field['key']: {'type': field['field_type'], 'options': field.get('options', [])} 
                       for field in person_fields}
 
         for mapping in self.field_mappings:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
-                field_info = field_types.get(mapping['target'])
-
-                # Handle ANR fields explicitly
-                if mapping['source'] in ['ANR_ANREDE', 'ANR_ANREDETEXT']:
-                    person_data[mapping['target']] = str(field_value) if field_value else ''
-                elif field_info and field_info['type'] == 'enum':
-                    person_data[mapping['target']] = field_value
-                else:
-                    person_data[mapping['target']] = field_value
+                field_key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
+                
+                if field_key:
+                    field_info = field_types.get(field_key)
+                    if field_info and field_info['type'] == 'enum':
+                        person_data[field_key] = str(field_value)
+                    else:
+                        person_data[field_key] = field_value
+                    logger.debug(f"Mapped person field {mapping['source']} to {field_key}")
 
         # Set standard fields if not already mapped
         if 'name' not in person_data:
@@ -355,29 +355,32 @@ class PipedriveHelper:
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            # Set final status in single update
+            # Handle deal status with proper sequencing
             status_data = {}
+            
             if data.get('NPO_ASumme'):
-                status_data = {
-                    'status': 'won',
-                    'won_time': adatum
-                }
-            elif str(data.get('Status')) == '4':
-                lost_date = status4_date or kdatum
-                if lost_date:
+                # For won deals, first set won status then won_time
+                status_data = {'status': 'won'}
+                status_response = requests.put(update_endpoint, params=params, json=status_data)
+                if status_response.ok and adatum:
                     try:
-                        # First set status to lost
-                        status_response = requests.put(update_endpoint, params=params, json={'status': 'lost'})
-                        if status_response.ok:
-                            # Then set lost_time as date only
-                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
-                            formatted_date = date_obj.strftime('%Y-%m-%d')
-                            status_data = {
-                                'lost_time': formatted_date
-                            }
+                        date_obj = datetime.strptime(adatum, '%Y-%m-%d %H:%M:%S')
+                        status_data = {'won_time': date_obj.strftime('%Y-%m-%d')}
                     except ValueError as e:
-                        logger.error(f"Error formatting lost_time for deal {deal_id}: {e}")
-                        status_data = {'status': 'lost'}
+                        logger.error(f"Error formatting won_time: {e}")
+                        
+            elif str(data.get('Status')) == '4':
+                # For lost deals, first set lost status then lost_time
+                status_data = {'status': 'lost'}
+                status_response = requests.put(update_endpoint, params=params, json=status_data)
+                if status_response.ok:
+                    lost_date = status4_date or kdatum
+                    if lost_date:
+                        try:
+                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
+                            status_data = {'lost_time': date_obj.strftime('%Y-%m-%d')}
+                        except ValueError as e:
+                            logger.error(f"Error formatting lost_time: {e}")
 
             if status_data:
                 try:
