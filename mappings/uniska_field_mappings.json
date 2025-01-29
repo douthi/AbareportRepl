@@ -2,7 +2,7 @@
 [
   {
     "source": "NPO_ProjNr",
-    "target": "projnr", 
+    "target": "proj_nr", 
     "entity": "deal"
   },
   {
