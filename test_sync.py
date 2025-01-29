@@ -7,25 +7,26 @@ logger = logging.getLogger(__name__)
 
 # Test data with different values
 test_data = {
-    'NPO_ProjNr': '8464684648',
-    'NPO_ProjName': 'Solar Installation Project',
-    'NPO_KDatum': '2024-01-15',
-    'NPO_KSumme': 75000.00,
-    'NPO_ADatum': '2024-06-30',
-    'NPO_ASumme': 80000.00,
-    'ADR_NAME': 'EcoTech Solutions AG',
-    'ADR_TEL': '+41 44 123 4567',
+    'NPO_ProjNr': '2024001',
+    'NPO_ProjName': 'Solar Installation Project 2024',
+    'NPO_KDatum': '2024-01-15 00:00:00',
+    'NPO_KSumme': 85000.00,
+    'NPO_ADatum': '2024-06-30 00:00:00',
+    'NPO_ASumme': 90000.00,
+    'ADR_NAME': 'SunTech Solutions AG',
+    'ADR_TEL': '+41 44 555 6677',
     'ADR_LAND': 'Switzerland',
-    'ADR_PLZ': '8001',
+    'ADR_PLZ': '8002',
     'ADR_ORT': 'Zürich',
-    'ADR_STREET': 'Bahnhofstrasse',
-    'ADR_HOUSE_NUMBER': '42',
-    'AKP_NAME': 'Weber',
-    'AKP_VORNAME': 'Thomas',
-    'AKP_FUNKTION': 'Project Manager',
-    'AKP_TEL': '+41 79 987 6543',
-    'AKP_MAIL': 'thomas.weber@ecotech.ch',
-    'ANR_ANREDE': 'Herr',  # Will be mapped to enum value 1
+    'ADR_STREET': 'Seestrasse',
+    'ADR_HOUSE_NUMBER': '123',
+    'AKP_NAME': 'Schmidt',
+    'AKP_VORNAME': 'Anna',
+    'AKP_FUNKTION': 'Sales Director',
+    'AKP_TEL': '+41 79 888 9999',
+    'AKP_MAIL': 'anna.schmidt@suntech.ch',
+    'ANR_ANREDE': 'Frau',
+    'ANR_ANREDETEXT': 'Mrs',
     'Status': 'new'
 }
 
