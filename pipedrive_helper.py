@@ -162,20 +162,12 @@ class PipedriveHelper:
                 field_info = field_types.get(mapping['target'])
 
                 if field_info and field_info['type'] == 'enum':
-                    # Handle single select fields
-                    valid_options = [opt['id'] for opt in field_info['options']]
-                    # Map salutations
-                    if isinstance(field_value, str):
-                        value_map = {'Herr': 1, 'Frau': 2, 'Mr': 1, 'Mrs': 2}
-                        field_value = value_map.get(field_value.strip(), None)
-                    # Add Anredetext as custom field
-                    if mapping['source'] == 'ANR_ANREDETEXT':
-                        person_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = field_value
-                    # Validate the value is in allowed options
-                    if field_value in valid_options:
+                    if mapping['source'] in ['ANR_ANREDE']:
+                        # Map salutations directly as custom field
                         person_data[mapping['target']] = field_value
-                    else:
-                        logger.warning(f"Invalid value {field_value} for enum field {mapping['target']}")
+                    elif mapping['source'] == 'ANR_ANREDETEXT':
+                        # Add Anredetext as custom field
+                        person_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = field_value
                 else:
                     person_data[mapping['target']] = field_value
 
@@ -363,19 +355,28 @@ class PipedriveHelper:
             # Step 2: Handle status and dates based on conditions
             status = data.get('Status')
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
+            kdatum = self._format_timestamp(data.get('NPO_KDatum'))
             status4_date = self._format_timestamp(data.get('NPO_Status4'))
 
-            # Default to open if no status/date info
-            if not status and not adatum:
-                status_data = {'status': 'open'}
-            # Status 4 means lost
-            elif status == '4':
-                status_data = {'status': 'lost'}
-            # Has ADatum means won
+            # First set the status
+            if status == '4':
+                status_data = {
+                    'status': 'lost',
+                    'lost_time': status4_date or kdatum
+                }
             elif adatum:
-                status_data = {'status': 'won'}
+                status_data = {
+                    'status': 'won',
+                    'won_time': adatum
+                }
             else:
                 status_data = {'status': 'open'}
+
+            # Update deal with status and time in one request
+            logger.debug(f"Setting deal {deal_id} status data: {status_data}")
+            status_response = requests.put(update_endpoint, params=params, json=status_data)
+            if not status_response.ok:
+                logger.error(f"Failed to update deal status: {status_response.text}")
 
             # Update status
             logger.debug(f"Setting deal {deal_id} status to {status_data['status']}")
