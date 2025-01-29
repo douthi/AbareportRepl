@@ -221,10 +221,14 @@ def get_reports():
 def sync_to_pipedrive():
     """Sync a record to Pipedrive."""
     try:
+        logger.info("Starting sync to Pipedrive")
         data = request.json
+        logger.debug(f"Received data: {data}")
         company_key = data.pop('company_key', 'uniska')
+        logger.info(f"Using company key: {company_key}")
         pipedrive_helper = PipedriveHelper(company_key)
         if not data:
+            logger.error("No data provided in request")
             return jsonify({'error': 'No data provided'}), 400
 
         # Check/create/update organization
