@@ -153,10 +153,19 @@
 
         <div class="card">
             <div class="card-body">
+                <div class="d-flex justify-content-end mb-3">
+                    <button id="bulkSyncBtn" class="btn btn-primary" disabled>
+                        <span class="spinner-border spinner-border-sm d-none"></span>
+                        <span class="btn-text">Sync Selected</span>
+                    </button>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                </th>
                                 <th data-sort="NPO_ProjNr">NPO_ProjNr</th>
                                 <th data-sort="NPO_ProjName">NPO_ProjName</th>
                                 <th data-sort="ADR_NAME">ADR_Name</th>
@@ -266,6 +275,9 @@
             if (elements.dataTableBody) {
                 elements.dataTableBody.innerHTML = filteredData.map(item => `
                     <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input row-checkbox" data-projnr="${item.ProjNr}" ${item.Status.toLowerCase() !== 'new' ? 'disabled' : ''}>
+                        </td>
                         <td>${item.NPO_ProjNr || ''}</td>
                         <td>${item.NPO_ProjName || ''}</td>
                         <td>${item.ADR_NAME || ''}</td>
@@ -373,6 +385,72 @@
         }
 
         // Event listeners
+        document.getElementById('selectAll')?.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.row-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            updateBulkSyncButton();
+        });
+
+        document.getElementById('bulkSyncBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('bulkSyncBtn');
+            const spinner = btn.querySelector('.spinner-border');
+            const btnText = btn.querySelector('.btn-text');
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+            btnText.textContent = 'Syncing...';
+
+            for (const cb of checkboxes) {
+                const projNr = cb.dataset.projnr;
+                const item = state.currentData.find(i => i.ProjNr.toString() === projNr);
+                
+                try {
+                    const response = await fetch('/sync-to-pipedrive', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ...item,
+                            company_key: window.location.pathname.split('/')[1]
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        item.Status = 'synced';
+                        state.freshSyncs.add(projNr);
+                    }
+                } catch (error) {
+                    console.error(`Failed to sync item ${projNr}:`, error);
+                }
+            }
+            
+            updateTable();
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+            btnText.textContent = 'Sync Selected';
+            
+            // Show success message
+            const successMsg = document.createElement('div');
+            successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+            successMsg.style.zIndex = '1050';
+            successMsg.textContent = 'Successfully synced selected items to Pipedrive';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+        });
+
+        document.getElementById('dataTableBody')?.addEventListener('change', (e) => {
+            if (e.target.classList.contains('row-checkbox')) {
+                updateBulkSyncButton();
+            }
+        });
+
+        function updateBulkSyncButton() {
+            const btn = document.getElementById('bulkSyncBtn');
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            btn.disabled = checkedBoxes.length === 0;
+        }
+
         if (elements.searchInput) {
             elements.searchInput.addEventListener('input', updateTable);
         }
