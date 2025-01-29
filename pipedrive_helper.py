@@ -163,7 +163,7 @@ class PipedriveHelper:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
                 field_key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
-                
+
                 if field_key:
                     field_info = field_types.get(field_key)
                     if field_info and field_info['type'] == 'enum':
@@ -280,7 +280,7 @@ class PipedriveHelper:
                 # Validate field ID exists
                 if mapping['target'] in field_ids:
                     logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
-                    deal_data[mapping['target']] = field_value
+                    deal_data[field_ids[mapping['target']]] = field_value
                 else:
                     logger.warning(f"Invalid field ID in mapping: {mapping['target']}")
 
@@ -295,19 +295,6 @@ class PipedriveHelper:
             deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
         if 'close_time' not in deal_data:
             deal_data['close_time'] = self._format_timestamp(data.get('NPO_ADatum'))
-
-        # Set project number and other custom fields
-        deal_fields = self.get_deal_fields()
-        for mapping in self.field_mappings:
-            if mapping['entity'] == 'deal' and mapping['source'] in data:
-                field_value = data[mapping['source']]
-                # For custom fields, we need to use the correct format
-                if mapping['target'].startswith('5d300'):  # Custom field
-                    deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
-                else:
-                    deal_data[mapping['target']] = field_value
-
-
 
 
         # Create/find and link person
@@ -357,7 +344,7 @@ class PipedriveHelper:
 
             # Handle deal status with proper sequencing
             status_data = {}
-            
+
             if data.get('NPO_ASumme'):
                 # For won deals, first set won status then won_time
                 status_data = {'status': 'won'}
@@ -368,7 +355,7 @@ class PipedriveHelper:
                         status_data = {'won_time': date_obj.strftime('%Y-%m-%d')}
                     except ValueError as e:
                         logger.error(f"Error formatting won_time: {e}")
-                        
+
             elif str(data.get('Status')) == '4':
                 # For lost deals, first set lost status then lost_time
                 status_data = {'status': 'lost'}
