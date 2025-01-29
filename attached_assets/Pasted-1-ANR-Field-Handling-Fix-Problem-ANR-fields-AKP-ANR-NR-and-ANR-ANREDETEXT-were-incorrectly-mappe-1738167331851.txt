@@ -1,0 +1,75 @@
+1. ANR Field Handling Fix
+Problem: ANR fields (AKP_ANR_NR and ANR_ANREDETEXT) were incorrectly mapped to deals instead of persons, causing data mismatches.
+Proposed Solution:
+Correctly map ANR fields to the person entity in create_person():
+python
+if field_info and field_info['type'] == 'enum':
+    # Directly map using the field mapping configuration
+    person_data[mapping['target']] = field_value
+Review:
+This fix ensures that ANR fields are properly assigned to persons, as they logically represent salutation details for individuals.
+The removal of hardcoded checks for ANR_ANREDE and ANR_ANREDETEXT improves maintainability by relying on the field mapping configuration.
+2. Remove Incorrect Deal Field Assignments
+Problem: ANR fields were mistakenly added to deal data, which is irrelevant.
+Proposed Solution:
+Remove these lines from create_deal():
+python
+if anr_nr:
+    deal_data['031ae26196cff3bf754a3fa9ff701f13c73113bf'] = str(anr_nr)
+if anredetext:
+    deal_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = anredetext
+Review:
+This is a necessary cleanup step to prevent irrelevant data from being included in deals.
+Ensures that deal objects remain focused on project-related information rather than personal salutation details.
+3. Simplified Deal Status Handling
+Problem: The current implementation uses overly complex logic for status sequencing and manual time setting.
+Proposed Solution:
+Replace the status handling block with a simplified update:
+python
+if result.get('success'):
+    deal_id = result['data']['id']
+    update_endpoint = f"{self.base_url}/deals/{deal_id}"
+
+    # Set final status in a single update
+    status_data = {}
+    if data.get('NPO_ASumme'):
+        status_data['status'] = 'won'
+    elif str(data.get('Status')) == '4':
+        status_data['status'] = 'lost'
+    
+    if status_data:
+        requests.put(update_endpoint, params=params, json=status_data)
+Review:
+This approach reduces complexity by directly setting the final status (won or lost) after deal creation.
+Eliminates redundant steps like clearing existing times or unnecessary delays (time.sleep()).
+However, ensure that won_time and lost_time updates are handled separately after this step if required.
+4. Field Mapping Validation
+Verification: Ensure all mappings in uniska_field_mappings.json align with Pipedrive field IDs.
+Review:
+The mappings appear consistent and correctly associate Abacus fields (e.g., NPO_ProjNr, ADR_NAME) with their corresponding Pipedrive custom fields or native fields.
+Adding validation during field mapping loading (e.g., checking if target IDs exist in Pipedrive) would further enhance robustness.
+5. Add Field Mapping Debugging
+Problem: Lack of visibility into mapping errors makes troubleshooting difficult.
+Proposed Solution:
+Add debugging logs when loading mappings:
+python
+def _load_field_mappings(self):
+    """Load field mappings from file."""
+    try:
+        with open(self.mapping_file, 'r') as f:
+            self.field_mappings = json.load(f)
+        logger.debug(f"Loaded field mappings: {self.field_mappings}")
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.error(f"Error loading field mappings: {str(e)}")
+        self.field_mappings = []
+Review:
+This is a straightforward and effective solution to improve visibility into potential issues during mapping initialization.
+Ensures that any errors (e.g., missing or malformed mapping files) are logged for easier debugging.
+Critical Implementation Notes
+Data Flow Order:
+The sequence of creating organizations → persons → deals must be strictly maintained to ensure proper linking between entities.
+Example: A person must have a valid org_id before being created, and a deal must have both a linked organization and person.
+API Timing:
+Remove all time.sleep() calls as they are unreliable for managing API timing. Instead, rely on proper sequencing and response validation before proceeding to the next step.
+Error Handling:
+Add validation checks before making API calls to ensure
