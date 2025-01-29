@@ -1,5 +1,5 @@
-
 import requests
+import json
 from pipedrive_helper import PipedriveHelper
 import logging
 
@@ -31,38 +31,43 @@ def search_deal_by_name(name):
 
 def fetch_and_display_data():
     pipedrive = PipedriveHelper('uniska')
-    
-    # Fetch organization with ID 965
-    endpoint = f"{pipedrive.base_url}/organizations/965"
-    params = {'api_token': pipedrive.api_key}
-    response = requests.get(endpoint, params=params)
-    if response.ok:
-        org_data = response.json()['data']
-        logger.info("\n=== Organization Details ===")
-        logger.info(f"Organization Name: {org_data.get('name')}")
-        logger.info(f"Address: {org_data.get('address')}")
-    
-    # Fetch person with ID 685
-    endpoint = f"{pipedrive.base_url}/persons/685"
-    params = {'api_token': pipedrive.api_key}
-    response = requests.get(endpoint, params=params)
-    if response.ok:
-        person_data = response.json()['data']
-        logger.info("\n=== Person Details ===")
-        logger.info(f"Person Name: {person_data.get('name')}")
-        logger.info(f"Email: {person_data.get('email')[0]['value'] if person_data.get('email') else 'N/A'}")
-        logger.info(f"Phone: {person_data.get('phone')[0]['value'] if person_data.get('phone') else 'N/A'}")
 
-    # Fetch deal with ID 359
-    endpoint = f"{pipedrive.base_url}/deals/359"
+    # Fetch deal with ID 359 and all its details
+    deal_endpoint = f"{pipedrive.base_url}/deals/359"
     params = {'api_token': pipedrive.api_key}
-    response = requests.get(endpoint, params=params)
+    response = requests.get(deal_endpoint, params=params)
     if response.ok:
         deal_data = response.json()['data']
-        logger.info("\n=== Deal Details ===")
-        logger.info(f"Deal Title: {deal_data.get('title')}")
-        logger.info(f"Deal Value: {deal_data.get('value')} {deal_data.get('currency')}")
-        logger.info(f"Status: {deal_data.get('status')}")
+        logger.info("\n=== Complete Deal Details ===")
+        logger.info(json.dumps(deal_data, indent=2))
+
+        # Get linked person and organization IDs
+        person_id = deal_data.get('person_id')
+        org_id = deal_data.get('org_id')
+
+        if person_id:
+            person_endpoint = f"{pipedrive.base_url}/persons/{person_id}"
+            response = requests.get(person_endpoint, params=params)
+            if response.ok:
+                person_data = response.json()['data']
+                logger.info("\n=== Linked Person Details ===")
+                logger.info(json.dumps(person_data, indent=2))
+            else:
+                logger.error(f"Failed to fetch person details: {response.text}")
+
+        if org_id:
+            org_endpoint = f"{pipedrive.base_url}/organizations/{org_id}"
+            response = requests.get(org_endpoint, params=params)
+            if response.ok:
+                org_data = response.json()['data']
+                logger.info("\n=== Linked Organization Details ===")
+                logger.info(json.dumps(org_data, indent=2))
+            else:
+                logger.error(f"Failed to fetch organization details: {response.text}")
+    else:
+        logger.error(f"Failed to fetch deal details: {response.text}")
+
 
 if __name__ == "__main__":
     search_deal_by_name("Solar Installation Project 2000")
+    fetch_and_display_data()
