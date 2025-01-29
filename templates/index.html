@@ -304,7 +304,7 @@
                         <td>${item.NPO_KSumme || ''}</td>
                         <td>${item.NPO_ADatum || ''}</td>
                         <td>${item.NPO_ASumme || ''}</td>
-                        <td class="${getStatusClass(status, item.NPO_ProjNr)}">${status}</td>
+                        <td class="${getStatusClass(status, item.ProjNr)}">${status}</td>
                         <td>
                             ${status.toLowerCase() === 'new' ? 
                                 `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
@@ -326,8 +326,9 @@
         }
 
         function getStatusClass(status, projNr) {
-            if (state.freshSyncs && state.freshSyncs.has(projNr)) return 'text-success';
-            return (status || '').toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
+            if (!status) return 'text-info';
+            if (state && state.freshSyncs && state.freshSyncs.has(projNr)) return 'text-success';
+            return status.toLowerCase() === 'synced' ? 'text-secondary' : 'text-info';
         }
 
         function updateProjNrSuggestions() {
@@ -409,7 +410,7 @@
             for (const cb of checkboxes) {
                 const projNr = cb.dataset.projnr;
                 const item = state.currentData.find(i => i?.ProjNr?.toString() === projNr);
-                
+
                 if (!item) continue;
                 try {
                     const response = await fetch('/sync-to-pipedrive', {
