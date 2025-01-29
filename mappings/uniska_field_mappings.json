@@ -88,5 +88,10 @@
     "source": "ANR_ANREDE",
     "target": "031ae26196cff3bf754a3fa9ff701f13c73113bf",
     "entity": "person"
+  },
+  {
+    "source": "ANR_ANREDETEXT",
+    "target": "2fea5d7de9997e5a2e32befbe45bf8a145373754",
+    "entity": "person"
   }
 ]
