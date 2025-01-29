@@ -384,7 +384,6 @@ def update_won_dates(self):
                     formatted_date = self._format_timestamp(adatum)
                     if formatted_date:
                         update_data = {
-                            'won_time': formatted_date,
                             'close_time': formatted_date
                         }
                         update_response = requests.put(
