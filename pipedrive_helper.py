@@ -186,11 +186,14 @@ class PipedriveHelper:
                     'key': field.get('key'),
                     'name': field.get('name'),
                     'field_type': field.get('field_type'),
+                    'id': field.get('id'),
                     'mandatory_flag': field.get('mandatory_flag', False),
                     'options': field.get('options', [])
                 }
+                logger.debug(f"Found {entity_type} field: {field_data}")
                 fields.append(field_data)
             return fields
+        logger.error(f"Failed to get {entity_type} fields: {response.text}")
         return []
 
     def get_organization_fields(self) -> List[Dict[str, Any]]:
@@ -249,12 +252,21 @@ class PipedriveHelper:
         deal_data = {'org_id': org_id, 'pipeline_id': self.default_pipeline_id}
         
         # Add mapped custom fields from field mappings
+        deal_fields = self.get_deal_fields()
+        field_ids = {str(field['id']): field['key'] for field in deal_fields}
+        
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 field_value = data[mapping['source']]
                 if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
                     field_value = self._format_timestamp(field_value)
-                deal_data[mapping['target']] = field_value
+                
+                # Validate field ID exists
+                if mapping['target'] in field_ids:
+                    logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
+                    deal_data[mapping['target']] = field_value
+                else:
+                    logger.warning(f"Invalid field ID in mapping: {mapping['target']}")
                 
         # Set standard fields if not already mapped
         if 'title' not in deal_data:
