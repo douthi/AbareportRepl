@@ -92,37 +92,41 @@ class PipedriveHelper:
         endpoint = f"{self.base_url}/organizations"
         params = {'api_token': self.api_key}
 
+        if not data.get('ADR_NAME'):
+            raise ValueError("Organization name (ADR_NAME) is required")
+
         # Basic organization data
         org_data = {
-            'name': data.get('ADR_NAME', ''),
+            'name': data['ADR_NAME'].strip(),
             'visible_to': 3  # Visible to entire company (default)
         }
 
-        # Address fields need to be strings
-        address_components = []
+        # Build address string
+        address_parts = []
         if data.get('STREET'):
-            address_components.append(str(data['STREET']))
+            address_parts.append(str(data['STREET']).strip())
         if data.get('HOUSE_NUMBER'):
-            address_components.append(str(data['HOUSE_NUMBER']))
+            address_parts.append(str(data['HOUSE_NUMBER']).strip())
         
-        # Construct address fields according to API spec
-        if address_components:
-            org_data['address'] = ' '.join(address_components)
+        if address_parts:
+            org_data['address'] = ' '.join(address_parts)
         if data.get('PLZ'):
-            org_data['address_postal_code'] = str(data.get('PLZ'))
+            org_data['postal_code'] = str(data['PLZ']).strip()
         if data.get('ORT'):
-            org_data['address_city'] = str(data.get('ORT'))
+            org_data['city'] = str(data['ORT']).strip()
         if data.get('LAND'):
-            org_data['address_country'] = str(data.get('LAND'))
+            org_data['country'] = str(data['LAND']).strip()
 
         try:
             response = requests.post(endpoint, params=params, json=org_data)
             response.raise_for_status()
             result = response.json()
-            if result.get('success'):
-                return result
-            raise Exception(f"Pipedrive API error: {result.get('error', 'Unknown error')}")
-        except Exception as e:
+            if not result.get('success'):
+                error_msg = result.get('error', 'Unknown error')
+                logger.error(f"Pipedrive API error: {error_msg}")
+                raise Exception(f"Pipedrive API error: {error_msg}")
+            return result
+        except requests.exceptions.RequestException as e:
             logger.error(f"Error creating organization: {str(e)}")
             raise Exception(f"Failed to create organization: {str(e)}")
 
