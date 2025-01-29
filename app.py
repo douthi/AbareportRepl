@@ -228,36 +228,54 @@ def sync_to_pipedrive():
             return jsonify({'error': 'No data provided'}), 400
 
         # Check/create/update organization
-        org_name = data.get('ADR_NAME', '')
+        org_name = data.get('ADR_NAME')
+        if not org_name:
+            return jsonify({'error': 'Organization name (ADR_NAME) is required'}), 400
+            
         existing_org = pipedrive_helper.find_organization_by_name(org_name)
         
         if existing_org:
+            logger.info(f"Found existing organization: {org_name}")
             org_result = pipedrive_helper.update_organization(existing_org['id'], data)
             org_id = existing_org['id']
         else:
+            logger.info(f"Creating new organization: {org_name}")
             org_result = pipedrive_helper.create_organization(data)
             if not org_result.get('success'):
-                return jsonify({'error': 'Failed to create organization'}), 500
+                error_msg = org_result.get('error', 'Unknown error creating organization')
+                logger.error(f"Organization creation failed: {error_msg}")
+                return jsonify({'error': error_msg}), 500
             org_id = org_result['data']['id']
+            logger.info(f"Created organization with ID: {org_id}")
 
         # Check/create/update person if name exists
-        if data.get('AKP_VORNAME') or data.get('AKP_NAME'):
-            person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
+        person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
+        if person_name:
+            logger.info(f"Processing person: {person_name}")
             existing_person = pipedrive_helper.find_person_by_name(person_name, org_id)
             
             if existing_person:
+                logger.info(f"Found existing person: {person_name}")
                 person_result = pipedrive_helper.update_person(existing_person['id'], data)
             else:
+                logger.info(f"Creating new person: {person_name}")
                 person_result = pipedrive_helper.create_person(data, org_id)
                 if not person_result.get('success'):
-                    return jsonify({'error': 'Failed to create person'}), 500
+                    error_msg = person_result.get('error', 'Unknown error creating person')
+                    logger.error(f"Person creation failed: {error_msg}")
+                    return jsonify({'error': error_msg}), 500
+                logger.info(f"Created person with ID: {person_result['data']['id']}")
 
         # Create deal
+        logger.info("Creating deal...")
         deal_result = pipedrive_helper.create_deal(data, org_id)
         if not deal_result.get('success'):
-            return jsonify({'error': 'Failed to create deal'}), 500
+            error_msg = deal_result.get('error', 'Unknown error creating deal')
+            logger.error(f"Deal creation failed: {error_msg}")
+            return jsonify({'error': error_msg}), 500
+        logger.info(f"Created deal with ID: {deal_result['data']['id']}")
 
-        return jsonify({'success': True, 'message': 'Data synced to Pipedrive'}), 200
+        return jsonify({'success': True, 'message': 'Data synced to Pipedrive successfully'}), 200
 
     except Exception as e:
         logger.error(f"Error syncing to Pipedrive: {e}")
