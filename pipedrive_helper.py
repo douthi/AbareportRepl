@@ -152,9 +152,29 @@ class PipedriveHelper:
         person_data = {'org_id': org_id}
         
         # Add mapped custom fields from field mappings
+        person_fields = self.get_person_fields()
+        field_types = {str(field['id']): {'type': field['field_type'], 'options': field.get('options', [])} 
+                      for field in person_fields}
+
         for mapping in self.field_mappings:
             if mapping['entity'] == 'person' and mapping['source'] in data:
-                person_data[mapping['target']] = data[mapping['source']]
+                field_value = data[mapping['source']]
+                field_info = field_types.get(mapping['target'])
+                
+                if field_info and field_info['type'] == 'enum':
+                    # Handle single select fields
+                    valid_options = [opt['id'] for opt in field_info['options']]
+                    # Map "Herr" to 1 and "Frau" to 2 if value is a string
+                    if isinstance(field_value, str):
+                        value_map = {'Herr': 1, 'Frau': 2}
+                        field_value = value_map.get(field_value, None)
+                    # Validate the value is in allowed options
+                    if field_value in valid_options:
+                        person_data[mapping['target']] = field_value
+                    else:
+                        logger.warning(f"Invalid value {field_value} for enum field {mapping['target']}")
+                else:
+                    person_data[mapping['target']] = field_value
                 
         # Set standard fields if not already mapped
         if 'name' not in person_data:
