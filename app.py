@@ -19,6 +19,9 @@ app.config.from_object(Config)
 # Initialize managers
 report_manager = ReportManager(app.config)
 
+# Simulate a key-value store (replace with a real database in production)
+db = {}
+
 @app.route('/')
 def index():
     """Redirect to Uniska page by default."""
@@ -36,7 +39,7 @@ def company_config(company_name):
     """Render company configuration page."""
     if company_name not in ['uniska', 'novisol']:
         return redirect(url_for('company_dashboard', company_name='uniska'))
-        
+
     if request.method == 'POST':
         data = request.get_json()
         if 'pipedrive_key' in data:
@@ -45,7 +48,7 @@ def company_config(company_name):
             app.config['COMPANIES'][company_name]['pipedrive_api_key'] = data['pipedrive_key']
             return jsonify({'status': 'success'})
         return jsonify({'error': 'Invalid data'}), 400
-        
+
     return render_template('company_config.html', company=company_name, config=app.config)
 
 @app.route('/<company_name>/field-mappings', methods=['GET', 'POST'])
@@ -53,14 +56,14 @@ def field_mappings(company_name):
     """Handle company field mappings."""
     if company_name not in ['uniska', 'novisol']:
         return jsonify({'error': 'Invalid company'}), 400
-        
+
     pipedrive_helper = PipedriveHelper(company_name)
-    
+
     if request.method == 'POST':
         mappings = request.get_json()
         pipedrive_helper.save_field_mappings(mappings)
         return jsonify({'status': 'success'})
-        
+
     return jsonify(pipedrive_helper.get_field_mappings())
 
 
@@ -224,18 +227,30 @@ def sync_to_pipedrive():
         data = request.json
         if not data:
             return jsonify({'error': 'No data received'}), 400
-            
+
+        proj_nr = data.get('ProjNr')
         company_key = data.pop('company_key', 'uniska')
+
+        # Save sync status
+        if proj_nr:
+            sync_key = f"{company_key}_synced_entries"
+            if sync_key not in db:
+                db[sync_key] = []
+            synced_entries = db[sync_key]
+            if proj_nr not in synced_entries:
+                synced_entries.append(proj_nr)
+                db[sync_key] = synced_entries
+
         if not os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY'):
             return jsonify({'error': 'Pipedrive API key not configured'}), 400
 
         pipedrive = PipedriveHelper(company_key)
-        
+
         # Create or update organization
         org_name = data.get('ADR_NAME')
         if not org_name:
             return jsonify({'error': 'Organization name (ADR_NAME) is required'}), 400
-            
+
         existing_org = pipedrive.find_organization_by_name(org_name)
         if existing_org:
             logger.info(f"Found existing organization: {existing_org['name']}")
