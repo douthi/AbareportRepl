@@ -330,14 +330,22 @@ class PipedriveHelper:
                 else:
                     logger.warning(f"Failed to create person: {person_result}")
 
-        if deal_date < two_years_ago:
+        # Handle deal status based on ADatum
+        if data.get('NPO_ADatum'):
             deal_data.update({
-                'status': 'lost',
-                'lost_reason': 'Aged out',
-                'lost_time': '2025-01-01'
+                'status': 'won',
+                'close_time': self._format_timestamp(data.get('NPO_ADatum')),
+                'value': data.get('NPO_ASumme', 0)
             })
         else:
-            deal_data['status'] = 'open'
+            deal_data.update({
+                'status': 'open',
+                'value': data.get('NPO_KSumme', 0)
+            })
+            
+        # Always set the creation date
+        if data.get('NPO_KDatum'):
+            deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
 
         logger.debug(f"Creating deal with data: {deal_data}")
         response = requests.post(endpoint, params=params, json=deal_data)
