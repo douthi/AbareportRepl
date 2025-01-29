@@ -330,24 +330,38 @@ class PipedriveHelper:
                 else:
                     logger.warning(f"Failed to create person: {person_result}")
 
-        # Handle deal status and dates based on ADatum
+        # First create the deal without won status
         if data.get('NPO_ADatum'):
-            adatum = self._format_timestamp(data.get('NPO_ADatum'))
-            # First set status to won
             deal_data.update({
-                'status': 'won',
                 'value': data.get('NPO_ASumme', 0)
-            })
-            # Then update the won time and close time
-            deal_data.update({
-                'won_time': adatum,
-                'close_time': adatum
             })
         else:
             deal_data.update({
                 'status': 'open',
                 'value': data.get('NPO_KSumme', 0)
             })
+
+        # Create initial deal
+        response = requests.post(endpoint, params=params, json=deal_data)
+        result = response.json()
+        
+        # If deal has ADatum, update it to won status with correct date
+        if data.get('NPO_ADatum') and result.get('success'):
+            deal_id = result['data']['id']
+            adatum = self._format_timestamp(data.get('NPO_ADatum'))
+            
+            # Update to won status
+            update_endpoint = f"{self.base_url}/deals/{deal_id}"
+            update_data = {
+                'status': 'won',
+                'won_time': adatum,
+                'close_time': adatum
+            }
+            
+            response = requests.put(update_endpoint, params=params, json=update_data)
+            result = response.json()
+
+        return result
             
         # Always set the creation date
         if data.get('NPO_KDatum'):
