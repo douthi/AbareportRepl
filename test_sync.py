@@ -32,4 +32,7 @@ response = requests.post('http://0.0.0.0:5000/sync-to-pipedrive',
                         headers={'Content-Type': 'application/json'})
 
 print(f"Status Code: {response.status_code}")
-print(f"Response: {json.dumps(response.json(), indent=2)}")
+try:
+    print(f"Response: {json.dumps(response.json(), indent=2)}")
+except requests.exceptions.JSONDecodeError:
+    print(f"Raw response: {response.text}")
