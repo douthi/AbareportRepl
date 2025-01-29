@@ -357,8 +357,7 @@ class PipedriveHelper:
                 update_endpoint = f"{self.base_url}/deals/{deal_id}"
                 update_data = {
                     'status': 'won',
-                    'won_time': adatum,
-                    'close_time': adatum
+                    'won_time': adatum
                 }
                 logger.debug(f"Updating deal {deal_id} with data: {update_data}")
                 response = requests.put(update_endpoint, params=params, json=update_data)
@@ -405,8 +404,7 @@ class PipedriveHelper:
                         formatted_date = self._format_timestamp(adatum)
                         if formatted_date:
                             update_data = {
-                                'won_time': formatted_date,
-                                'close_time': formatted_date
+                                'won_time': formatted_date
                             }
                             update_response = requests.put(
                                 f"{endpoint}/{deal_id}",
