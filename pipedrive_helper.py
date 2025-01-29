@@ -314,6 +314,15 @@ class PipedriveHelper:
                 else:
                     deal_data[mapping['target']] = field_value
 
+        # Use ANR values from the passed data directly since they were already looked up
+        anr_anrede = data.get('ANR_ANREDE')
+        anr_anredetext = data.get('ANR_ANREDETEXT')
+        if anr_anrede:
+            deal_data['031ae26196cff3bf754a3fa9ff701f13c73113bf'] = anr_anrede
+        if anr_anredetext:
+            deal_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = anr_anredetext
+
+
         # Create/find and link person
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
         if person_name:
