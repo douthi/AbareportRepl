@@ -354,20 +354,21 @@ class PipedriveHelper:
 
             # Step 2: Handle status and dates based on conditions
             status = data.get('Status')
-            adatum = self._format_timestamp(data.get('NPO_ADatum'))
-            kdatum = self._format_timestamp(data.get('NPO_KDatum'))
-            status4_date = self._format_timestamp(data.get('NPO_Status4'))
+            asumme = data.get('NPO_ASumme')
+            adatum = data.get('NPO_ADatum')
+            kdatum = data.get('NPO_KDatum')
+            status4_date = data.get('NPO_Status4')
 
             # First set the status
-            if status == '4':
-                status_data = {
-                    'status': 'lost',
-                    'lost_time': status4_date or kdatum
-                }
-            elif adatum:
+            if asumme:
                 status_data = {
                     'status': 'won',
                     'won_time': adatum
+                }
+            elif status == '4':
+                status_data = {
+                    'status': 'lost',
+                    'lost_time': status4_date or kdatum
                 }
             else:
                 status_data = {'status': 'open'}
@@ -377,9 +378,6 @@ class PipedriveHelper:
             status_response = requests.put(update_endpoint, params=params, json=status_data)
             if not status_response.ok:
                 logger.error(f"Failed to update deal status: {status_response.text}")
-
-            # Update status
-            logger.debug(f"Setting deal {deal_id} status to {status_data['status']}")
             status_response = requests.put(update_endpoint, params=params, json=status_data)
 
             # Update time fields based on status
