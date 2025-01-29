@@ -385,22 +385,6 @@ class PipedriveHelper:
             if not status_response.ok:
                 logger.error(f"Failed to update deal status: {status_response.text}")
                 logger.error(f"Status response: {status_response.text}")
-            status_response = requests.put(update_endpoint, params=params, json=status_data)
-
-            # Update time fields based on status
-            if status_response.ok:
-                time_data = {}
-                if status_data['status'] == 'won' and adatum:
-                    time_data = {'won_time': adatum}
-                    logger.debug(f"Setting deal {deal_id} won_time to {adatum}")
-                elif status_data['status'] == 'lost' and status == '4' and status4_date:
-                    time_data = {'lost_time': status4_date}
-                    logger.debug(f"Setting deal {deal_id} lost_time to {status4_date}")
-
-                if time_data:
-                    response = requests.put(update_endpoint, params=params, json=time_data)
-                    result = response.json()
-                    logger.debug(f"Deal time update response: {result}")
 
         return result
 
