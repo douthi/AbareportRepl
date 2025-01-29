@@ -343,51 +343,58 @@
 
         function handleSync(event) {
             const btn = event.currentTarget;
-            const spinner = btn.querySelector('.spinner-border');
-            const btnText = btn.querySelector('.btn-text');
-            const projNr = btn.dataset.projnr;
+            const row = btn.closest('tr');
+            const item = {
+                NPO_ProjNr: row.cells[1].textContent.trim(),
+                NPO_ProjName: row.cells[2].textContent.trim(),
+                ADR_NAME: row.cells[3].textContent.trim(),
+                ADR_TEL: row.cells[4].textContent.trim(),
+                ADR_LAND: row.cells[5].textContent.trim(),
+                ADR_PLZ: row.cells[6].textContent.trim(),
+                ADR_ORT: row.cells[7].textContent.trim(),
+                ADR_STREET: row.cells[8].textContent.trim(),
+                ADR_HOUSE_NUMBER: row.cells[9].textContent.trim(),
+                AKP_NAME: row.cells[10].textContent.trim(),
+                AKP_VORNAME: row.cells[11].textContent.trim(),
+                AKP_FUNKTION: row.cells[12].textContent.trim(),
+                AKP_TEL: row.cells[13].textContent.trim(),
+                AKP_MAIL: row.cells[14].textContent.trim(),
+                NPO_KDatum: row.cells[19].textContent.trim(),
+                NPO_KSumme: row.cells[20].textContent.trim(),
+                NPO_ADatum: row.cells[21].textContent.trim(),
+                NPO_ASumme: row.cells[22].textContent.trim()
+            };
 
             btn.disabled = true;
-            spinner.classList.remove('d-none');
-            btnText.textContent = 'Syncing...';
-
-            const item = state.currentData.find(i => i?.ProjNr?.toString() === projNr);
-            if (item && item.ProjNr != null) {
-                fetch('/sync-to-pipedrive', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        ...item,
-                        company_key: window.location.pathname.split('/')[1]
-                    })
+            
+            fetch('/sync-to-pipedrive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...item,
+                    company_key: window.location.pathname.split('/')[1]
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        item.Status = 'synced';
-                        state.freshSyncs.add(projNr);
-                        updateTable();
-                        const successMsg = document.createElement('div');
-                        successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
-                        successMsg.style.zIndex = '1050';
-                        successMsg.textContent = 'Successfully synced to Pipedrive';
-                        document.body.appendChild(successMsg);
-                        setTimeout(() => successMsg.remove(), 3000);
-                    } else {
-                        throw new Error(data.error || 'Sync failed');
-                    }
-                })
-                .catch(error => {
-                    alert(`Sync failed: ${error.message}`);
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    spinner.classList.add('d-none');
-                    btnText.textContent = 'Sync';
-                });
-            }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    row.cells[24].textContent = 'synced';
+                    row.cells[24].className = 'text-secondary';
+                    btn.remove();
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    successMsg.style.zIndex = '1050';
+                    successMsg.textContent = 'Successfully synced to Pipedrive';
+                    document.body.appendChild(successMsg);
+                    setTimeout(() => successMsg.remove(), 3000);
+                } else {
+                    throw new Error(data.error || 'Sync failed');
+                }
+            })
+            .catch(error => {
+                alert(`Sync failed: ${error.message}`);
+                btn.disabled = false;
+            });
         }
 
         // Event listeners
