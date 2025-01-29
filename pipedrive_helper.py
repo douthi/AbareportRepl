@@ -350,30 +350,42 @@ class PipedriveHelper:
         if result.get('success'):
             deal_id = result['data']['id']
             update_endpoint = f"{self.base_url}/deals/{deal_id}"
-            
+
             # Step 2: Handle status and dates based on conditions
             status = data.get('Status')
             adatum = self._format_timestamp(data.get('NPO_ADatum'))
-            status4_date = self._format_timestamp(data.get('NPO_Status4_Date'))
-            
-            # First set the status
-            status_data = {'status': 'open'}
-            if status == '4':
+            status4_date = self._format_timestamp(data.get('NPO_Status4'))
+
+            # Default to open if no status/date info
+            if not status and not adatum:
+                status_data = {'status': 'open'}
+            # Status 4 means lost
+            elif status == '4':
                 status_data = {'status': 'lost'}
+            # Has ADatum means won
             elif adatum:
                 status_data = {'status': 'won'}
-            
-            # Update with status first, then add time data if needed
-            update_data = status_data.copy()
-            if status_data['status'] == 'won' and adatum:
-                update_data['won_time'] = adatum
-            elif status_data['status'] == 'lost' and status4_date:
-                update_data['lost_time'] = status4_date
-            
-            logger.debug(f"Setting deal {deal_id} with data: {update_data}")
-            response = requests.put(update_endpoint, params=params, json=update_data)
-            result = response.json()
-            logger.debug(f"Deal update response: {result}")
+            else:
+                status_data = {'status': 'open'}
+
+            # Update status
+            logger.debug(f"Setting deal {deal_id} status to {status_data['status']}")
+            status_response = requests.put(update_endpoint, params=params, json=status_data)
+
+            # Update time fields based on status
+            if status_response.ok:
+                time_data = {}
+                if status_data['status'] == 'won' and adatum:
+                    time_data = {'won_time': adatum}
+                    logger.debug(f"Setting deal {deal_id} won_time to {adatum}")
+                elif status_data['status'] == 'lost' and status == '4' and status4_date:
+                    time_data = {'lost_time': status4_date}
+                    logger.debug(f"Setting deal {deal_id} lost_time to {status4_date}")
+
+                if time_data:
+                    response = requests.put(update_endpoint, params=params, json=time_data)
+                    result = response.json()
+                    logger.debug(f"Deal time update response: {result}")
 
         return result
 
