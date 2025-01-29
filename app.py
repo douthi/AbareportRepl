@@ -324,22 +324,43 @@ def not_found_error(error):
 def get_combined_data():
     """Get combined and matched data from all reports."""
     try:
-        if request.method == 'GET':
-            data = db.get('last_combined_data')
+        if request.method == 'GET' and 'last_combined_data' in db:
+            data = list(db['last_combined_data'])
+        else:
+            data = report_manager.get_combined_data()
+            if data:
+                db['last_combined_data'] = data
+
+        # Check if HTML format is requested
+        if request.args.get('format') == 'html':
             if not data:
-                data = report_manager.get_combined_data()
-                if data:
-                    db['last_combined_data'] = data
-            return jsonify(list(data) if data else []), 200
-        
-        data = report_manager.get_combined_data()
-        if data:
-            db['last_combined_data'] = data
-            return jsonify(data), 200
-        return jsonify([]), 200
-        
+                return '<p>No data available</p>'
+
+            # Start HTML table
+            html = '<table border="1" style="border-collapse: collapse; width: 100%;">'
+
+            # Headers
+            if data:
+                headers = list(data[0].keys())
+                html += '<tr>'
+                for header in headers:
+                    html += f'<th style="padding: 8px; text-align: left;">{header}</th>'
+                html += '</tr>'
+
+            # Data rows
+            for row in data:
+                html += '<tr>'
+                for header in headers:
+                    value = row.get(header, '')
+                    html += f'<td style="padding: 8px;">{value}</td>'
+                html += '</tr>'
+
+            html += '</table>'
+            return html
+
+        return jsonify({'combined_data': data}), 200
     except Exception as e:
-        logger.error(f"Error in get_combined_data: {e}")
+        logger.error(f"Error getting combined data: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(500)

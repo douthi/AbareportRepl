@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -361,7 +360,8 @@ class PipedriveHelper:
                 update_endpoint = f"{self.base_url}/deals/{deal_id}"
                 update_data = {
                     'status': 'won',
-                    'won_time': adatum
+                    'won_time': adatum,
+                    'close_time': adatum
                 }
                 logger.debug(f"Updating deal {deal_id} with data: {update_data}")
                 response = requests.put(update_endpoint, params=params, json=update_data)
