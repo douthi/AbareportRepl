@@ -343,30 +343,6 @@ def get_combined_data():
     except Exception as e:
         logger.error(f"Error in get_combined_data: {e}")
         return jsonify({'error': str(e)}), 500
-            if not data:
-                return '<p>No data available</p>'
-
-            # Start HTML table
-            html = '<table border="1" style="border-collapse: collapse; width: 100%;">'
-
-            # Headers
-            if data:
-                headers = list(data[0].keys())
-                html += '<tr>'
-                for header in headers:
-                    html += f'<th style="padding: 8px; text-align: left;">{header}</th>'
-                html += '</tr>'
-
-            # Data rows
-            for row in data:
-                html += '<tr>'
-                for header in headers:
-                    value = row.get(header, '')
-                    html += f'<td style="padding: 8px;">{value}</td>'
-                html += '</tr>'
-
-            html += '</table>'
-            return html
 
         return jsonify({'combined_data': data}), 200
     except Exception as e:
