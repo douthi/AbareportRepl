@@ -342,6 +342,7 @@ class PipedriveHelper:
             })
 
         # Step 1: Create initial deal
+        logger.debug(f"Creating deal with data: {deal_data}")
         response = requests.post(endpoint, params=params, json=deal_data)
         result = response.json()
         logger.debug(f"Initial deal creation response: {result}")
