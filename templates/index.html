@@ -264,22 +264,27 @@
             if (elements.dataTableBody) {
                 elements.dataTableBody.innerHTML = filteredData.map(item => `
                     <tr>
-                        <td>${item.ProjNr || ''}</td>
-                        <td>${item.ProjName || ''}</td>
-                        <td>${item.NAME || ''}</td>
-                        <td>${item.VORNAME || ''}</td>
-                        <td>${item.EMAIL || ''}</td>
-                        <td>${item.TEL || ''}</td>
-                        <td>${item.LAND || ''}</td>
-                        <td>${item.PLZ || ''}</td>
-                        <td>${item.ORT || ''}</td>
-                        <td>${item.STREET || ''}</td>
-                        <td>${item.HOUSE_NUMBER || ''}</td>
-                        <td>${item.KDatum || ''}</td>
-                        <td>${item.KSumme || ''}</td>
-                        <td>${item.ADatum || ''}</td>
-                        <td>${item.ASumme || ''}</td>
-                        <td class="${getStatusClass(item.Status, item.ProjNr)}">${item.Status}</td>
+                        <td>${item.NPO_ProjNr || ''}</td>
+                        <td>${item.NPO_ProjName || ''}</td>
+                        <td>${item.ADR_NAME || ''}</td>
+                        <td>${item.ADR_TEL || ''}</td>
+                        <td>${item.ADR_LAND || ''}</td>
+                        <td>${item.ADR_PLZ || ''}</td>
+                        <td>${item.ADR_ORT || ''}</td>
+                        <td>${item.ADR_STREET || ''}</td>
+                        <td>${item.ADR_HOUSE_NUMBER || ''}</td>
+                        <td>${item.AKP_NAME || ''}</td>
+                        <td>${item.AKP_VORNAME || ''}</td>
+                        <td>${item.AKP_FUNKTION || ''}</td>
+                        <td>${item.AKP_TEL || ''}</td>
+                        <td>${item.AKP_MAIL || ''}</td>
+                        <td>${item.AKP_NR || ''}</td>
+                        <td>${item.AKP_ANR_NR || ''}</td>
+                        <td>${item.NPO_KDatum || ''}</td>
+                        <td>${item.NPO_KSumme || ''}</td>
+                        <td>${item.NPO_ADatum || ''}</td>
+                        <td>${item.NPO_ASumme || ''}</td>
+                        <td class="${getStatusClass(item.Status, item.NPO_ProjNr)}">${item.Status || ''}</td>
                         <td>
                             ${item.Status.toLowerCase() === 'new' ? 
                                 `<button class="btn btn-sm btn-primary sync-btn" data-projnr="${item.ProjNr}">
