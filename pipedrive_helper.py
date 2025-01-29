@@ -162,11 +162,10 @@ class PipedriveHelper:
         for mapping in self.field_mappings:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
-                field_key = next((field['key'] for field in person_fields if str(field['id']) == mapping['target']), None)
-
-                if field_key:
-                    field_info = field_types.get(field_key)
-                    if field_info and field_info['type'] == 'enum':
+                # Use target as key directly instead of looking up by ID
+                field_key = mapping['target']
+                field_info = field_types.get(field_key)
+                if field_info and field_info['type'] == 'enum':
                         person_data[field_key] = str(field_value)
                     else:
                         person_data[field_key] = field_value
@@ -364,7 +363,7 @@ class PipedriveHelper:
                     lost_date = status4_date or kdatum
                     if lost_date:
                         try:
-                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
+                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d') if len(lost_date) == 10 else datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
                             status_data = {'lost_time': date_obj.strftime('%Y-%m-%d')}
                         except ValueError as e:
                             logger.error(f"Error formatting lost_time: {e}")
