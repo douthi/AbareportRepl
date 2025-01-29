@@ -372,12 +372,20 @@ class PipedriveHelper:
                 current_state = get_response.json()
                 logger.debug(f"Current deal state after update: {current_state}")
 
-                # If status is 4, mark as lost
+                # If status is 4, mark as lost and set lost_time
                 if data.get('Status') == '4':
-                    update_data = {'status': 'lost'}
-                    response = requests.put(update_endpoint, params=params, json=update_data)
-                    result = response.json()
-                    logger.debug(f"Deal lost status update response: {result}")
+                    # First set status to lost
+                    status_data = {'status': 'lost'}
+                    logger.debug(f"Setting deal {deal_id} status to lost")
+                    status_response = requests.put(update_endpoint, params=params, json=status_data)
+                    
+                    if status_response.ok and adatum:
+                        # Then set lost_time after status is lost
+                        lost_data = {'lost_time': adatum}
+                        logger.debug(f"Setting deal {deal_id} lost_time to {adatum}")
+                        response = requests.put(update_endpoint, params=params, json=lost_data)
+                        result = response.json()
+                        logger.debug(f"Deal lost_time update response: {result}")
 
         return result
 
