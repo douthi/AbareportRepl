@@ -1,8 +1,7 @@
-
 [
   {
     "source": "NPO_ProjNr",
-    "target": "proj_nr", 
+    "target": "5d300cf82930e07f6107c7255fcd0dd550af7774",
     "entity": "deal"
   },
   {
@@ -21,13 +20,8 @@
     "entity": "deal"
   },
   {
-    "source": "NPO_ADatum", 
-    "target": "won_time",
-    "entity": "deal"
-  },
-  {
-    "source": "NPO_Status4",
-    "target": "lost_time",
+    "source": "NPO_ADatum",
+    "target": "close_time",
     "entity": "deal"
   },
   {
@@ -37,13 +31,13 @@
   },
   {
     "source": "ADR_TEL",
-    "target": "phone",
+    "target": "a82d57b1a943fc63f5c1130cd7e2af78f8a3b6b0",
     "entity": "organization"
   },
   {
     "source": "ADR_LAND",
     "target": "address_country",
-    "entity": "organization" 
+    "entity": "organization"
   },
   {
     "source": "ADR_PLZ",
@@ -92,7 +86,12 @@
   },
   {
     "source": "ANR_ANREDE",
-    "target": "salutation",
+    "target": "031ae26196cff3bf754a3fa9ff701f13c73113bf",
+    "entity": "person"
+  },
+  {
+    "source": "ANR_ANREDETEXT",
+    "target": "2fea5d7de9997e5a2e32befbe45bf8a145373754",
     "entity": "person"
   }
 ]

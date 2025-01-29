@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -44,9 +43,7 @@ class PipedriveHelper:
         try:
             with open(self.mapping_file, 'r') as f:
                 self.field_mappings = json.load(f)
-            logger.debug(f"Loaded field mappings: {self.field_mappings}")
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.error(f"Error loading field mappings: {str(e)}")
+        except (FileNotFoundError, json.JSONDecodeError):
             self.field_mappings = []
 
     def save_field_mappings(self, mappings):
@@ -156,20 +153,23 @@ class PipedriveHelper:
 
         # Add mapped custom fields from field mappings
         person_fields = self.get_person_fields()
-        field_types = {field['key']: {'type': field['field_type'], 'options': field.get('options', [])} 
+        field_types = {str(field['id']): {'type': field['field_type'], 'options': field.get('options', [])} 
                       for field in person_fields}
 
         for mapping in self.field_mappings:
             if mapping['entity'] == 'person' and mapping['source'] in data:
                 field_value = data[mapping['source']]
-                # Use target as key directly instead of looking up by ID
-                field_key = mapping['target']
-                field_info = field_types.get(field_key)
+                field_info = field_types.get(mapping['target'])
+
                 if field_info and field_info['type'] == 'enum':
-                    person_data[field_key] = str(field_value)
+                    if mapping['source'] in ['ANR_ANREDE']:
+                        # Map salutations directly as custom field
+                        person_data[mapping['target']] = field_value
+                    elif mapping['source'] == 'ANR_ANREDETEXT':
+                        # Add Anredetext as custom field
+                        person_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = field_value
                 else:
-                    person_data[field_key] = field_value
-                logger.debug(f"Mapped person field {mapping['source']} to {field_key}")
+                    person_data[mapping['target']] = field_value
 
         # Set standard fields if not already mapped
         if 'name' not in person_data:
@@ -268,20 +268,20 @@ class PipedriveHelper:
 
         # Add mapped custom fields from field mappings
         deal_fields = self.get_deal_fields()
-        field_types = {field['key']: {'type': field['field_type']} for field in deal_fields}
+        field_ids = {str(field['id']): field['key'] for field in deal_fields}
 
         for mapping in self.field_mappings:
             if mapping['entity'] == 'deal' and mapping['source'] in data:
                 field_value = data[mapping['source']]
                 if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
                     field_value = self._format_timestamp(field_value)
-                
-                # Core fields are handled separately
-                if mapping['target'] in ['title', 'value', 'won_time', 'lost_time']:
-                    continue
-                    
-                deal_data[mapping['target']] = field_value
-                logger.debug(f"Mapped deal field {mapping['source']} to {mapping['target']}")
+
+                # Validate field ID exists
+                if mapping['target'] in field_ids:
+                    logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
+                    deal_data[mapping['target']] = field_value
+                else:
+                    logger.warning(f"Invalid field ID in mapping: {mapping['target']}")
 
         # Set standard fields if not already mapped
         if 'title' not in deal_data:
@@ -294,6 +294,25 @@ class PipedriveHelper:
             deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
         if 'close_time' not in deal_data:
             deal_data['close_time'] = self._format_timestamp(data.get('NPO_ADatum'))
+
+        # Set project number and other custom fields
+        deal_fields = self.get_deal_fields()
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'deal' and mapping['source'] in data:
+                field_value = data[mapping['source']]
+                # For custom fields, we need to use the correct format
+                if mapping['target'].startswith('5d300'):  # Custom field
+                    deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
+                else:
+                    deal_data[mapping['target']] = field_value
+
+        # Use ANR values from the passed data directly since they were already looked up
+        anr_anrede = data.get('ANR_ANREDE')
+        anr_anredetext = data.get('ANR_ANREDETEXT')
+        if anr_anrede:
+            deal_data['031ae26196cff3bf754a3fa9ff701f13c73113bf'] = anr_anrede
+        if anr_anredetext:
+            deal_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = anr_anredetext
 
 
         # Create/find and link person
@@ -323,8 +342,7 @@ class PipedriveHelper:
                 'value': data.get('NPO_KSumme', 0)
             })
 
-        # Step 1: Create initial deal with open status
-        deal_data['status'] = 'open'
+        # Step 1: Create initial deal
         logger.debug(f"Creating deal with data: {deal_data}")
         response = requests.post(endpoint, params=params, json=deal_data)
         result = response.json()
@@ -334,48 +352,55 @@ class PipedriveHelper:
             deal_id = result['data']['id']
             update_endpoint = f"{self.base_url}/deals/{deal_id}"
 
-            # Step 2: Handle status and times with proper sequencing
+            # Step 2: Handle status and dates based on conditions
             status = data.get('Status')
             asumme = data.get('NPO_ASumme')
             adatum = data.get('NPO_ADatum')
             kdatum = data.get('NPO_KDatum')
             status4_date = data.get('NPO_Status4')
 
-            # Handle deal status with proper sequencing
-            status_data = {}
+            # First set the status with explicit time handling
+            if asumme:
+                status_data = {
+                    'status': 'won',
+                    'won_time': self._format_timestamp(adatum),
+                    'lost_time': None  # Clear lost time for won deals
+                }
+            elif str(status) == '4':  # Convert status to string for comparison
+                status_data = {
+                    'status': 'lost',
+                    'lost_time': self._format_timestamp(status4_date or kdatum),
+                    'won_time': None  # Clear won time for lost deals
+                }
+            else:
+                status_data = {
+                    'status': 'open',
+                    'won_time': None,
+                    'lost_time': None  # Clear both times for open deals
+                }
 
-            if data.get('NPO_ASumme'):
-                # For won deals, first set won status then won_time
-                status_data = {'status': 'won'}
-                status_response = requests.put(update_endpoint, params=params, json=status_data)
-                if status_response.ok and adatum:
-                    try:
-                        date_obj = datetime.strptime(adatum, '%Y-%m-%d %H:%M:%S')
-                        status_data = {'won_time': date_obj.strftime('%Y-%m-%d')}
-                    except ValueError as e:
-                        logger.error(f"Error formatting won_time: {e}")
+            # Update deal with status and time in one request
+            logger.debug(f"Setting deal {deal_id} status data: {status_data}")
+            status_response = requests.put(update_endpoint, params=params, json=status_data)
+            if not status_response.ok:
+                logger.error(f"Failed to update deal status: {status_response.text}")
+                logger.error(f"Status response: {status_response.text}")
+            status_response = requests.put(update_endpoint, params=params, json=status_data)
 
-            elif str(data.get('Status')) == '4':
-                # For lost deals, first set lost status then lost_time
-                status_data = {'status': 'lost'}
-                status_response = requests.put(update_endpoint, params=params, json=status_data)
-                if status_response.ok:
-                    lost_date = status4_date or kdatum
-                    if lost_date:
-                        try:
-                            date_obj = datetime.strptime(lost_date, '%Y-%m-%d') if len(lost_date) == 10 else datetime.strptime(lost_date, '%Y-%m-%d %H:%M:%S')
-                            status_data = {'lost_time': date_obj.strftime('%Y-%m-%d')}
-                        except ValueError as e:
-                            logger.error(f"Error formatting lost_time: {e}")
+            # Update time fields based on status
+            if status_response.ok:
+                time_data = {}
+                if status_data['status'] == 'won' and adatum:
+                    time_data = {'won_time': adatum}
+                    logger.debug(f"Setting deal {deal_id} won_time to {adatum}")
+                elif status_data['status'] == 'lost' and status == '4' and status4_date:
+                    time_data = {'lost_time': status4_date}
+                    logger.debug(f"Setting deal {deal_id} lost_time to {status4_date}")
 
-            if status_data:
-                try:
-                    logger.debug(f"Setting deal {deal_id} status: {status_data}")
-                    status_response = requests.put(update_endpoint, params=params, json=status_data)
-                    if not status_response.ok:
-                        logger.error(f"Failed to update deal status: {status_response.text}")
-                except requests.exceptions.RequestException as e:
-                    logger.error(f"API request failed for deal {deal_id}: {str(e)}")
+                if time_data:
+                    response = requests.put(update_endpoint, params=params, json=time_data)
+                    result = response.json()
+                    logger.debug(f"Deal time update response: {result}")
 
         return result
 
