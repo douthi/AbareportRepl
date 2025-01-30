@@ -124,8 +124,23 @@ def export_data():
         if not data:
             return jsonify({'error': 'No data available to export'}), 404
 
-        # Get all fields from the first row
-        columns = list(data[0].keys()) if data else []
+        # Define specific columns to export
+        columns = [
+            # AKP columns
+            'AKP_INR', 'AKP_NR', 'AKP_NAME', 'AKP_VORNAME', 'AKP_FUNKTION', 'AKP_SUBJEKT_NR',
+            'AKP_ANR_NR', 'AKP_ANREDENAME', 'AKP_TEL', 'AKP_MAIL', 'AKP_WWW', 'AKP_TEL2',
+            'AKP_TEL3', 'AKP_TEL4', 'AKP_ABTEILUNG', 'AKP_ANR_GROUP',
+            # ANR columns
+            'ANR_ANREDE', 'ANR_ANREDETEXT',
+            # ADR columns
+            'ADR_INR', 'ADR_KURZNA', 'ADR_LAND', 'ADR_PLZ', 'ADR_NAME', 'ADR_VORNAME',
+            'ADR_ORT', 'ADR_EMAIL', 'ADR_STAAT', 'ADR_STREET', 'ADR_TEL', 'ADR_TEL2',
+            'ADR_TELEX', 'ADR_TELEFAX', 'ADR_SPRACHE', 'ADR_WWW', 'ADR_HOUSE_NUMBER',
+            'ADR_PostOfficeBoxText', 'ADR_PostOfficeBoxNumber', 'ADR_ANR_GROUP',
+            # NPO columns
+            'NPO_ProjNr', 'NPO_ProjName', 'NPO_Status', 'NPO_Status1', 'NPO_Status2',
+            'NPO_Status3', 'NPO_Status4', 'NPO_KDatum', 'NPO_KSumme', 'NPO_ADatum', 'NPO_ASumme'
+        ]
 
         # Create a temporary file-like object
         output = io.StringIO()
@@ -134,9 +149,10 @@ def export_data():
         # Write headers
         writer.writeheader()
 
-        # Write data rows without any formatting
+        # Write data rows, only including specified columns
         for row in data:
-            writer.writerow(row)
+            filtered_row = {col: row.get(col, '') for col in columns}
+            writer.writerow(filtered_row)
 
         # Prepare the output
         output.seek(0)
