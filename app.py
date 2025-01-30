@@ -124,51 +124,19 @@ def export_data():
         if not data:
             return jsonify({'error': 'No data available to export'}), 404
 
-        # Define custom column headers and order
-        columns = [
-            'ProjNr', 'ProjName', 'NAME', 'VORNAME', 'EMAIL', 'TEL',
-            'LAND', 'PLZ', 'ORT', 'STREET', 'HOUSE_NUMBER',
-            'KDatum', 'KSumme', 'ADatum', 'ASumme', 'Status'
-        ]
+        # Get all fields from the first row
+        columns = list(data[0].keys()) if data else []
 
         # Create a temporary file-like object
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=columns)
 
-        # Write headers with custom formatting
+        # Write headers
         writer.writeheader()
 
-        # Write data rows
+        # Write data rows without any formatting
         for row in data:
-            # Create a filtered dictionary with only the specified columns
-            filtered_row = {col: row.get(col, '') for col in columns}
-
-            # Apply custom formatting
-            if 'KSumme' in filtered_row:
-                # Format currency values
-                try:
-                    value = float(filtered_row['KSumme'])
-                    filtered_row['KSumme'] = f"CHF {value:,.2f}"
-                except (ValueError, TypeError):
-                    pass
-
-            if 'ASumme' in filtered_row:
-                try:
-                    value = float(filtered_row['ASumme'])
-                    filtered_row['ASumme'] = f"CHF {value:,.2f}"
-                except (ValueError, TypeError):
-                    pass
-
-            # Format dates
-            for date_field in ['KDatum', 'ADatum']:
-                if filtered_row.get(date_field):
-                    try:
-                        date_obj = datetime.strptime(filtered_row[date_field], '%Y-%m-%d')
-                        filtered_row[date_field] = date_obj.strftime('%d.%m.%Y')
-                    except ValueError:
-                        pass
-
-            writer.writerow(filtered_row)
+            writer.writerow(row)
 
         # Prepare the output
         output.seek(0)
