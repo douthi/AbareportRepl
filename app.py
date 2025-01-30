@@ -21,7 +21,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # Register blueprints
-app.register_blueprint(pipedrive_config_bp)
+app.register_blueprint(pipedrive_config_bp, url_prefix='/pipedrive')
 
 # Global error handler
 @app.errorhandler(Exception)
