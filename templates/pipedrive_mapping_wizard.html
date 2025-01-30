@@ -4,7 +4,23 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
-            <h2>Pipedrive Field Mapping Wizard</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>Pipedrive Field Mapping Wizard</h2>
+                    <p class="lead mb-0">Map your data fields to Pipedrive fields in 4 simple steps</p>
+                </div>
+                <div class="company-selector">
+                    <label class="form-label">Select Company:</label>
+                    <select class="form-select" id="companySelector">
+                        {% for company in companies %}
+                        <option value="{{ company }}" {% if company == current_company %}selected{% endif %}>
+                            {{ company|upper }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <div class="wizard-progress mb-4">
@@ -12,15 +28,16 @@
                             <div class="progress-bar" role="progressbar" style="width: 0%"></div>
                         </div>
                         <div class="steps d-flex justify-content-between">
-                            <span class="step active">Organizations</span>
-                            <span class="step">Contacts</span>
-                            <span class="step">Deals</span>
-                            <span class="step">Settings</span>
+                            <span class="step active" title="Map organization fields">Organizations</span>
+                            <span class="step" title="Map contact person fields">Contacts</span>
+                            <span class="step" title="Map deal fields">Deals</span>
+                            <span class="step" title="Configure sync settings">Settings</span>
                         </div>
                     </div>
 
+                    <!-- Step content will be loaded here -->
                     <div id="wizardContent">
-                        <!-- Step content will be loaded here -->
+                        <!-- Dynamic content -->
                     </div>
 
                     <!-- Loading Spinner -->
@@ -34,7 +51,7 @@
                     <!-- Field Preview -->
                     <div id="fieldPreview" class="mt-4 d-none">
                         <h5>Selected Field Preview</h5>
-                        <div class="card">
+                        <div class="card bg-light">
                             <div class="card-body">
                                 <dl class="row mb-0">
                                     <dt class="col-sm-3">Field Name:</dt>
@@ -48,10 +65,11 @@
                         </div>
                     </div>
 
+                    <!-- Current Mappings -->
                     <div class="mapping-table mt-4">
-                        <h4>Current Mappings</h4>
+                        <h5>Current Mappings</h5>
                         <div class="table-responsive">
-                            <table class="table table-striped">
+                            <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
                                         <th>Source Field</th>
@@ -68,9 +86,15 @@
                 </div>
 
                 <div class="card-footer d-flex justify-content-between">
-                    <button class="btn btn-secondary" id="prevStep">Previous</button>
-                    <button class="btn btn-primary" id="nextStep">Next</button>
-                    <button class="btn btn-success d-none" id="finishWizard">Finish</button>
+                    <button class="btn btn-secondary" id="prevStep">
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-primary" id="nextStep">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="btn btn-success d-none" id="finishWizard">
+                        <i class="fas fa-check"></i> Finish
+                    </button>
                 </div>
             </div>
         </div>
@@ -87,7 +111,7 @@
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    Select a source field from your data and map it to a corresponding Pipedrive field.
+                    <i class="fas fa-info-circle"></i> Select a source field from your data and map it to a corresponding Pipedrive field.
                 </div>
                 <form id="fieldMappingForm">
                     <div class="row">
@@ -114,7 +138,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveMapping">Save Mapping</button>
+                <button type="button" class="btn btn-primary" id="saveMapping">
+                    <i class="fas fa-save"></i> Save Mapping
+                </button>
             </div>
         </div>
     </div>
@@ -127,10 +153,17 @@ let currentStep = 0;
 const steps = ['organization', 'person', 'deal', 'settings'];
 let entityFields = {};
 let currentMappings = {};
+let currentCompany = '{{ current_company }}';
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeWizard();
     loadEntityFields(steps[currentStep]);
+
+    // Add company selector listener
+    document.getElementById('companySelector').addEventListener('change', function() {
+        currentCompany = this.value;
+        window.location.href = `/pipedrive/wizard?company=${currentCompany}`;
+    });
 });
 
 async function initializeWizard() {
@@ -151,7 +184,7 @@ async function initializeWizard() {
 async function loadEntityFields(entityType) {
     try {
         showLoading(true);
-        const response = await fetch(`/pipedrive/api/available_fields/${entityType}`);
+        const response = await fetch(`/pipedrive/api/available_fields/${entityType}?company=${currentCompany}`);
         const data = await response.json();
 
         if (data.success) {
@@ -221,7 +254,7 @@ async function loadStepContent(stepIndex) {
 
     try {
         showLoading(true);
-        const response = await fetch(`/pipedrive/wizard/step/${entityType}`);
+        const response = await fetch(`/pipedrive/wizard/step/${entityType}?company=${currentCompany}`);
         wizardContent.innerHTML = await response.text();
 
         // Load existing mappings
@@ -245,7 +278,7 @@ async function loadStepContent(stepIndex) {
 
 async function loadExistingMappings(entityType) {
     try {
-        const response = await fetch(`/pipedrive/api/mapping/${entityType}`);
+        const response = await fetch(`/pipedrive/api/mapping/${entityType}?company=${currentCompany}`);
         const data = await response.json();
 
         if (data.success) {
@@ -271,7 +304,7 @@ function updateMappingTable(entityType) {
             <td>${targetField?.field_type || 'Unknown'}</td>
             <td>
                 <button class="btn btn-sm btn-danger" onclick="deleteMapping('${entityType}', ${index})">
-                    Delete
+                    <i class="fas fa-trash"></i>
                 </button>
             </td>
         `;
@@ -291,7 +324,7 @@ async function saveFieldMapping() {
 
     try {
         showLoading(true);
-        const response = await fetch('/pipedrive/api/mapping', {
+        const response = await fetch(`/pipedrive/api/mapping?company=${currentCompany}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -333,7 +366,7 @@ function showError(message) {
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
     alertDiv.innerHTML = `
-        ${message}
+        <i class="fas fa-exclamation-circle"></i> ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     document.querySelector('.card-body').insertBefore(alertDiv, document.getElementById('wizardContent'));
@@ -363,7 +396,7 @@ async function previousStep() {
 async function finishWizard() {
     try {
         showLoading(true);
-        const response = await fetch('/pipedrive/wizard/finish', {
+        const response = await fetch(`/pipedrive/wizard/finish?company=${currentCompany}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -387,7 +420,7 @@ async function finishWizard() {
 async function deleteMapping(entityType, index) {
     try {
         showLoading(true);
-        const response = await fetch(`/pipedrive/api/mapping/${entityType}/${index}`, {
+        const response = await fetch(`/pipedrive/api/mapping/${entityType}/${index}?company=${currentCompany}`, {
             method: 'DELETE'
         });
 

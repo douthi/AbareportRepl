@@ -17,8 +17,13 @@ class SyncSettings:
     set_won_time: bool = True
     set_lost_time: bool = True
 
+AVAILABLE_COMPANIES = ['uniska', 'novisol']
+
 class PipedriveConfig:
     def __init__(self, company_key='uniska'):
+        if company_key not in AVAILABLE_COMPANIES:
+            raise ValueError(f"Invalid company key. Must be one of: {AVAILABLE_COMPANIES}")
+
         self.company_key = company_key
         self.mapping_file = f'mappings/{company_key}_field_mappings.json'
         self.settings_file = f'mappings/{company_key}_sync_settings.json'
@@ -125,13 +130,21 @@ class PipedriveConfig:
             logger.error(f"Error updating settings: {e}")
             return False, str(e)
 
-config = PipedriveConfig()
+# Initialize configs for both companies
+configs = {company: PipedriveConfig(company) for company in AVAILABLE_COMPANIES}
 
 @bp.route('/wizard')
 def show_wizard():
     """Show the Pipedrive mapping wizard."""
     try:
-        return render_template('pipedrive_mapping_wizard.html')
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            flash("Invalid company selected", "error")
+            return redirect(url_for('index'))
+
+        return render_template('pipedrive_mapping_wizard.html', 
+                             companies=AVAILABLE_COMPANIES,
+                             current_company=company)
     except Exception as e:
         logger.error(f"Error showing wizard: {e}")
         flash("Error loading wizard", "error")
@@ -144,6 +157,10 @@ def get_wizard_step(entity_type):
         if entity_type not in ['organization', 'person', 'deal', 'settings']:
             return jsonify({'error': 'Invalid entity type'}), 400
 
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
         return render_template(f'wizard_steps/{entity_type}.html')
     except Exception as e:
         logger.error(f"Error loading wizard step: {e}")
@@ -153,10 +170,15 @@ def get_wizard_step(entity_type):
 def finish_wizard():
     """Save all mappings and settings from the wizard."""
     try:
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
         mappings = request.json
         if not mappings:
             return jsonify({'error': 'No mappings provided'}), 400
 
+        config = configs[company]
         # Save mappings for each entity type
         for entity_type, entity_mappings in mappings.items():
             if entity_type == 'settings':
@@ -181,11 +203,18 @@ def finish_wizard():
 def show_config():
     """Show the Pipedrive configuration page."""
     try:
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            flash("Invalid company selected", "error")
+            return redirect(url_for('index'))
+
+        config = configs[company]
         return render_template('pipedrive_config.html',
-                             organization_mappings=config.get_mappings_by_entity('organization'),
-                             person_mappings=config.get_mappings_by_entity('person'),
-                             deal_mappings=config.get_mappings_by_entity('deal'),
-                             settings=config.settings)
+                                 organization_mappings=config.get_mappings_by_entity('organization'),
+                                 person_mappings=config.get_mappings_by_entity('person'),
+                                 deal_mappings=config.get_mappings_by_entity('deal'),
+                                 settings=config.settings,
+                                 company=company)
     except Exception as e:
         logger.error(f"Error rendering config page: {e}")
         flash("Error loading configuration", "error")
@@ -195,7 +224,11 @@ def show_config():
 def refresh_fields(entity_type):
     """Refresh available fields from Pipedrive."""
     try:
-        pipedrive = PipedriveHelper()
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
+        pipedrive = PipedriveHelper(company_key=company)
 
         if entity_type == 'organization':
             fields = pipedrive.get_organization_fields()
@@ -216,7 +249,11 @@ def refresh_fields(entity_type):
 def get_available_fields(entity_type):
     """Get available fields for an entity type."""
     try:
-        pipedrive = PipedriveHelper()
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
+        pipedrive = PipedriveHelper(company_key=company)
 
         if entity_type == 'organization':
             fields = pipedrive.get_organization_fields()
@@ -232,10 +269,16 @@ def get_available_fields(entity_type):
         logger.error(f"Error getting available fields: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+
 @bp.route('/api/mapping', methods=['POST'])
 def add_mapping():
     """Add a new field mapping."""
     try:
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
+        config = configs[company]
         mapping_data = request.json
         success, message = config.add_mapping(mapping_data)
         if success:
@@ -250,6 +293,12 @@ def add_mapping():
 def manage_mapping(entity_type, mapping_id):
     """Manage (get/update/delete) a field mapping."""
     try:
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
+        config = configs[company]
+
         if request.method == 'GET':
             mappings = config.get_mappings_by_entity(entity_type)
             if 0 <= mapping_id < len(mappings):
@@ -278,6 +327,10 @@ def manage_mapping(entity_type, mapping_id):
 def save_sync_settings():
     """Save synchronization settings."""
     try:
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+        config = configs[company]
         settings_data = request.json
         success, message = config.update_settings(settings_data)
         if success:
