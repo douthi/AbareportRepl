@@ -127,6 +127,56 @@ class PipedriveConfig:
 
 config = PipedriveConfig()
 
+@bp.route('/wizard')
+def show_wizard():
+    """Show the Pipedrive mapping wizard."""
+    try:
+        return render_template('pipedrive_mapping_wizard.html')
+    except Exception as e:
+        logger.error(f"Error showing wizard: {e}")
+        flash("Error loading wizard", "error")
+        return redirect(url_for('index'))
+
+@bp.route('/wizard/step/<entity_type>')
+def get_wizard_step(entity_type):
+    """Get the content for a wizard step."""
+    try:
+        if entity_type not in ['organization', 'person', 'deal', 'settings']:
+            return jsonify({'error': 'Invalid entity type'}), 400
+
+        return render_template(f'wizard_steps/{entity_type}.html')
+    except Exception as e:
+        logger.error(f"Error loading wizard step: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/wizard/finish', methods=['POST'])
+def finish_wizard():
+    """Save all mappings and settings from the wizard."""
+    try:
+        mappings = request.json
+        if not mappings:
+            return jsonify({'error': 'No mappings provided'}), 400
+
+        # Save mappings for each entity type
+        for entity_type, entity_mappings in mappings.items():
+            if entity_type == 'settings':
+                continue  # Handle settings separately
+
+            for mapping in entity_mappings:
+                success, message = config.add_mapping({
+                    'entity': entity_type,
+                    'source': mapping['source'],
+                    'target': mapping['target']
+                })
+                if not success:
+                    return jsonify({'error': f'Error saving {entity_type} mapping: {message}'}), 500
+
+        flash('Field mappings saved successfully', 'success')
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error finishing wizard: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/config')
 def show_config():
     """Show the Pipedrive configuration page."""

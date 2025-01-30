@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Pipedrive Field Mapping Wizard</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="wizard-progress mb-4">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="steps d-flex justify-content-between">
+                            <span class="step active">Organizations</span>
+                            <span class="step">Contacts</span>
+                            <span class="step">Deals</span>
+                            <span class="step">Settings</span>
+                        </div>
+                    </div>
+
+                    <div id="wizardContent">
+                        <!-- Step content will be loaded here -->
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="text-center d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading fields from Pipedrive...</p>
+                    </div>
+
+                    <!-- Field Preview -->
+                    <div id="fieldPreview" class="mt-4 d-none">
+                        <h5>Selected Field Preview</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-3">Field Name:</dt>
+                                    <dd class="col-sm-9" id="previewFieldName">-</dd>
+                                    <dt class="col-sm-3">Type:</dt>
+                                    <dd class="col-sm-9" id="previewFieldType">-</dd>
+                                    <dt class="col-sm-3">Required:</dt>
+                                    <dd class="col-sm-9" id="previewRequired">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mapping-table mt-4">
+                        <h4>Current Mappings</h4>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Source Field</th>
+                                        <th>Target Field</th>
+                                        <th>Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mappingTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between">
+                    <button class="btn btn-secondary" id="prevStep">Previous</button>
+                    <button class="btn btn-primary" id="nextStep">Next</button>
+                    <button class="btn btn-success d-none" id="finishWizard">Finish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Field Mapping Modal -->
+<div class="modal fade" id="fieldMappingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Map Fields</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    Select a source field from your data and map it to a corresponding Pipedrive field.
+                </div>
+                <form id="fieldMappingForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Source Field</label>
+                                <select class="form-select" id="sourceField" required>
+                                    <option value="">Select source field...</option>
+                                </select>
+                                <div class="form-text">Field from your data</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Target Pipedrive Field</label>
+                                <select class="form-select" id="targetField" required>
+                                    <option value="">Select target field...</option>
+                                </select>
+                                <div class="form-text">Field in Pipedrive</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveMapping">Save Mapping</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentStep = 0;
+const steps = ['organization', 'person', 'deal', 'settings'];
+let entityFields = {};
+let currentMappings = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeWizard();
+    loadEntityFields(steps[currentStep]);
+});
+
+async function initializeWizard() {
+    // Initialize event listeners
+    document.getElementById('prevStep').addEventListener('click', previousStep);
+    document.getElementById('nextStep').addEventListener('click', nextStep);
+    document.getElementById('finishWizard').addEventListener('click', finishWizard);
+    document.getElementById('saveMapping').addEventListener('click', saveFieldMapping);
+
+    // Set up field preview listeners
+    document.getElementById('targetField').addEventListener('change', showFieldPreview);
+
+    // Load initial step
+    await loadStepContent(currentStep);
+    updateProgressBar();
+}
+
+async function loadEntityFields(entityType) {
+    try {
+        showLoading(true);
+        const response = await fetch(`/pipedrive/api/available_fields/${entityType}`);
+        const data = await response.json();
+
+        if (data.success) {
+            entityFields[entityType] = data.fields;
+            populateFieldDropdowns(entityType);
+        } else {
+            showError(`Failed to load ${entityType} fields: ${data.error}`);
+        }
+    } catch (error) {
+        showError(`Error loading fields: ${error}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+function showLoading(show) {
+    document.getElementById('loadingSpinner').classList.toggle('d-none', !show);
+}
+
+function showFieldPreview() {
+    const targetField = document.getElementById('targetField');
+    const selectedField = entityFields[steps[currentStep]]?.find(
+        f => f.id === targetField.value
+    );
+
+    if (selectedField) {
+        document.getElementById('fieldPreview').classList.remove('d-none');
+        document.getElementById('previewFieldName').textContent = selectedField.name;
+        document.getElementById('previewFieldType').textContent = selectedField.field_type;
+        document.getElementById('previewRequired').textContent = 
+            selectedField.mandatory_flag ? 'Yes' : 'No';
+    } else {
+        document.getElementById('fieldPreview').classList.add('d-none');
+    }
+}
+
+function populateFieldDropdowns(entityType) {
+    const sourceSelect = document.getElementById('sourceField');
+    const targetSelect = document.getElementById('targetField');
+
+    // Clear existing options
+    sourceSelect.innerHTML = '<option value="">Select source field...</option>';
+    targetSelect.innerHTML = '<option value="">Select target field...</option>';
+
+    // Add source fields (from your data source)
+    const sourceFields = getSourceFields(entityType);
+    sourceFields.forEach(field => {
+        const option = document.createElement('option');
+        option.value = field.key;
+        option.textContent = `${field.name} (${field.key})`;
+        sourceSelect.appendChild(option);
+    });
+
+    // Add target fields (from Pipedrive)
+    const fields = entityFields[entityType] || [];
+    fields.forEach(field => {
+        const option = document.createElement('option');
+        option.value = field.id;
+        option.textContent = `${field.name} (${field.field_type})`;
+        targetSelect.appendChild(option);
+    });
+}
+
+async function loadStepContent(stepIndex) {
+    const entityType = steps[stepIndex];
+    const wizardContent = document.getElementById('wizardContent');
+
+    try {
+        showLoading(true);
+        const response = await fetch(`/pipedrive/wizard/step/${entityType}`);
+        wizardContent.innerHTML = await response.text();
+
+        // Load existing mappings
+        await loadExistingMappings(entityType);
+
+        // Update UI state
+        document.getElementById('prevStep').disabled = stepIndex === 0;
+        document.getElementById('nextStep').style.display = 
+            stepIndex === steps.length - 1 ? 'none' : 'inline-block';
+        document.getElementById('finishWizard').style.display = 
+            stepIndex === steps.length - 1 ? 'inline-block' : 'none';
+
+        // Refresh field dropdowns
+        await loadEntityFields(entityType);
+    } catch (error) {
+        showError(`Error loading step content: ${error}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function loadExistingMappings(entityType) {
+    try {
+        const response = await fetch(`/pipedrive/api/mapping/${entityType}`);
+        const data = await response.json();
+
+        if (data.success) {
+            currentMappings[entityType] = data.mappings;
+            updateMappingTable(entityType);
+        }
+    } catch (error) {
+        showError(`Error loading mappings: ${error}`);
+    }
+}
+
+function updateMappingTable(entityType) {
+    const tableBody = document.getElementById('mappingTableBody');
+    tableBody.innerHTML = '';
+
+    const mappings = currentMappings[entityType] || [];
+    mappings.forEach((mapping, index) => {
+        const targetField = entityFields[entityType]?.find(f => f.id === mapping.target);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${mapping.source}</td>
+            <td>${targetField?.name || mapping.target}</td>
+            <td>${targetField?.field_type || 'Unknown'}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteMapping('${entityType}', ${index})">
+                    Delete
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+async function saveFieldMapping() {
+    const entityType = steps[currentStep];
+    const sourceField = document.getElementById('sourceField').value;
+    const targetField = document.getElementById('targetField').value;
+
+    if (!sourceField || !targetField) {
+        showError('Please select both source and target fields');
+        return;
+    }
+
+    try {
+        showLoading(true);
+        const response = await fetch('/pipedrive/api/mapping', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                entity: entityType,
+                source: sourceField,
+                target: targetField
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            await loadExistingMappings(entityType);
+            bootstrap.Modal.getInstance(document.getElementById('fieldMappingModal')).hide();
+        } else {
+            showError(data.error);
+        }
+    } catch (error) {
+        showError(`Error saving mapping: ${error}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+function updateProgressBar() {
+    const progressBar = document.querySelector('.progress-bar');
+    const progress = ((currentStep + 1) / steps.length) * 100;
+    progressBar.style.width = `${progress}%`;
+
+    // Update step indicators
+    document.querySelectorAll('.step').forEach((step, index) => {
+        step.classList.toggle('active', index === currentStep);
+        step.classList.toggle('completed', index < currentStep);
+    });
+}
+
+function showError(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.card-body').insertBefore(alertDiv, document.getElementById('wizardContent'));
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        bootstrap.Alert.getOrCreateInstance(alertDiv).close();
+    }, 5000);
+}
+
+async function nextStep() {
+    if (currentStep < steps.length - 1) {
+        currentStep++;
+        await loadStepContent(currentStep);
+        updateProgressBar();
+    }
+}
+
+async function previousStep() {
+    if (currentStep > 0) {
+        currentStep--;
+        await loadStepContent(currentStep);
+        updateProgressBar();
+    }
+}
+
+async function finishWizard() {
+    try {
+        showLoading(true);
+        const response = await fetch('/pipedrive/wizard/finish', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(currentMappings)
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            window.location.href = '/pipedrive/config';
+        } else {
+            showError(data.error);
+        }
+    } catch (error) {
+        showError(`Error finishing wizard: ${error}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function deleteMapping(entityType, index) {
+    try {
+        showLoading(true);
+        const response = await fetch(`/pipedrive/api/mapping/${entityType}/${index}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            await loadExistingMappings(entityType);
+        } else {
+            showError(data.error);
+        }
+    } catch (error) {
+        showError(`Error deleting mapping: ${error}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+function getSourceFields(entityType) {
+    const fieldMappings = {
+        organization: [
+            { key: 'ADR_NAME', name: 'Organization Name' },
+            { key: 'ADR_STREET', name: 'Street Address' },
+            { key: 'ADR_PLZ', name: 'Postal Code' },
+            { key: 'ADR_ORT', name: 'City' },
+            { key: 'ADR_LAND', name: 'Country' },
+            { key: 'ADR_EMAIL', name: 'Email' },
+            { key: 'ADR_TEL', name: 'Phone' },
+            { key: 'ADR_WWW', name: 'Website' }
+        ],
+        person: [
+            { key: 'AKP_NAME', name: 'Last Name' },
+            { key: 'AKP_VORNAME', name: 'First Name' },
+            { key: 'AKP_MAIL', name: 'Email' },
+            { key: 'AKP_TEL', name: 'Phone' },
+            { key: 'AKP_FUNKTION', name: 'Job Title' },
+            { key: 'ANR_ANREDE', name: 'Salutation' },
+            { key: 'ANR_ANREDETEXT', name: 'Salutation Text' }
+        ],
+        deal: [
+            { key: 'NPO_ProjNr', name: 'Project Number' },
+            { key: 'NPO_ProjName', name: 'Project Name' },
+            { key: 'NPO_KSumme', name: 'Initial Amount' },
+            { key: 'NPO_ASumme', name: 'Final Amount' },
+            { key: 'NPO_KDatum', name: 'Start Date' },
+            { key: 'NPO_ADatum', name: 'End Date' },
+            { key: 'NPO_Status', name: 'Deal Status' }
+        ]
+    };
+
+    return fieldMappings[entityType] || [];
+}
+</script>
+{% endblock %}
