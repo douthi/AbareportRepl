@@ -45,6 +45,12 @@ class Config:
                 "akp": "novisol_pipedrive_akp",
                 "anr": "novisol_pipedrive_anr",
                 "npo": "novisol_pipedrive_npo"
+            },
+            'field_keys': {
+                'project_number': 'f5f8535453d1498befe27d2dfe90a680f10fd616',
+                'salutation': 'a1e33efdca526d9b12b21bc5594e11f8e017824b',
+                'salutation_text': 'd70aa79b28126a53cf4260fc23beeba271b7255f',
+                'company_phone': '300867ce076894528208878f4f7ec1d684fabbc9'
             }
         }
     }
