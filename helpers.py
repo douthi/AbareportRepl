@@ -245,13 +245,15 @@ class ReportManager:
         # Create lookup dictionaries
         npo_dict = {}
         for npo in npo_data:
+            if not npo.get('ProjNr'):  # Skip if no project number
+                continue
             key = str(npo.get('KdINR', '')) if npo.get('Person1') == '0' else str(npo.get('Person1', ''))
             if key:
                 npo_dict[key] = npo
 
         adr_dict = {str(adr.get('INR', '')): adr for adr in adr_data if adr.get('INR')}
 
-        # Create lookup dictionaries
+        # Create lookup dictionaries for AKP
         akp_dict = {}
         if akp_data:
             for akp in akp_data:
@@ -264,24 +266,33 @@ class ReportManager:
         # Process NPO records
         for inr, npo in npo_dict.items():
             adr = adr_dict.get(inr)
-            if adr:
-                # Add NPO fields with prefix
-                combined_record = {f'NPO_{k}': v for k, v in npo.items()}
+            if not adr:
+                continue
 
-                # Handle ADR phone fallback
-                adr_phone = adr.get('TEL') or adr.get('TEL2') or ''
-                adr_with_phone = {**adr, 'TEL': adr_phone}
+            # Create base record with NPO data
+            base_record = {f'NPO_{k}': v for k, v in npo.items()}
 
-                # Add ADR fields with prefix
-                adr_fields = {f'ADR_{k}': v for k, v in adr_with_phone.items()}
-                combined_record.update(adr_fields)
+            # Handle ADR phone fallback
+            adr_phone = adr.get('TEL') or adr.get('TEL2') or ''
+            adr_with_phone = {**adr, 'TEL': adr_phone}
 
-                # Add status field
-                combined_record['Status'] = 'new'
+            # Add ADR fields with prefix
+            adr_fields = {f'ADR_{k}': v for k, v in adr_with_phone.items()}
+            base_record.update(adr_fields)
 
-                # Add AKP data with prefix and phone fallback
-                akp_entries = akp_dict.get(inr, [{}])
-                akp_record = akp_entries[0]  # Take first entry
+            # Add status field
+            base_record['Status'] = 'new'
+
+            # Get all AKP entries for this ADR
+            akp_entries = akp_dict.get(inr, [])
+            
+            if not akp_entries:  # If no AKP entries, add base record
+                combined_data.append(base_record)
+                continue
+
+            # Create a record for each AKP entry
+            for akp_record in akp_entries:
+                current_record = base_record.copy()
 
                 # Handle AKP phone fallback
                 akp_phone = akp_record.get('TEL') or akp_record.get('TEL2') or akp_record.get('TEL3') or ''
@@ -289,7 +300,7 @@ class ReportManager:
 
                 # Add AKP fields with prefix
                 akp_fields = {f'AKP_{k}': v for k, v in akp_with_phone.items()}
-                combined_record.update(akp_fields)
+                current_record.update(akp_fields)
 
                 # Add ANR fields based on AKP_ANR_NR
                 anr_nr = akp_record.get('ANR_NR')
@@ -300,13 +311,13 @@ class ReportManager:
                             anr_reader = csv.DictReader(f)
                             for row in anr_reader:
                                 if row['NR'] == str(anr_nr):
-                                    combined_record['ANR_ANREDE'] = row['ANREDE']
-                                    combined_record['ANR_ANREDETEXT'] = row['ANREDETEXT']
+                                    current_record['ANR_ANREDE'] = row['ANREDE']
+                                    current_record['ANR_ANREDETEXT'] = row['ANREDETEXT']
                                     break
                     except Exception as e:
                         logger.error(f"Error reading ANR data: {e}")
 
-                combined_data.append(combined_record)
+                combined_data.append(current_record)
 
         return combined_data
 
