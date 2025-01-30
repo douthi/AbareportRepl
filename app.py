@@ -186,8 +186,15 @@ def start_all_reports():
         company_config = app.config['COMPANIES'].get(company, {})
         company_mandants = company_config.get('mandants', {})
 
-        if not mandant or mandant not in company_mandants:
-            return jsonify({'error': 'Invalid mandant'}), 400
+        logger.debug(f"Company: {company}")
+        logger.debug(f"Mandant: {mandant}")
+        logger.debug(f"Available mandants: {company_mandants}")
+
+        if not mandant:
+            return jsonify({'error': 'No mandant provided'}), 400
+            
+        if mandant not in company_mandants:
+            return jsonify({'error': f'Invalid mandant {mandant}. Available mandants: {company_mandants}'}), 400
 
         report_ids = {}
         company_config = app.config['COMPANIES'][company]
