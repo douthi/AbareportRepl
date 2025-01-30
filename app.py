@@ -183,6 +183,7 @@ def start_all_reports():
 
         # Get company from request
         company = data.get('company', 'uniska')
+        logger.debug(f"Received request for company: {company}")
         company_config = app.config['COMPANIES'].get(company, {})
         company_mandants = company_config.get('mandants', {})
 
