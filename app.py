@@ -9,6 +9,9 @@ from datetime import datetime
 import csv
 import io
 
+# Import our blueprints
+from routes.pipedrive_config import bp as pipedrive_config_bp
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -16,6 +19,9 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Register blueprints
+app.register_blueprint(pipedrive_config_bp)
 
 # Global error handler
 @app.errorhandler(Exception)
@@ -82,7 +88,6 @@ def field_mappings(company_name):
         return jsonify({'status': 'success'})
 
     return jsonify(pipedrive_helper.get_field_mappings())
-
 
 
 @app.route('/pipedrive-fields', methods=['GET'])
@@ -193,7 +198,7 @@ def start_all_reports():
 
         if not mandant:
             return jsonify({'error': 'No mandant provided'}), 400
-            
+
         if mandant not in company_mandants:
             return jsonify({'error': f'Invalid mandant {mandant}. Available mandants: {company_mandants}'}), 400
 

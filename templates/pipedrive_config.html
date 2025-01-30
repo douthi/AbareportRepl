@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Pipedrive Configuration</h2>
+
+    <!-- Tabs for different entities -->
+    <ul class="nav nav-tabs mb-4" id="entityTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="organization-tab" data-bs-toggle="tab" href="#organization" role="tab">Organizations</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="person-tab" data-bs-toggle="tab" href="#person" role="tab">Persons</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="deal-tab" data-bs-toggle="tab" href="#deal" role="tab">Deals</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#settings" role="tab">Settings</a>
+        </li>
+    </ul>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="entityTabContent">
+        <!-- Organizations Tab -->
+        <div class="tab-pane fade show active" id="organization" role="tabpanel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Organization Field Mappings</h5>
+                    <button class="btn btn-primary btn-sm" onclick="refreshFields('organization')">
+                        <i class="fas fa-sync-alt"></i> Refresh Fields
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="organizationMappings">
+                            <thead>
+                                <tr>
+                                    <th>Source Field</th>
+                                    <th>Pipedrive Field</th>
+                                    <th>Field Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mapping in organization_mappings %}
+                                <tr>
+                                    <td>{{ mapping.source }}</td>
+                                    <td>{{ mapping.target }}</td>
+                                    <td>{{ mapping.field_type }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="editMapping('organization', '{{ mapping.id }}')">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteMapping('organization', '{{ mapping.id }}')">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-success mt-3" onclick="addNewMapping('organization')">
+                        <i class="fas fa-plus"></i> Add New Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Persons Tab -->
+        <div class="tab-pane fade" id="person" role="tabpanel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Person Field Mappings</h5>
+                    <button class="btn btn-primary btn-sm" onclick="refreshFields('person')">
+                        <i class="fas fa-sync-alt"></i> Refresh Fields
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="personMappings">
+                            <thead>
+                                <tr>
+                                    <th>Source Field</th>
+                                    <th>Pipedrive Field</th>
+                                    <th>Field Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mapping in person_mappings %}
+                                <tr>
+                                    <td>{{ mapping.source }}</td>
+                                    <td>{{ mapping.target }}</td>
+                                    <td>{{ mapping.field_type }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="editMapping('person', '{{ mapping.id }}')">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteMapping('person', '{{ mapping.id }}')">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-success mt-3" onclick="addNewMapping('person')">
+                        <i class="fas fa-plus"></i> Add New Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deals Tab -->
+        <div class="tab-pane fade" id="deal" role="tabpanel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Deal Field Mappings</h5>
+                    <button class="btn btn-primary btn-sm" onclick="refreshFields('deal')">
+                        <i class="fas fa-sync-alt"></i> Refresh Fields
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="dealMappings">
+                            <thead>
+                                <tr>
+                                    <th>Source Field</th>
+                                    <th>Pipedrive Field</th>
+                                    <th>Field Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mapping in deal_mappings %}
+                                <tr>
+                                    <td>{{ mapping.source }}</td>
+                                    <td>{{ mapping.target }}</td>
+                                    <td>{{ mapping.field_type }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="editMapping('deal', '{{ mapping.id }}')">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteMapping('deal', '{{ mapping.id }}')">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-success mt-3" onclick="addNewMapping('deal')">
+                        <i class="fas fa-plus"></i> Add New Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sync Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="syncSettingsForm" method="POST" action="{{ url_for('pipedrive_config.save_sync_settings') }}">
+                        <div class="mb-3">
+                            <label class="form-label">Entity Existence Checking</label>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="checkOrganizations" name="check_organizations" {% if settings.check_organizations %}checked{% endif %}>
+                                <label class="form-check-label" for="checkOrganizations">Check for existing organizations before creating</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="checkPersons" name="check_persons" {% if settings.check_persons %}checked{% endif %}>
+                                <label class="form-check-label" for="checkPersons">Check for existing persons before creating</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Deal Status Handling</label>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="sequentialStatus" name="sequential_status" {% if settings.sequential_status %}checked{% endif %}>
+                                <label class="form-check-label" for="sequentialStatus">Use sequential status updates (Recommended)</label>
+                            </div>
+                            <small class="form-text text-muted">This ensures proper order: create deal → set status → set timestamps</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Mapping Modal -->
+<div class="modal fade" id="mappingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mappingModalTitle">Add/Edit Mapping</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="mappingForm">
+                    <input type="hidden" id="mappingId">
+                    <input type="hidden" id="entityType">
+                    <div class="mb-3">
+                        <label for="sourceField" class="form-label">Source Field</label>
+                        <input type="text" class="form-control" id="sourceField" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetField" class="form-label">Pipedrive Field</label>
+                        <select class="form-control" id="targetField" required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveMapping()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Function to refresh fields from Pipedrive
+function refreshFields(entityType) {
+    fetch(`/api/refresh_fields/${entityType}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error refreshing fields: ' + data.error);
+            }
+        });
+}
+
+// Function to add new mapping
+function addNewMapping(entityType) {
+    document.getElementById('mappingId').value = '';
+    document.getElementById('entityType').value = entityType;
+    document.getElementById('sourceField').value = '';
+    document.getElementById('targetField').value = '';
+    document.getElementById('mappingModalTitle').textContent = 'Add New Mapping';
+
+    // Fetch available fields
+    fetch(`/api/available_fields/${entityType}`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('targetField');
+            select.innerHTML = '';
+            data.fields.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field.key;
+                option.textContent = `${field.name} (${field.field_type})`;
+                select.appendChild(option);
+            });
+        });
+
+    new bootstrap.Modal(document.getElementById('mappingModal')).show();
+}
+
+// Function to edit mapping
+function editMapping(entityType, mappingId) {
+    fetch(`/api/mapping/${entityType}/${mappingId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('mappingId').value = mappingId;
+            document.getElementById('entityType').value = entityType;
+            document.getElementById('sourceField').value = data.mapping.source;
+            document.getElementById('targetField').value = data.mapping.target;
+            document.getElementById('mappingModalTitle').textContent = 'Edit Mapping';
+
+            // Also fetch available fields
+            return fetch(`/api/available_fields/${entityType}`);
+        })
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('targetField');
+            select.innerHTML = '';
+            data.fields.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field.key;
+                option.textContent = `${field.name} (${field.field_type})`;
+                select.appendChild(option);
+            });
+        });
+
+    new bootstrap.Modal(document.getElementById('mappingModal')).show();
+}
+
+// Function to save mapping
+function saveMapping() {
+    const mappingId = document.getElementById('mappingId').value;
+    const entityType = document.getElementById('entityType').value;
+    const sourceField = document.getElementById('sourceField').value;
+    const targetField = document.getElementById('targetField').value;
+
+    const data = {
+        source: sourceField,
+        target: targetField,
+        entity: entityType
+    };
+
+    const url = mappingId ? `/api/mapping/${entityType}/${mappingId}` : '/api/mapping';
+    const method = mappingId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error saving mapping: ' + data.error);
+        }
+    });
+}
+
+// Function to delete mapping
+function deleteMapping(entityType, mappingId) {
+    if (confirm('Are you sure you want to delete this mapping?')) {
+        fetch(`/api/mapping/${entityType}/${mappingId}`, {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting mapping: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
