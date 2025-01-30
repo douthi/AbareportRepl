@@ -278,15 +278,21 @@ async function loadStepContent(stepIndex) {
 
 async function loadExistingMappings(entityType) {
     try {
-        const response = await fetch(`/pipedrive/api/mapping/${entityType}?company=${currentCompany}`);
+        showLoading(true);
+        const response = await fetch(`/pipedrive/api/mappings/${entityType}?company=${currentCompany}`);
         const data = await response.json();
 
         if (data.success) {
-            currentMappings[entityType] = data.mappings;
+            currentMappings[entityType] = data.mappings || [];
             updateMappingTable(entityType);
+        } else {
+            showError(`Error loading mappings: ${data.error}`);
         }
     } catch (error) {
         showError(`Error loading mappings: ${error}`);
+        console.error('Error loading mappings:', error);
+    } finally {
+        showLoading(false);
     }
 }
 
@@ -295,6 +301,19 @@ function updateMappingTable(entityType) {
     tableBody.innerHTML = '';
 
     const mappings = currentMappings[entityType] || [];
+
+    if (mappings.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="4" class="text-center text-muted">
+                <i class="fas fa-info-circle"></i> No mappings defined yet. 
+                Click the "Add Field Mapping" button above to start mapping fields.
+            </td>
+        `;
+        tableBody.appendChild(row);
+        return;
+    }
+
     mappings.forEach((mapping, index) => {
         const targetField = entityFields[entityType]?.find(f => f.id === mapping.target);
         const row = document.createElement('tr');

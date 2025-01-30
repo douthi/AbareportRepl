@@ -27,7 +27,12 @@ class PipedriveConfig:
         self.company_key = company_key
         self.mapping_file = f'mappings/{company_key}_field_mappings.json'
         self.settings_file = f'mappings/{company_key}_sync_settings.json'
+
+        # Create mappings directory if it doesn't exist
         os.makedirs('mappings', exist_ok=True)
+        logger.debug(f"Initializing PipedriveConfig for company: {company_key}")
+        logger.debug(f"Mapping file path: {self.mapping_file}")
+
         self._load_settings()
         self._load_mappings()
 
@@ -51,18 +56,31 @@ class PipedriveConfig:
         try:
             with open(self.mapping_file, 'r') as f:
                 self.mappings = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+                logger.debug(f"Loaded {len(self.mappings)} mappings for company {self.company_key}")
+        except FileNotFoundError:
+            logger.debug(f"No existing mappings file found for {self.company_key}, creating new")
+            self.mappings = []
+            self._save_mappings()
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decoding mappings file for {self.company_key}: {e}")
             self.mappings = []
             self._save_mappings()
 
     def _save_mappings(self):
         """Save field mappings to file."""
-        with open(self.mapping_file, 'w') as f:
-            json.dump(self.mappings, f, indent=2)
+        try:
+            with open(self.mapping_file, 'w') as f:
+                json.dump(self.mappings, f, indent=2)
+            logger.debug(f"Saved {len(self.mappings)} mappings for company {self.company_key}")
+        except Exception as e:
+            logger.error(f"Error saving mappings for {self.company_key}: {e}")
+            raise
 
     def get_mappings_by_entity(self, entity_type):
         """Get field mappings for a specific entity type."""
-        return [m for m in self.mappings if m['entity'] == entity_type]
+        mappings = [m for m in self.mappings if m['entity'] == entity_type]
+        logger.debug(f"Retrieved {len(mappings)} mappings for entity {entity_type} in company {self.company_key}")
+        return mappings
 
     def add_mapping(self, mapping_data):
         """Add a new field mapping."""
@@ -339,4 +357,19 @@ def save_sync_settings():
         return jsonify({'success': False, 'error': message})
     except Exception as e:
         logger.error(f"Error saving sync settings: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@bp.route('/api/mappings/<entity_type>', methods=['GET'])
+def get_mappings(entity_type):
+    """Get all field mappings for a specific entity type."""
+    try:
+        company = request.args.get('company', 'uniska')
+        if company not in AVAILABLE_COMPANIES:
+            return jsonify({'error': 'Invalid company'}), 400
+
+        config = configs[company]
+        mappings = config.get_mappings_by_entity(entity_type)
+        return jsonify({'success': True, 'mappings': mappings})
+    except Exception as e:
+        logger.error(f"Error getting mappings: {e}")
         return jsonify({'success': False, 'error': str(e)})
