@@ -31,6 +31,31 @@ class Config:
                 "akp": "uniska_pipedrive_akp",
                 "anr": "uniska_pipedrive_anr",
                 "npo": "uniska_pipedrive_npo"
+            },
+            'field_mappings': [
+                {"source": "NPO_ProjNr", "target": "5d300cf82930e07f6107c7255fcd0dd550af7774", "entity": "deal"},
+                {"source": "NPO_ProjName", "target": "title", "entity": "deal"},
+                {"source": "NPO_KSumme", "target": "value", "entity": "deal"},
+                {"source": "NPO_KDatum", "target": "add_time", "entity": "deal"},
+                {"source": "NPO_ADatum", "target": "close_time", "entity": "deal"},
+                {"source": "NPO_Status4Date", "target": "lost_time", "entity": "deal"},
+                {"source": "ADR_NAME", "target": "name", "entity": "organization"},
+                {"source": "ADR_TEL", "target": "a82d57b1a943fc63f5c1130cd7e2af78f8a3b6b0", "entity": "organization"},
+                {"source": "ADR_LAND", "target": "address_country", "entity": "organization"},
+                {"source": "ADR_PLZ", "target": "address_postal_code", "entity": "organization"},
+                {"source": "ADR_ORT", "target": "address_locality", "entity": "organization"},
+                {"source": "ADR_STREET", "target": "address_route", "entity": "organization"},
+                {"source": "ADR_HOUSE_NUMBER", "target": "address_street_number", "entity": "organization"},
+                {"source": "AKP_NAME", "target": "last_name", "entity": "person"},
+                {"source": "AKP_VORNAME", "target": "first_name", "entity": "person"},
+                {"source": "AKP_FUNKTION", "target": "job_title", "entity": "person"},
+                {"source": "AKP_TEL", "target": "phone", "entity": "person"},
+                {"source": "AKP_MAIL", "target": "email", "entity": "person"},
+                {"source": "ANR_ANREDE", "target": "031ae26196cff3bf754a3fa9ff701f13c73113bf", "entity": "person"},
+                {"source": "ANR_ANREDETEXT", "target": "7bcef1831b6beeb06bcdd031e8ce321626dc644a", "entity": "person"}
+            ],
+            'field_keys': {
+                'salutation_text': '7bcef1831b6beeb06bcdd031e8ce321626dc644a'
             }
         },
         'novisol': {
