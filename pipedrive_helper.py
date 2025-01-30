@@ -10,7 +10,11 @@ logger = logging.getLogger(__name__)
 class PipedriveHelper:
     def __init__(self, company_key='uniska'):
         self.company_key = company_key
-        self.api_key = os.getenv(f'{company_key.upper()}_PIPEDRIVE_API_KEY')
+        env_key = f'{company_key.upper()}_PIPEDRIVE_API_KEY'
+        self.api_key = os.getenv(env_key)
+        logger.debug(f"Initializing PipedriveHelper for company: {company_key}")
+        logger.debug(f"Looking for API key with env var: {env_key}")
+        logger.debug(f"API key found: {bool(self.api_key)}")
         self.base_url = f'https://{company_key}ag.pipedrive.com/api/v1'
         self.mapping_file = f'mappings/{company_key}_field_mappings.json'
         os.makedirs('mappings', exist_ok=True)
