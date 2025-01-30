@@ -8,26 +8,83 @@ import logging
 from datetime import datetime
 import csv
 import io
-
-# Import our blueprints
-from routes.pipedrive_config import bp as pipedrive_config_bp
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Initialize database
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Initialize database with app
+db.init_app(app)
+
+# Import our blueprints
+from routes.pipedrive_config import bp as pipedrive_config_bp
+
 # Register blueprints
 app.register_blueprint(pipedrive_config_bp, url_prefix='/pipedrive')
+
+# Global error handler for database operations
+class DatabaseError(Exception):
+    pass
+
+@app.errorhandler(DatabaseError)
+def handle_database_error(error):
+    logger.error(f"Database error: {error}")
+    db.session.rollback()
+    return jsonify({'error': str(error)}), 500
 
 # Global error handler
 @app.errorhandler(Exception)
 def handle_error(error):
     logger.error(f"Unhandled error: {error}")
+    if db.session.is_active:
+        db.session.rollback()
     return jsonify({'error': str(error)}), 500
+
+# Database session management
+@app.before_request
+def before_request():
+    """Ensure we have a database session for each request"""
+    if not hasattr(db.session, 'is_active') or not db.session.is_active:
+        db.session.begin()
+
+@app.after_request
+def after_request(response):
+    """Clean up database session after each request"""
+    if hasattr(db.session, 'is_active') and db.session.is_active:
+        if response.status_code >= 400:
+            db.session.rollback()
+        else:
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Error committing session: {e}")
+                return jsonify({'error': 'Database error'}), 500
+    return response
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    """Remove database session at the end of request"""
+    if exception:
+        logger.error(f"Exception during request: {exception}")
+        db.session.rollback()
+    db.session.remove()
+
+# Create all database tables within application context
+with app.app_context():
+    db.create_all()
 
 # Rate limiting
 limiter = RateLimiter()
@@ -43,7 +100,7 @@ def check_rate_limit():
 report_manager = ReportManager(app.config)
 
 # Simulate a key-value store (replace with a real database in production)
-db = {}
+#db = {}  Removed - replaced by SQLAlchemy db
 
 @app.route('/')
 def index():
