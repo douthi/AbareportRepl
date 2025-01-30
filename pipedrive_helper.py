@@ -187,118 +187,32 @@ class PipedriveHelper:
         response = requests.post(endpoint, params=params, json=person_data)
         return response.json()
 
-    def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
-        """Create a new deal with proper status and timing handling."""
-        endpoint = f"{self.base_url}/deals"
-        params = {'api_token': self.api_key}
-
-        deal_data = {
-            'org_id': org_id,
-            'pipeline_id': self.default_pipeline_id
-        }
-
-        # Add mapped custom fields from field mappings
-        deal_fields = self.get_deal_fields()
-        field_ids = {str(field['id']): field['key'] for field in deal_fields}
-
-        for mapping in self.field_mappings:
-            if mapping['entity'] == 'deal' and mapping['source'] in data:
-                field_value = data[mapping['source']]
-                if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
-                    field_value = self._format_timestamp(field_value)
-
-                if mapping['target'] in field_ids:
-                    logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
-                    deal_data[mapping['target']] = field_value
-
-        # Set standard fields
-        if 'title' not in deal_data:
-            deal_data['title'] = data.get('NPO_ProjName', '')
-        if 'value' not in deal_data:
-            deal_data['value'] = float(data.get('NPO_KSumme', 0))
-        if 'currency' not in deal_data:
-            deal_data['currency'] = 'CHF'
-
-        # Handle status and dates
-        status = data.get('Status')
-        asumme = float(data.get('NPO_ASumme', 0))
-        adatum = data.get('NPO_ADatum')
-        kdatum = data.get('NPO_KDatum')
-        status4_date = data.get('NPO_Status4')
-
-        # Set initial deal data
-        if asumme > 0 and adatum:
-            deal_data.update({
-                'status': 'won',
-                'value': asumme,
-                'won_time': self._format_timestamp(adatum),
-                'close_time': self._format_timestamp(adatum)
-            })
-        elif str(status) == '4':
-            lost_date = status4_date if status4_date else kdatum
-            deal_data.update({
-                'status': 'lost',
-                'lost_time': self._format_timestamp(lost_date),
-                'close_time': self._format_timestamp(lost_date)
-            })
-        else:
-            deal_data.update({
-                'status': 'open',
-                'add_time': self._format_timestamp(kdatum) if kdatum else None
-            })
-
-        # Check if deal already exists
-        proj_nr = data.get('NPO_ProjNr')
-        if proj_nr:
-            existing_deals = self.search_deals_by_custom_field('5d300cf82930e07f6107c7255fcd0dd550af7774', proj_nr)
-            if existing_deals:
-                logger.info(f"Deal with project number {proj_nr} already exists")
-                return {'success': False, 'error': 'Deal already exists'}
-
-        # Create the deal
-        logger.debug(f"Creating deal with data: {deal_data}")
-        response = requests.post(endpoint, params=params, json=deal_data)
-        result = response.json()
-
-        if not result.get('success'):
-            logger.error(f"Failed to create deal: {result}")
-            return result
-
-        # Update deal status and times if needed
-        deal_id = result['data']['id']
-        update_endpoint = f"{self.base_url}/deals/{deal_id}"
-
-        if deal_data['status'] == 'won' and adatum:
-            logger.debug(f"Setting won time for deal {deal_id} to {adatum}")
-            requests.put(update_endpoint, params=params, json={'won_time': self._format_timestamp(adatum)})
-        elif deal_data['status'] == 'lost' and status == '4' and status4_date:
-            logger.debug(f"Setting lost time for deal {deal_id} to {status4_date}")
-            requests.put(update_endpoint, params=params, json={'lost_time': self._format_timestamp(status4_date)})
-
-        return result
-
-    def search_deals_by_custom_field(self, field_key: str, value: str) -> List[Dict[str, Any]]:
-        """Search deals by custom field value."""
-        endpoint = f"{self.base_url}/deals/search"
-        params = {
-            'api_token': self.api_key,
-            'term': value,
-            'exact_match': True,
-            'fields': field_key
-        }
-        response = requests.get(endpoint, params=params)
-        if response.ok:
-            return response.json().get('data', {}).get('items', [])
-        return []
-
     def get_fields(self, entity_type: str) -> List[Dict[str, Any]]:
         """Get fields for a specific entity type."""
         endpoint = f"{self.base_url}/{entity_type}Fields"
-        params = {'api_token': self.api_key}
+        params = {
+            'api_token': self.api_key,
+            'start': 0,
+            'limit': 100
+        }
 
         response = requests.get(endpoint, params=params)
         if response.ok:
-            return response.json().get('data', [])
+            data = response.json()
+            fields = []
+            for field in data.get('data', []):
+                field_data = {
+                    'key': field.get('key'),
+                    'name': field.get('name'),
+                    'field_type': field.get('field_type'),
+                    'id': field.get('id'),
+                    'mandatory_flag': field.get('mandatory_flag', False),
+                    'options': field.get('options', [])
+                }
+                logger.debug(f"Found {entity_type} field: {field_data}")
+                fields.append(field_data)
+            return fields
+        logger.error(f"Failed to get {entity_type} fields: {response.text}")
         return []
 
     def get_organization_fields(self) -> List[Dict[str, Any]]:
@@ -342,6 +256,171 @@ class PipedriveHelper:
         response = requests.put(endpoint, params=params, json=data)
         return response.json()
 
+    def create_deal(self, data: Dict[str, Any], org_id: int) -> Dict[str, Any]:
+        from datetime import datetime, timedelta
+        endpoint = f"{self.base_url}/deals"
+        params = {'api_token': self.api_key}
+
+        # Check if deal is older than 24 months
+        try:
+            deal_date = datetime.strptime(data.get('NPO_KDatum', ''), '%Y-%m-%d %H:%M:%S')
+        except (ValueError, TypeError):
+            deal_date = datetime.now()  # Default to current date if invalid
+        two_years_ago = datetime.now() - timedelta(days=730)
+
+        deal_data = {'org_id': org_id, 'pipeline_id': self.default_pipeline_id}
+
+        # Add mapped custom fields from field mappings
+        deal_fields = self.get_deal_fields()
+        field_ids = {str(field['id']): field['key'] for field in deal_fields}
+
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'deal' and mapping['source'] in data:
+                field_value = data[mapping['source']]
+                if mapping['source'] in ['NPO_KDatum', 'NPO_ADatum']:
+                    field_value = self._format_timestamp(field_value)
+
+                # Validate field ID exists
+                if mapping['target'] in field_ids:
+                    logger.debug(f"Mapping field {mapping['source']} to {field_ids[mapping['target']]} ({mapping['target']})")
+                    deal_data[mapping['target']] = field_value
+                else:
+                    logger.warning(f"Invalid field ID in mapping: {mapping['target']}")
+
+        # Set standard fields if not already mapped
+        if 'title' not in deal_data:
+            deal_data['title'] = data.get('NPO_ProjName', '')
+        if 'value' not in deal_data:
+            deal_data['value'] = data.get('NPO_KSumme', 0)
+        if 'currency' not in deal_data:
+            deal_data['currency'] = 'CHF'
+        if 'add_time' not in deal_data:
+            deal_data['add_time'] = self._format_timestamp(data.get('NPO_KDatum'))
+        if 'close_time' not in deal_data:
+            deal_data['close_time'] = self._format_timestamp(data.get('NPO_ADatum'))
+
+        # Set project number and other custom fields
+        deal_fields = self.get_deal_fields()
+        for mapping in self.field_mappings:
+            if mapping['entity'] == 'deal' and mapping['source'] in data:
+                field_value = data[mapping['source']]
+                # For custom fields, we need to use the correct format
+                if mapping['target'].startswith('5d300'):  # Custom field
+                    deal_data[f'5d300cf82930e07f6107c7255fcd0dd550af7774'] = field_value
+                else:
+                    deal_data[mapping['target']] = field_value
+
+        # Use ANR values from the passed data directly since they were already looked up
+        anr_anrede = data.get('ANR_ANREDE')
+        anr_anredetext = data.get('ANR_ANREDETEXT')
+        if anr_anrede:
+            deal_data['031ae26196cff3bf754a3fa9ff701f13c73113bf'] = anr_anrede
+        if anr_anredetext:
+            deal_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = anr_anredetext
+
+
+        # Find or create primary contact first
+        primary_contact = None
+        person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
+        if person_name:
+            existing_person = self.find_person_by_name(person_name, org_id)
+            if existing_person:
+                logger.info(f"Found existing primary contact: {existing_person['name']}")
+                primary_contact = existing_person
+                deal_data['person_id'] = existing_person['id']
+            else:
+                logger.info(f"Creating new primary contact: {person_name}")
+                person_result = self.create_person(data, org_id)
+                if person_result.get('success'):
+                    primary_contact = person_result['data']
+                    deal_data['person_id'] = person_result['data']['id']
+                    logger.info(f"Created and linked primary contact with ID: {person_result['data']['id']}")
+                else:
+                    logger.warning(f"Failed to create primary contact: {person_result}")
+
+        # Check if deal already exists to prevent duplicates
+        proj_nr = data.get('NPO_ProjNr')
+        if proj_nr:
+            existing_deals = self.search_deals_by_custom_field('5d300cf82930e07f6107c7255fcd0dd550af7774', proj_nr)
+            if existing_deals:
+                logger.info(f"Deal with project number {proj_nr} already exists")
+                return {'success': False, 'error': 'Deal already exists'}
+
+        # Set initial deal value
+        if data.get('NPO_ADatum'):
+            deal_data.update({
+                'value': data.get('NPO_ASumme', 0)
+            })
+        else:
+            deal_data.update({
+                'status': 'open',
+                'value': data.get('NPO_KSumme', 0)
+            })
+
+        # Step 1: Create initial deal
+        logger.debug(f"Creating deal with data: {deal_data}")
+        response = requests.post(endpoint, params=params, json=deal_data)
+        result = response.json()
+        logger.debug(f"Initial deal creation response: {result}")
+
+        if result.get('success'):
+            deal_id = result['data']['id']
+            update_endpoint = f"{self.base_url}/deals/{deal_id}"
+
+            # Step 2: Handle status and dates based on conditions
+            status = data.get('Status')
+            asumme = data.get('NPO_ASumme')
+            adatum = data.get('NPO_ADatum')
+            kdatum = data.get('NPO_KDatum')
+            status4_date = data.get('NPO_Status4')
+
+            # First set the status with explicit time handling
+            if asumme:
+                status_data = {
+                    'status': 'won',
+                    'won_time': self._format_timestamp(adatum),
+                    'lost_time': None  # Clear lost time for won deals
+                }
+            elif str(status) == '4':  # Convert status to string for comparison
+                # Use status4_date as primary, fall back to kdatum if not available
+                lost_date = status4_date if status4_date else kdatum
+                status_data = {
+                    'status': 'lost',
+                    'lost_time': self._format_timestamp(lost_date),
+                    'won_time': None  # Clear won time for lost deals
+                }
+            else:
+                status_data = {
+                    'status': 'open',
+                    'won_time': None,
+                    'lost_time': None  # Clear both times for open deals
+                }
+
+            # Update deal with status and time in one request
+            logger.debug(f"Setting deal {deal_id} status data: {status_data}")
+            status_response = requests.put(update_endpoint, params=params, json=status_data)
+            if not status_response.ok:
+                logger.error(f"Failed to update deal status: {status_response.text}")
+                logger.error(f"Status response: {status_response.text}")
+            status_response = requests.put(update_endpoint, params=params, json=status_data)
+
+            # Update time fields based on status
+            if status_response.ok:
+                time_data = {}
+                if status_data['status'] == 'won' and adatum:
+                    time_data = {'won_time': adatum}
+                    logger.debug(f"Setting deal {deal_id} won_time to {adatum}")
+                elif status_data['status'] == 'lost' and status == '4' and status4_date:
+                    time_data = {'lost_time': status4_date}
+                    logger.debug(f"Setting deal {deal_id} lost_time to {status4_date}")
+
+                if time_data:
+                    response = requests.put(update_endpoint, params=params, json=time_data)
+                    result = response.json()
+                    logger.debug(f"Deal time update response: {result}")
+
+        return result
+
     def update_won_dates(self):
         """Update won dates for all deals with ADatum."""
         endpoint = f"{self.base_url}/deals"
@@ -376,6 +455,20 @@ class PipedriveHelper:
                                 json=update_data
                             )
                             logger.debug(f"Updated won dates for deal {deal_id}: {update_response.json()}")
+    def search_deals_by_custom_field(self, field_key: str, value: str) -> List[Dict[str, Any]]:
+        """Search deals by custom field value."""
+        endpoint = f"{self.base_url}/deals/search"
+        params = {
+            'api_token': self.api_key,
+            'term': value,
+            'exact_match': True,
+            'fields': field_key
+        }
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            return response.json().get('data', {}).get('items', [])
+        return []
+
     def get_organization_contacts(self, org_id: int) -> List[Dict[str, Any]]:
         """Get all contacts associated with an organization."""
         endpoint = f"{self.base_url}/persons/search"
