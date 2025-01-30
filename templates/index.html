@@ -98,6 +98,7 @@
         <div class="card mb-4">
             <div class="card-body">
                 <form id="reportForm" method="POST" action="/startAllReports" class="row g-3">
+    <input type="hidden" name="company" value="{{ company }}">">
                     <div class="col-md-6">
                         <label for="mandant" class="form-label">Mandant</label>
                         <select class="form-select" id="mandant" name="mandant" required>
