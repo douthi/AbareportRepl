@@ -2,6 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
+    <!-- Company selection and header -->
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -21,8 +22,10 @@
                 </div>
             </div>
 
+            <!-- Main wizard card -->
             <div class="card">
                 <div class="card-body">
+                    <!-- Progress bar -->
                     <div class="wizard-progress mb-4">
                         <div class="progress">
                             <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -35,12 +38,12 @@
                         </div>
                     </div>
 
-                    <!-- Step content will be loaded here -->
+                    <!-- Dynamic content area -->
                     <div id="wizardContent">
-                        <!-- Dynamic content -->
+                        <!-- Step content will be loaded here -->
                     </div>
 
-                    <!-- Loading Spinner -->
+                    <!-- Loading indicator -->
                     <div id="loadingSpinner" class="text-center d-none">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -48,7 +51,7 @@
                         <p class="mt-2">Loading fields from Pipedrive...</p>
                     </div>
 
-                    <!-- Field Preview -->
+                    <!-- Field preview section -->
                     <div id="fieldPreview" class="mt-4 d-none">
                         <h5>Selected Field Preview</h5>
                         <div class="card bg-light">
@@ -65,7 +68,7 @@
                         </div>
                     </div>
 
-                    <!-- Current Mappings -->
+                    <!-- Current mappings table -->
                     <div class="mapping-table mt-4">
                         <h5>Current Mappings</h5>
                         <div class="table-responsive">
@@ -85,6 +88,7 @@
                     </div>
                 </div>
 
+                <!-- Navigation buttons -->
                 <div class="card-footer d-flex justify-content-between">
                     <button class="btn btn-secondary" id="prevStep">
                         <i class="fas fa-arrow-left"></i> Previous
@@ -101,7 +105,7 @@
     </div>
 </div>
 
-<!-- Field Mapping Modal -->
+<!-- Field mapping modal -->
 <div class="modal fade" id="fieldMappingModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -156,44 +160,86 @@ let currentMappings = {};
 let currentCompany = '{{ current_company }}';
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing wizard');
     initializeWizard();
-    loadEntityFields(steps[currentStep]);
-
-    // Add company selector listener
-    document.getElementById('companySelector').addEventListener('change', function() {
-        currentCompany = this.value;
-        window.location.href = `/pipedrive/wizard?company=${currentCompany}`;
-    });
 });
 
 async function initializeWizard() {
+    console.log('Setting up event listeners');
+
     // Initialize event listeners
     document.getElementById('prevStep').addEventListener('click', previousStep);
     document.getElementById('nextStep').addEventListener('click', nextStep);
     document.getElementById('finishWizard').addEventListener('click', finishWizard);
     document.getElementById('saveMapping').addEventListener('click', saveFieldMapping);
 
+    // Add company selector listener
+    document.getElementById('companySelector').addEventListener('change', function() {
+        console.log('Company changed to:', this.value);
+        currentCompany = this.value;
+        window.location.href = `/pipedrive/wizard?company=${currentCompany}`;
+    });
+
     // Set up field preview listeners
     document.getElementById('targetField').addEventListener('change', showFieldPreview);
 
     // Load initial step
+    console.log('Loading initial step');
     await loadStepContent(currentStep);
     updateProgressBar();
+}
+
+async function loadStepContent(stepIndex) {
+    const entityType = steps[stepIndex];
+    const wizardContent = document.getElementById('wizardContent');
+
+    try {
+        showLoading(true);
+        console.log(`Loading step content for ${entityType} - Company: ${currentCompany}`);
+        const response = await fetch(`/pipedrive/wizard/step/${entityType}?company=${currentCompany}`);
+        wizardContent.innerHTML = await response.text();
+
+        // Load existing mappings first
+        console.log('Loading existing mappings');
+        await loadExistingMappings(entityType);
+
+        // Update UI state
+        document.getElementById('prevStep').disabled = stepIndex === 0;
+        document.getElementById('nextStep').style.display = 
+            stepIndex === steps.length - 1 ? 'none' : 'inline-block';
+        document.getElementById('finishWizard').style.display = 
+            stepIndex === steps.length - 1 ? 'inline-block' : 'none';
+
+        // Refresh field dropdowns
+        console.log('Loading entity fields');
+        await loadEntityFields(entityType);
+
+        console.log(`Step content loaded for ${entityType}`);
+    } catch (error) {
+        console.error(`Error loading step content: ${error}`);
+        showError(`Error loading step content: ${error}`);
+    } finally {
+        showLoading(false);
+    }
 }
 
 async function loadEntityFields(entityType) {
     try {
         showLoading(true);
+        console.log(`Loading fields for ${entityType} - Company: ${currentCompany}`);
         const response = await fetch(`/pipedrive/api/available_fields/${entityType}?company=${currentCompany}`);
         const data = await response.json();
 
         if (data.success) {
             entityFields[entityType] = data.fields;
+            console.log(`Loaded ${data.fields.length} fields for ${entityType}`);
             populateFieldDropdowns(entityType);
         } else {
             showError(`Failed to load ${entityType} fields: ${data.error}`);
+            console.error(`Error loading fields: ${data.error}`);
         }
     } catch (error) {
+        console.error(`Error loading fields: ${error}`);
         showError(`Error loading fields: ${error}`);
     } finally {
         showLoading(false);
@@ -222,8 +268,14 @@ function showFieldPreview() {
 }
 
 function populateFieldDropdowns(entityType) {
+    console.log(`Populating dropdowns for ${entityType}`);
     const sourceSelect = document.getElementById('sourceField');
     const targetSelect = document.getElementById('targetField');
+
+    if (!sourceSelect || !targetSelect) {
+        console.error('Dropdown elements not found');
+        return;
+    }
 
     // Clear existing options
     sourceSelect.innerHTML = '<option value="">Select source field...</option>';
@@ -231,6 +283,7 @@ function populateFieldDropdowns(entityType) {
 
     // Add source fields (from your data source)
     const sourceFields = getSourceFields(entityType);
+    console.log(`Found ${sourceFields.length} source fields`);
     sourceFields.forEach(field => {
         const option = document.createElement('option');
         option.value = field.key;
@@ -240,6 +293,7 @@ function populateFieldDropdowns(entityType) {
 
     // Add target fields (from Pipedrive)
     const fields = entityFields[entityType] || [];
+    console.log(`Found ${fields.length} target fields`);
     fields.forEach(field => {
         const option = document.createElement('option');
         option.value = field.id;
@@ -248,45 +302,22 @@ function populateFieldDropdowns(entityType) {
     });
 }
 
-async function loadStepContent(stepIndex) {
-    const entityType = steps[stepIndex];
-    const wizardContent = document.getElementById('wizardContent');
-
-    try {
-        showLoading(true);
-        const response = await fetch(`/pipedrive/wizard/step/${entityType}?company=${currentCompany}`);
-        wizardContent.innerHTML = await response.text();
-
-        // Load existing mappings
-        await loadExistingMappings(entityType);
-
-        // Update UI state
-        document.getElementById('prevStep').disabled = stepIndex === 0;
-        document.getElementById('nextStep').style.display = 
-            stepIndex === steps.length - 1 ? 'none' : 'inline-block';
-        document.getElementById('finishWizard').style.display = 
-            stepIndex === steps.length - 1 ? 'inline-block' : 'none';
-
-        // Refresh field dropdowns
-        await loadEntityFields(entityType);
-    } catch (error) {
-        showError(`Error loading step content: ${error}`);
-    } finally {
-        showLoading(false);
-    }
-}
-
 async function loadExistingMappings(entityType) {
     try {
         showLoading(true);
+        console.log(`Loading mappings for ${entityType} - Company: ${currentCompany}`);
         const response = await fetch(`/pipedrive/api/mappings/${entityType}?company=${currentCompany}`);
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
 
         if (data.success) {
             currentMappings[entityType] = data.mappings || [];
+            console.log(`Loaded ${currentMappings[entityType].length} mappings`);
             updateMappingTable(entityType);
         } else {
             showError(`Error loading mappings: ${data.error}`);
+            console.error('Error from server:', data.error);
         }
     } catch (error) {
         showError(`Error loading mappings: ${error}`);
@@ -297,10 +328,18 @@ async function loadExistingMappings(entityType) {
 }
 
 function updateMappingTable(entityType) {
-    const tableBody = document.getElementById('mappingTableBody');
-    tableBody.innerHTML = '';
+    console.log(`Updating table for ${entityType}`);
+    console.log('Current mappings:', currentMappings[entityType]);
 
+    const tableBody = document.getElementById('mappingTableBody');
+    if (!tableBody) {
+        console.error('Table body element not found');
+        return;
+    }
+
+    tableBody.innerHTML = '';
     const mappings = currentMappings[entityType] || [];
+    console.log(`Found ${mappings.length} mappings to display`);
 
     if (mappings.length === 0) {
         const row = document.createElement('tr');
@@ -316,6 +355,8 @@ function updateMappingTable(entityType) {
 
     mappings.forEach((mapping, index) => {
         const targetField = entityFields[entityType]?.find(f => f.id === mapping.target);
+        console.log(`Mapping ${index}:`, mapping, 'Target field:', targetField);
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${mapping.source}</td>
@@ -343,6 +384,7 @@ async function saveFieldMapping() {
 
     try {
         showLoading(true);
+        console.log(`Saving mapping - Entity: ${entityType}, Source: ${sourceField}, Target: ${targetField}`);
         const response = await fetch(`/pipedrive/api/mapping?company=${currentCompany}`, {
             method: 'POST',
             headers: {
@@ -356,6 +398,8 @@ async function saveFieldMapping() {
         });
 
         const data = await response.json();
+        console.log('Save mapping response:', data);
+
         if (data.success) {
             await loadExistingMappings(entityType);
             bootstrap.Modal.getInstance(document.getElementById('fieldMappingModal')).hide();
@@ -363,6 +407,7 @@ async function saveFieldMapping() {
             showError(data.error);
         }
     } catch (error) {
+        console.error('Error saving mapping:', error);
         showError(`Error saving mapping: ${error}`);
     } finally {
         showLoading(false);
@@ -439,17 +484,21 @@ async function finishWizard() {
 async function deleteMapping(entityType, index) {
     try {
         showLoading(true);
+        console.log(`Deleting mapping - Entity: ${entityType}, Index: ${index}`);
         const response = await fetch(`/pipedrive/api/mapping/${entityType}/${index}?company=${currentCompany}`, {
             method: 'DELETE'
         });
 
         const data = await response.json();
+        console.log('Delete response:', data);
+
         if (data.success) {
             await loadExistingMappings(entityType);
         } else {
             showError(data.error);
         }
     } catch (error) {
+        console.error('Error deleting mapping:', error);
         showError(`Error deleting mapping: ${error}`);
     } finally {
         showLoading(false);

@@ -367,8 +367,10 @@ def get_mappings(entity_type):
         if company not in AVAILABLE_COMPANIES:
             return jsonify({'error': 'Invalid company'}), 400
 
+        logger.debug(f"Getting mappings for company: {company}, entity: {entity_type}")
         config = configs[company]
         mappings = config.get_mappings_by_entity(entity_type)
+        logger.debug(f"Retrieved {len(mappings)} mappings")
         return jsonify({'success': True, 'mappings': mappings})
     except Exception as e:
         logger.error(f"Error getting mappings: {e}")
