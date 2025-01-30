@@ -319,21 +319,32 @@ class PipedriveHelper:
             deal_data['2fea5d7de9997e5a2e32befbe45bf8a145373754'] = anr_anredetext
 
 
-        # Create/find and link person
+        # Find or create primary contact first
+        primary_contact = None
         person_name = f"{data.get('AKP_VORNAME', '')} {data.get('AKP_NAME', '')}".strip()
         if person_name:
             existing_person = self.find_person_by_name(person_name, org_id)
             if existing_person:
-                logger.info(f"Found existing person: {existing_person['name']}")
+                logger.info(f"Found existing primary contact: {existing_person['name']}")
+                primary_contact = existing_person
                 deal_data['person_id'] = existing_person['id']
             else:
-                logger.info(f"Creating new person: {person_name}")
+                logger.info(f"Creating new primary contact: {person_name}")
                 person_result = self.create_person(data, org_id)
                 if person_result.get('success'):
+                    primary_contact = person_result['data']
                     deal_data['person_id'] = person_result['data']['id']
-                    logger.info(f"Created and linked person with ID: {person_result['data']['id']}")
+                    logger.info(f"Created and linked primary contact with ID: {person_result['data']['id']}")
                 else:
-                    logger.warning(f"Failed to create person: {person_result}")
+                    logger.warning(f"Failed to create primary contact: {person_result}")
+
+        # Check if deal already exists to prevent duplicates
+        proj_nr = data.get('NPO_ProjNr')
+        if proj_nr:
+            existing_deals = self.search_deals_by_custom_field('5d300cf82930e07f6107c7255fcd0dd550af7774', proj_nr)
+            if existing_deals:
+                logger.info(f"Deal with project number {proj_nr} already exists")
+                return {'success': False, 'error': 'Deal already exists'}
 
         # Set initial deal value
         if data.get('NPO_ADatum'):
@@ -444,3 +455,28 @@ class PipedriveHelper:
                                 json=update_data
                             )
                             logger.debug(f"Updated won dates for deal {deal_id}: {update_response.json()}")
+    def search_deals_by_custom_field(self, field_key: str, value: str) -> List[Dict[str, Any]]:
+        """Search deals by custom field value."""
+        endpoint = f"{self.base_url}/deals/search"
+        params = {
+            'api_token': self.api_key,
+            'term': value,
+            'exact_match': True,
+            'fields': field_key
+        }
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            return response.json().get('data', {}).get('items', [])
+        return []
+
+    def get_organization_contacts(self, org_id: int) -> List[Dict[str, Any]]:
+        """Get all contacts associated with an organization."""
+        endpoint = f"{self.base_url}/persons/search"
+        params = {
+            'api_token': self.api_key,
+            'org_id': org_id
+        }
+        response = requests.get(endpoint, params=params)
+        if response.ok:
+            return response.json().get('data', [])
+        return []

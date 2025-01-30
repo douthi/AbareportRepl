@@ -290,12 +290,15 @@ def sync_to_pipedrive():
                     return jsonify({'error': person_result.get('error', 'Failed to create person')}), 500
                 logger.info(f"Created person with ID: {person_result['data']['id']}")
 
-        # Create deal with all related data
+        # Create deal with all related data if it doesn't exist
         logger.info("Creating deal...")
         deal_result = pipedrive.create_deal(data, org_id)
         if not deal_result.get('success'):
+            error_msg = deal_result.get('error', '')
+            if error_msg == 'Deal already exists':
+                return jsonify({'message': 'Deal already exists, skipping'}), 200
             logger.error(f"Failed to create deal: {deal_result}")
-            return jsonify({'error': deal_result.get('error', 'Failed to create deal')}), 500
+            return jsonify({'error': error_msg}), 500
         logger.info(f"Created deal with ID: {deal_result['data']['id']}")
 
         return jsonify({'success': True, 'message': 'Record synced successfully'}), 200
