@@ -43,18 +43,9 @@ class PipedriveHelper:
             return None
 
     def _load_field_mappings(self):
-        """Load field mappings from file."""
-        try:
-            with open(self.mapping_file, 'r') as f:
-                self.field_mappings = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            self.field_mappings = []
-
-    def save_field_mappings(self, mappings):
-        """Save field mappings to file."""
-        with open(self.mapping_file, 'w') as f:
-            json.dump(mappings, f, indent=2)
-        self.field_mappings = mappings
+        """Load field mappings from config."""
+        from config import Config
+        self.field_mappings = Config.COMPANIES[self.company_key].get('field_mappings', [])
 
     def get_field_mappings(self):
         """Get current field mappings."""

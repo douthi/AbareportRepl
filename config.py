@@ -76,6 +76,28 @@ class Config:
                 'salutation': 'a1e33efdca526d9b12b21bc5594e11f8e017824b',
                 'salutation_text': 'd70aa79b28126a53cf4260fc23beeba271b7255f',
                 'company_phone': '300867ce076894528208878f4f7ec1d684fabbc9'
-            }
+            },
+            'field_mappings': [
+                {"source": "NPO_ProjNr", "target": "f5f8535453d1498befe27d2dfe90a680f10fd616", "entity": "deal"},
+                {"source": "NPO_ProjName", "target": "title", "entity": "deal"},
+                {"source": "NPO_KSumme", "target": "value", "entity": "deal"},
+                {"source": "NPO_KDatum", "target": "add_time", "entity": "deal"},
+                {"source": "NPO_ADatum", "target": "close_time", "entity": "deal"},
+                {"source": "NPO_Status4Date", "target": "lost_time", "entity": "deal"},
+                {"source": "ADR_NAME", "target": "name", "entity": "organization"},
+                {"source": "ADR_TEL", "target": "300867ce076894528208878f4f7ec1d684fabbc9", "entity": "organization"},
+                {"source": "ADR_LAND", "target": "address_country", "entity": "organization"},
+                {"source": "ADR_PLZ", "target": "address_postal_code", "entity": "organization"},
+                {"source": "ADR_ORT", "target": "address_locality", "entity": "organization"},
+                {"source": "ADR_STREET", "target": "address_route", "entity": "organization"},
+                {"source": "ADR_HOUSE_NUMBER", "target": "address_street_number", "entity": "organization"},
+                {"source": "AKP_NAME", "target": "last_name", "entity": "person"},
+                {"source": "AKP_VORNAME", "target": "first_name", "entity": "person"},
+                {"source": "AKP_FUNKTION", "target": "job_title", "entity": "person"},
+                {"source": "AKP_TEL", "target": "phone", "entity": "person"},
+                {"source": "AKP_MAIL", "target": "email", "entity": "person"},
+                {"source": "ANR_ANREDE", "target": "a1e33efdca526d9b12b21bc5594e11f8e017824b", "entity": "person"},
+                {"source": "ANR_ANREDETEXT", "target": "d70aa79b28126a53cf4260fc23beeba271b7255f", "entity": "person"}
+            ]
         }
     }
